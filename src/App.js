@@ -1,25 +1,38 @@
-import logo from './logo.svg';
-import './App.css';
+import { Routes, Route } from "react-router-dom";
+import AppLayout from "./layout/AppLayout";
 
-function App() {
+import Home from "./pages/Home";
+import Profile from "./pages/Profile";
+import Upload from "./pages/Upload";
+import Inbox from "./pages/Inbox";
+import Notifications from "./pages/Notifications";
+import Chat from "./pages/Chat";
+import Chatbot from "./pages/Chatbot";
+import EditProfile from "./pages/EditProfile";
+import Search from "./pages/Search";
+
+
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Routes>
+
+      {/* pages WITH bottom navbar */}
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/upload" element={<Upload />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/inbox" element={<Inbox />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/search" element={<Search />} />
+        
+      </Route>
+
+      {/* pages WITHOUT bottom navbar */}
+      <Route path="/chat/:clientId" element={<Chat />} />
+
+      <Route path="/chatbot" element={<Chatbot />} />
+
+    </Routes>
   );
 }
-
-export default App;
