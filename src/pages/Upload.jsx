@@ -195,33 +195,31 @@ const styles = {
   
   header: {
     position: "relative",
+    height: 48,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
-    height: 44,
   },
-
-  
-
-
   close: {
     position: "absolute",
     left: 0,
     background: "none",
     border: "none",
-    fontSize: 20,
+    fontSize: 22,
+    padding: 4,
   },
   publish: {
     position: "absolute",
     right: 0,
-    background: "black",
+    background: "#888",
     color: "white",
     border: "none",
-    padding: "6px 14px",
+    padding: "6px 16px",
     borderRadius: 20,
-    
+    fontSize: 14,
   },
+
 
   
 
