@@ -220,6 +220,7 @@ const styles = {
     border: "none",
     padding: "6px 14px",
     borderRadius: 20,
+    
   },
 
   
