@@ -302,16 +302,18 @@ const styles = {
     marginBottom: 10,
   },
 
+
   input: {
-    height: 32,
-    padding: "0 14px",
+    flex: 1,
+    height: 34,
+    padding: "0 10px",
     borderRadius: 999,
-    border: "1px solid #bdbdbd",
-    outline: "none",
-    fontSize: 13,
-    minWidth: 90,
-    maxWidth: 120,
+    border: "1px solid #ccc",
+    fontSize: 12.5,
+    textAlign: "center",
+    background: "#fafafa",
   },
+
 
   tagsContainer: {
     display: "flex",
