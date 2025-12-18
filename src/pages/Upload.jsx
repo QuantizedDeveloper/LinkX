@@ -123,7 +123,7 @@ export default function Upload() {
 
         {images.length < 2 && (
           <label style={styles.imageAdd}>
-            <FiImage size={26} color="#555" />
+            <FiImage size={24} color="#666" />
             <input
               type="file"
               accept="image/*"
@@ -183,7 +183,7 @@ export default function Upload() {
   );
 }
 
-/* ---------------- STYLES ---------------- */
+/* ---------------- STYLES (ONLY THIS CHANGED) ---------------- */
 
 const styles = {
   container: {
@@ -192,65 +192,89 @@ const styles = {
     margin: "0 auto",
     fontFamily: "sans-serif",
   },
+  
   header: {
+    position: "relative",
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 12,
+    height: 44,
   },
+
+  
+
+
   close: {
+    position: "absolute",
+    left: 0,
     background: "none",
     border: "none",
     fontSize: 20,
   },
   publish: {
+    position: "absolute",
+    right: 0,
     background: "black",
     color: "white",
     border: "none",
     padding: "6px 14px",
     borderRadius: 20,
   },
+
+  
+
+  
+
+
   userRow: {
     display: "flex",
     alignItems: "center",
     gap: 10,
-    marginBottom: 10,
+    marginBottom: 8,
   },
+
   avatar: {
     width: 36,
     height: 36,
     borderRadius: "50%",
   },
+
   username: {
     fontSize: 14,
     fontWeight: 500,
   },
+
   textarea: {
     width: "100%",
-    minHeight: 80,
+    minHeight: 60,
     border: "none",
     outline: "none",
     fontSize: 16,
-    marginBottom: 10,
+    marginBottom: 12,
   },
+
   imageRow: {
     display: "flex",
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 14,
   },
+
   imagePreview: {
-    width: 110,
-    height: 110,
-    borderRadius: 14,
+    width: 100,
+    height: 100,
+    borderRadius: 18,
     background: "#f5f5f5",
     position: "relative",
     overflow: "hidden",
   },
+
   previewImg: {
     width: "100%",
     height: "100%",
     objectFit: "contain",
   },
+
   removeImg: {
     position: "absolute",
     top: 4,
@@ -260,36 +284,54 @@ const styles = {
     borderRadius: "50%",
     padding: "2px 6px",
     cursor: "pointer",
-    fontSize: 14,
+    fontSize: 13,
   },
+
   imageAdd: {
-    width: 110,
-    height: 110,
-    borderRadius: 14,
+    width: 100,
+    height: 100,
+    borderRadius: 18,
     border: "1px dashed #ccc",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
   },
+
   row: {
     display: "flex",
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   input: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 12,
-    border: "1px solid #ccc",
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 999,
+    border: "1px solid #bdbdbd",
     outline: "none",
+    fontSize: 13,
+    minWidth: 90,
+    maxWidth: 120,    // 👈 tighter so it visually shifts left
   },
+
+
+  container: {
+    padding: 16,
+    maxWidth: 360,   // 👈 tighter like the screenshot
+    margin: "0 auto",
+    fontFamily: "sans-serif",
+  },
+
+
   tagsContainer: {
     display: "flex",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 10,
+    marginTop: 8,
   },
+
   tag: {
     background: "#f1f1f1",
     padding: "6px 12px",
@@ -297,15 +339,17 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 6,
-    fontSize: 14,
+    fontSize: 13,
   },
+
   remove: {
     cursor: "pointer",
     fontWeight: "bold",
   },
+
   error: {
     color: "red",
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 6,
   },
 };
