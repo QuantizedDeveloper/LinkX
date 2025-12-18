@@ -72,7 +72,9 @@ export default function Upload() {
         <button style={styles.close} onClick={() => navigate(-1)}>
           ✕
         </button>
-        <h3>New gig</h3>
+
+        <h3 style={styles.headerTitle}>New gig</h3>
+
         <button
           disabled={!canPublish}
           style={{
@@ -107,11 +109,7 @@ export default function Upload() {
       <div style={styles.imageRow}>
         {images.map((img, index) => (
           <div key={index} style={styles.imagePreview}>
-            <img
-              src={img.preview}
-              alt="preview"
-              style={styles.previewImg}
-            />
+            <img src={img.preview} alt="preview" style={styles.previewImg} />
             <span
               style={styles.removeImg}
               onClick={() => removeImage(index)}
@@ -183,35 +181,42 @@ export default function Upload() {
   );
 }
 
-/* ---------------- STYLES (ONLY THIS CHANGED) ---------------- */
+/* ---------------- STYLES ---------------- */
 
 const styles = {
   container: {
     padding: 16,
-    maxWidth: 420,
+    maxWidth: 360,
     margin: "0 auto",
     fontFamily: "sans-serif",
   },
-  
+
   header: {
-    position: "relative",
     height: 48,
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    position: "relative",
     marginBottom: 12,
   },
-  close: {
+
+  headerTitle: {
     position: "absolute",
-    left: 0,
+    left: "50%",
+    transform: "translateX(-50%)",
+    margin: 0,
+    fontSize: 16,
+    fontWeight: 600,
+  },
+
+  close: {
     background: "none",
     border: "none",
     fontSize: 22,
     padding: 4,
   },
+
   publish: {
-    position: "absolute",
-    right: 0,
     background: "#888",
     color: "white",
     border: "none",
@@ -219,12 +224,6 @@ const styles = {
     borderRadius: 20,
     fontSize: 14,
   },
-
-
-  
-
-  
-
 
   userRow: {
     display: "flex",
@@ -301,9 +300,8 @@ const styles = {
     display: "flex",
     gap: 8,
     marginBottom: 10,
-    alignItems: "center",
-    justifyContent: "flex-start",
   },
+
   input: {
     height: 32,
     padding: "0 14px",
@@ -312,17 +310,8 @@ const styles = {
     outline: "none",
     fontSize: 13,
     minWidth: 90,
-    maxWidth: 120,    // 👈 tighter so it visually shifts left
+    maxWidth: 120,
   },
-
-
-  container: {
-    padding: 16,
-    maxWidth: 360,   // 👈 tighter like the screenshot
-    margin: "0 auto",
-    fontFamily: "sans-serif",
-  },
-
 
   tagsContainer: {
     display: "flex",
