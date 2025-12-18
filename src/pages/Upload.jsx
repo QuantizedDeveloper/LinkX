@@ -12,7 +12,7 @@ export default function Upload() {
   const [tags, setTags] = useState([]);
   const [images, setImages] = useState([]);
 
-  /* ---------- TAG LOGIC ---------- */
+  /* ---------- TAG LOGIC (UNCHANGED) ---------- */
 
   const tryAddTag = (value) => {
     const tag = value.trim().toLowerCase();
@@ -37,17 +37,14 @@ export default function Upload() {
     setTags(tags.filter((_, i) => i !== index));
   };
 
-  /* ---------- IMAGE LOGIC ---------- */
+  /* ---------- IMAGE LOGIC (UNCHANGED) ---------- */
 
   const handleImage = (file) => {
     if (!file || images.length >= 2) return;
 
     setImages((prev) => [
       ...prev,
-      {
-        file,
-        preview: URL.createObjectURL(file),
-      },
+      { file, preview: URL.createObjectURL(file) },
     ]);
   };
 
@@ -55,7 +52,7 @@ export default function Upload() {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  /* ---------- VALIDATION ---------- */
+  /* ---------- VALIDATION (UNCHANGED MEANING) ---------- */
 
   const canPublish =
     title.trim() &&
@@ -79,7 +76,7 @@ export default function Upload() {
           disabled={!canPublish}
           style={{
             ...styles.publish,
-            opacity: canPublish ? 1 : 0.5,
+            background: canPublish ? "#000" : "#bdbdbd",
             cursor: canPublish ? "pointer" : "not-allowed",
           }}
         >
@@ -132,24 +129,24 @@ export default function Upload() {
         )}
       </div>
 
-      {/* Inputs */}
+      {/* Inputs (SHORT PILLS) */}
       <div style={styles.row}>
         <input
-          placeholder="Price (₹500, $20, €15)"
+          placeholder="Price (₹, $, €)"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           style={styles.input}
         />
 
         <input
-          placeholder="Delivery time"
+          placeholder="delivery time"
           value={delivery}
           onChange={(e) => setDelivery(e.target.value)}
           style={styles.input}
         />
 
         <input
-          placeholder="Add tags"
+          placeholder="add tags"
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={handleTagKeyDown}
@@ -217,7 +214,6 @@ const styles = {
   },
 
   publish: {
-    background: "#888",
     color: "white",
     border: "none",
     padding: "6px 16px",
@@ -249,13 +245,13 @@ const styles = {
     border: "none",
     outline: "none",
     fontSize: 16,
-    marginBottom: 12,
+    marginBottom: 14,
   },
 
   imageRow: {
     display: "flex",
-    gap: 10,
-    marginBottom: 14,
+    gap: 12,
+    marginBottom: 18,
   },
 
   imagePreview: {
@@ -298,22 +294,22 @@ const styles = {
 
   row: {
     display: "flex",
-    gap: 8,
-    marginBottom: 10,
+    gap: 12,
+    justifyContent: "center",
+    marginBottom: 14,
   },
 
-
   input: {
-    flex: 1,
+    width: 110,
     height: 34,
     padding: "0 10px",
     borderRadius: 999,
-    border: "1px solid #ccc",
-    fontSize: 12.5,
+    border: "1px solid #9e9e9e",
+    outline: "none",
+    fontSize: 13,
     textAlign: "center",
-    background: "#fafafa",
+    background: "white",
   },
-
 
   tagsContainer: {
     display: "flex",
