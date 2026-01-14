@@ -84,16 +84,6 @@ export default function Upload() {
         </button>
       </div>
 
-      {/* User */}
-      <div style={styles.userRow}>
-        <img
-          src="https://via.placeholder.com/40"
-          alt="user"
-          style={styles.avatar}
-        />
-        <span style={styles.username}>freelancer</span>
-      </div>
-
       {/* Title */}
       <textarea
         placeholder="What's new gig"
@@ -221,24 +211,6 @@ const styles = {
     fontSize: 14,
   },
 
-  userRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 8,
-  },
-
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-  },
-
-  username: {
-    fontSize: 14,
-    fontWeight: 500,
-  },
-
   textarea: {
     width: "100%",
     minHeight: 60,
@@ -294,22 +266,25 @@ const styles = {
 
   row: {
     display: "flex",
-    gap: 12,
+    gap: 8,
     justifyContent: "center",
     marginBottom: 14,
+    
   },
 
   input: {
-    width: 110,
-    height: 34,
-    padding: "0 10px",
+    width: 88,                 // 👈 real small
+    height: 32,
+    padding: "0 6px",          // 👈 less padding
     borderRadius: 999,
     border: "1px solid #9e9e9e",
     outline: "none",
-    fontSize: 13,
+    fontSize: 12,              // 👈 smaller text
     textAlign: "center",
     background: "white",
+    boxSizing: "border-box",   // 👈 VERY IMPORTANT
   },
+
 
   tagsContainer: {
     display: "flex",

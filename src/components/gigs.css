@@ -1,0 +1,13 @@
+/* components/gigs.css */
+
+.gigs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  align-items: stretch; /* full width, centered */
+}
+
+.observer {
+  height: 1px;
+}

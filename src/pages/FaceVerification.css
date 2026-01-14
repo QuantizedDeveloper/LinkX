@@ -1,0 +1,124 @@
+.face-wrapper {
+  min-height: 100vh;
+  background: #cfcfcf;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.face-card {
+  width: 360px;
+  height: 680px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.camera-frame {
+  width: 100%;
+  height: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 10px;
+  border: 4px solid #ccc; /* dynamic border controlled inline */
+  transition: border 0.2s ease-in-out;
+  position: relative;
+}
+
+.camera-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.face-instruction {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #000;
+  text-align: center;
+  min-height: 40px;
+}
+
+.face-error {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #d32f2f;
+  text-align: center;
+  min-height: 20px;
+}
+
+.face-liveness {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #388e3c;
+  text-align: center;
+  min-height: 20px;
+}
+
+.submit-btn {
+  margin-top: 20px;
+  width: 120px;
+  height: 40px;
+  border: none;
+  border-radius: 20px;
+  background-color: #6a1b9a;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.submit-btn:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.progress-bar {
+  margin-top: 16px;
+  width: 100%;
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #6a1b9a;
+  transition: width 0.2s ease;
+}
+
+/* Optional: small tips text */
+.tips {
+  font-size: 12px;
+  color: #555;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Optional: mobile responsive */
+@media (max-width: 400px) {
+  .face-card {
+    width: 90%;
+    height: auto;
+    padding: 16px;
+  }
+
+  .camera-frame {
+    height: 240px;
+  }
+}
+
+.camera-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror video horizontally */
+}

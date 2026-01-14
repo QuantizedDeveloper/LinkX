@@ -72,14 +72,14 @@ const styles = {
     position: "fixed",
     inset: 0,
     background: "rgba(0,0,0,0.15)",
-    zIndex: 1000
+    zIndex: 5000
   },
 
   menu: {
     width: "75%",
     height: "100%",
     background: "#fff",
-    paddingTop: 10
+    paddingTop: 10,
   },
 
   header: {
@@ -98,7 +98,7 @@ const styles = {
   cancel: {
     fontSize: 22,
     fontWeight: "bold",
-    cursor: "pointer"
+    cursor: "pointer",
   },
 
   menuItem: {

@@ -1,0 +1,78 @@
+@api_view(["POST"])
+def complete_signup(request):
+    email = request.data.get("email")
+    username = request.data.get("username")
+    password = request.data.get("password")
+    vectors = request.data.get("vectors")
+
+    # 1️⃣ Basic validation
+    if not all([email, username, password, vectors]):
+        return Response({"error": "Incomplete signup data"}, status=400)
+
+    if not isinstance(vectors, list) or len(vectors) < 4:
+        return Response({"error": "Insufficient face vectors"}, status=400)
+
+    # 2️⃣ OTP must be verified
+    otp_record = EmailOTP.objects.filter(
+        email=email,
+        purpose="signup",
+        is_verified=True
+    ).last()
+
+    if not otp_record:
+        return Response({"error": "OTP not verified"}, status=400)
+
+    # 3️⃣ Uniqueness checks
+    if User.objects.filter(email=email).exists():
+        return Response({"error": "Email already registered"}, status=400)
+
+    if User.objects.filter(username=username).exists():
+        return Response({"error": "Username already taken"}, status=400)
+
+    # 4️⃣ Convert vectors → numpy
+    try:
+        embeddings = [np.array(v, dtype=np.float32) for v in vectors]
+    except Exception:
+        return Response({"error": "Invalid face vectors"}, status=400)
+
+    base = embeddings[0]
+
+    # 5️⃣ Same-person consistency check
+    for emb in embeddings[1:]:
+        if np.linalg.norm(base - emb) > 0.6:
+            return Response({"error": "Face mismatch detected"}, status=400)
+
+    # 6️⃣ Anti-replay check (variance)
+    variance = np.mean([np.linalg.norm(base - emb) for emb in embeddings[1:]])
+    if variance < 0.03:
+        return Response({"error": "Face movement too low"}, status=400)
+
+    # 7️⃣ Duplicate face prevention
+    for stored in FaceEmbedding.objects.all():
+        stored_vec = np.array(stored.embedding_vector, dtype=np.float32)
+        if np.linalg.norm(base - stored_vec) < 0.55:
+            return Response({"error": "Face already registered"}, status=400)
+
+    # 8️⃣ Atomic user creation
+    with transaction.atomic():
+        user = User.objects.create_user(
+            email=email,
+            username=username,
+            password=password
+        )
+
+        FaceEmbedding.objects.create(
+            user=user,
+            embedding_vector=base.tolist()
+        )
+
+        otp_record.delete()
+
+    # 9️⃣ Auto-login (JWT)
+    refresh = RefreshToken.for_user(user)
+
+    return Response({
+        "access": str(refresh.access_token),
+        "username": user.username
+    })
+    

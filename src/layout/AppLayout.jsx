@@ -5,7 +5,7 @@ export default function AppLayout() {
   return (
     <div style={{ minHeight: "100vh" }}>
       <Outlet />
-      <BottomNav />
+      {/*}<BottomNav />*/}
     </div>
   );
 }

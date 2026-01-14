@@ -1,394 +1,399 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  FiEdit2,
+  FiArrowLeft,
+} from "react-icons/fi";
+import { FaQrcode, FaRupeeSign } from "react-icons/fa";
 import { SiRazorpay } from "react-icons/si";
-import { MdQrCode, MdPayment, MdLink } from "react-icons/md";
+import { BsCreditCard } from "react-icons/bs";
 
 export default function EditProfile() {
   const navigate = useNavigate();
 
-  /* ---------- KEYWORDS ---------- */
-  const [keywords, setKeywords] = useState(["example keyword"]);
-  const [keywordInput, setKeywordInput] = useState("");
+  const bannerRef = useRef(null);
+  const avatarRef = useRef(null);
 
-  /* ---------- PAYMENTS ---------- */
+  const [banner, setBanner] = useState(null);
+  const [avatar, setAvatar] = useState(null);
+
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+
+  // ---------- KEYWORDS ----------
+  const [keywordInput, setKeywordInput] = useState("");
+  const [keywords, setKeywords] = useState([]);
+
+  const addKeyword = (e) => {
+    if (e.key === "Enter" && keywordInput.trim()) {
+      e.preventDefault();
+      if (!keywords.includes(keywordInput.trim())) {
+        setKeywords([...keywords, keywordInput.trim()]);
+      }
+      setKeywordInput("");
+    }
+  };
+
+  const removeKeyword = (k) =>
+    setKeywords(keywords.filter((x) => x !== k));
+
+  // ---------- PAYMENTS ----------
+  const [showSheet, setShowSheet] = useState(false);
   const [payments, setPayments] = useState({
     razorpay: "",
     instamojo: "",
     upi: "",
-    custom: ""
+    custom: "",
+    qr: null,
   });
 
-  const [qrImage, setQrImage] = useState(null);
-  const [showPayment, setShowPayment] = useState(false);
+  const activeIcons = [];
+  if (payments.razorpay) activeIcons.push("razorpay");
+  if (payments.instamojo) activeIcons.push("instamojo");
+  if (payments.upi) activeIcons.push("upi");
+  if (payments.custom) activeIcons.push("custom");
+  if (payments.qr) activeIcons.push("qr");
 
-  /* ---------- IMAGES (UI ONLY) ---------- */
-  const [banner, setBanner] = useState(null);
-  const [avatar, setAvatar] = useState(null);
-
-  const handleSave = () => {
-    console.log({ keywords, payments, qrImage, banner, avatar });
-    alert("Saved (UI only)");
+  const readImage = (file, setter) => {
+    const reader = new FileReader();
+    reader.onload = () => setter(reader.result);
+    reader.readAsDataURL(file);
   };
 
   return (
-    <div style={styles.page}>
+    <div style={s.page}>
       {/* HEADER */}
-      <div style={styles.header}>
-        <span style={styles.back} onClick={() => navigate(-1)}>‹</span>
-        <h3>Edit Profile</h3>
-        <button style={styles.save} onClick={handleSave}>Save</button>
+      <div style={s.header}>
+        <FiArrowLeft size={20} onClick={() => navigate(-1)} />
+        <div>Edit Profile</div>
+        <button style={s.save}>Save</button>
       </div>
 
       {/* BANNER */}
-      <label style={styles.cover}>
+      <div
+        style={{
+          ...s.banner,
+          backgroundImage: banner ? `url(${banner})` : "none",
+        }}
+      >
+        <button
+          type="button"
+          style={s.bannerBtn}
+          onClick={() => bannerRef.current.click()}
+        >
+          <FiEdit2 />
+        </button>
+
         <input
+          ref={bannerRef}
           type="file"
-          hidden
           accept="image/*"
-          onChange={(e) => {
-            const f = e.target.files[0];
-            if (f) setBanner(URL.createObjectURL(f));
-          }}
+          hidden
+          onChange={(e) =>
+            e.target.files[0] &&
+            readImage(e.target.files[0], setBanner)
+          }
         />
-
-        {banner ? (
-          <img src={banner} alt="banner" style={styles.bannerImg} />
-        ) : (
-          <div style={styles.bannerPlaceholder} />
-        )}
-
-        <span style={styles.bannerEdit}>✏️</span>
-      </label>
+      </div>
 
       {/* AVATAR */}
-      <div style={styles.avatarWrap}>
-        <label style={styles.avatar}>
-          <input
-            type="file"
-            hidden
-            accept="image/*"
-            onChange={(e) => {
-              const f = e.target.files[0];
-              if (f) setAvatar(URL.createObjectURL(f));
-            }}
-          />
+      <div style={s.avatarWrap}>
+        <div
+          style={{
+            ...s.avatar,
+            backgroundImage: avatar ? `url(${avatar})` : "none",
+          }}
+        />
+        <button
+          type="button"
+          style={s.avatarBtn}
+          onClick={() => avatarRef.current.click()}
+        >
+          <FiEdit2 size={14} />
+        </button>
 
-          {avatar ? (
-            <img src={avatar} alt="avatar" style={styles.avatarImg} />
-          ) : (
-            <div style={styles.avatarPlaceholder} />
-          )}
-
-          <span style={styles.avatarEdit}>✏️</span>
-        </label>
+        <input
+          ref={avatarRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) =>
+            e.target.files[0] &&
+            readImage(e.target.files[0], setAvatar)
+          }
+        />
       </div>
 
       {/* NAME */}
-      <input style={styles.input} placeholder="name - optional" />
+      <input
+        style={s.input}
+        placeholder="name --optional"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <p style={s.hint}>
+        this will be displayed to clients and does not change your username
+      </p>
 
       {/* KEYWORDS */}
-      <div style={styles.keywordBox}>
-        {keywords.map((k, i) => (
-          <span key={i} style={styles.tag}>
+      <div style={s.keywordBox}>
+        {keywords.map((k) => (
+          <span key={k} style={s.pill}>
             {k}
-            <span
-              style={styles.remove}
-              onClick={() =>
-                setKeywords(keywords.filter((_, idx) => idx !== i))
-              }
-            >
-              ×
-            </span>
+            <span onClick={() => removeKeyword(k)}>×</span>
           </span>
         ))}
-
         <input
+          style={s.keywordInput}
+          placeholder="add keywords"
           value={keywordInput}
           onChange={(e) => setKeywordInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && keywordInput.trim()) {
-              setKeywords([...keywords, keywordInput.trim()]);
-              setKeywordInput("");
-              e.preventDefault();
-            }
-          }}
-          placeholder="Add tags"
-          style={styles.keywordInput}
+          onKeyDown={addKeyword}
         />
       </div>
 
       {/* PAYMENTS */}
-      <div style={styles.section}>
-        <strong>Payment methods</strong>
-        <p style={styles.muted}>clients can pay using these</p>
+      <h4>Payments method (max 5)</h4>
+      <p style={s.hint}>client can pay using these methods</p>
 
-        <div style={styles.paymentIcons}>
-          {payments.razorpay && (
-            <IconBubble><SiRazorpay size={20} /></IconBubble>
-          )}
-
-          {payments.instamojo && (
-            <IconBubble>
-              <img src="/icons/instamojo.svg" alt="Instamojo" style={styles.svgIcon} />
-            </IconBubble>
-          )}
-
-          {payments.upi && (
-            <IconBubble><MdPayment size={20} /></IconBubble>
-          )}
-
-          {qrImage && (
-            <IconBubble><MdQrCode size={20} /></IconBubble>
-          )}
-
-          {payments.custom && (
-            <IconBubble><MdLink size={20} /></IconBubble>
-          )}
-        </div>
-
-        <button style={styles.addPayment} onClick={() => setShowPayment(true)}>
+      <div style={s.paymentRow}>
+        <button style={s.addPayBtn} onClick={() => setShowSheet(true)}>
           + add payment
         </button>
+
+        {activeIcons.map((i) => (
+          <span key={i} style={s.payIcon}>
+            {i === "razorpay" && <SiRazorpay />}
+            {i === "instamojo" && (
+              <img
+                src="/instamojo/instamojo.svg"
+                alt="instamojo"
+                style={{ height: 18 }}
+              />
+            )}
+            {i === "upi" && <FaRupeeSign />}
+            {i === "custom" && <BsCreditCard />}
+            {i === "qr" && <FaQrcode />}
+          </span>
+        ))}
       </div>
 
       {/* DESCRIPTION */}
-      <textarea style={styles.textarea} placeholder="description - optional" />
+      <textarea
+        style={s.desc}
+        placeholder="description --optional"
+        value={desc}
+        onChange={(e) => setDesc(e.target.value)}
+      />
 
       {/* PAYMENT SHEET */}
-      {showPayment && (
-        <>
-          <div style={styles.overlay} onClick={() => setShowPayment(false)} />
-          <PaymentSheet
-            payments={payments}
-            setPayments={setPayments}
-            qrImage={qrImage}
-            setQrImage={setQrImage}
+      {showSheet && (
+        <div style={s.sheet}>
+          <h3>Add payment method</h3>
+
+          <input
+            style={s.input}
+            placeholder="Razorpay link"
+            onChange={(e) =>
+              setPayments({ ...payments, razorpay: e.target.value })
+            }
           />
-        </>
+          <input
+            style={s.input}
+            placeholder="Instamojo link"
+            onChange={(e) =>
+              setPayments({ ...payments, instamojo: e.target.value })
+            }
+          />
+          <input
+            style={s.input}
+            placeholder="UPI ID"
+            onChange={(e) =>
+              setPayments({ ...payments, upi: e.target.value })
+            }
+          />
+          <input
+            style={s.input}
+            placeholder="Custom payment"
+            onChange={(e) =>
+              setPayments({ ...payments, custom: e.target.value })
+            }
+          />
+
+          <label style={s.qrBox}>
+            <FaQrcode size={34} />
+            <div style={{ fontWeight: 600 }}>Upload QR code</div>
+            <span style={{ fontSize: 12, color: "#666" }}>
+  PNG or JPG
+</span>
+
+            <input
+              type="file"
+              hidden
+              onChange={(e) =>
+                e.target.files[0] &&
+                setPayments({
+                  ...payments,
+                  qr: e.target.files[0],
+                })
+              }
+            />
+          </label>
+
+          <button
+            style={s.close}
+            onClick={() => setShowSheet(false)}
+          >
+            Done
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-/* ---------- PAYMENT SHEET ---------- */
-
-function PaymentSheet({ payments, setPayments, qrImage, setQrImage }) {
-  return (
-    <div style={styles.sheet}>
-      <div style={styles.handle} />
-      <h4>Add payment methods</h4>
-
-      <InputRow
-        label="Razorpay"
-        placeholder="https://rzp.io/..."
-        value={payments.razorpay}
-        onChange={(v) => setPayments({ ...payments, razorpay: v })}
-      />
-
-      <InputRow
-        label="Instamojo"
-        placeholder="https://imjo.in/..."
-        value={payments.instamojo}
-        onChange={(v) => setPayments({ ...payments, instamojo: v })}
-      />
-
-      <InputRow
-        label="UPI ID"
-        placeholder="yourid@upi"
-        value={payments.upi}
-        onChange={(v) => setPayments({ ...payments, upi: v })}
-      />
-
-      <InputRow
-        label="Custom payment link"
-        placeholder="https://your-payment-link.com"
-        value={payments.custom}
-        onChange={(v) => setPayments({ ...payments, custom: v })}
-      />
-
-      <label style={styles.qrBox}>
-        <input
-          type="file"
-          hidden
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files[0];
-            if (file) setQrImage(URL.createObjectURL(file));
-          }}
-        />
-        {qrImage ? (
-          <img src={qrImage} alt="QR" style={styles.qrPreview} />
-        ) : (
-          <>
-            <div style={styles.plus}>＋</div>
-            <div>Upload QR code</div>
-          </>
-        )}
-      </label>
-    </div>
-  );
-}
-
-function InputRow({ label, value, onChange, placeholder }) {
-  return (
-    <div style={styles.payRow}>
-      <strong>{label}</strong>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={styles.payInput}
-      />
-    </div>
-  );
-}
-
-function IconBubble({ children }) {
-  return <div style={styles.iconBubble}>{children}</div>;
-}
-
-/* ---------- STYLES ---------- */
-
-const styles = {
-  page: { padding: 16, paddingBottom: 120 },
-
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  back: { fontSize: 22, cursor: "pointer" },
-  save: { borderRadius: 20, padding: "6px 16px", border: "none" },
-
-  cover: {
-    height: 180,
-    background: "#eaeaea",
-    borderRadius: 20,
-    marginTop: 10,
-    position: "relative",
-    overflow: "hidden",
-    cursor: "pointer"
+/* ---------------- STYLES ---------------- */
+const HP = 16;
+const s = {
+  page: {
+    paddingBottom: 140,
+    paddingLeft: HP,
+    paddingRight: HP,
   },
 
-  bannerImg: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover"
-  },
-
-  bannerPlaceholder: {
-    position: "absolute",
-    inset: 0,
-    background: "#ddd"
-  },
-
-  bannerEdit: {
-    position: "absolute",
-    right: 16,
-    top: "50%",
-    transform: "translateY(-50%)",
-    width: 38,
-    height: 38,
-    borderRadius: "50%",
-    background: "#fff",
+  
+  
+  header: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
-    zIndex: 2
+    justifyContent: "space-between",
+    padding: 14,
+    fontWeight: "bold",
+  },
+  save: {
+    border: "none",
+    padding: "6px 14px",
+    borderRadius: 20,
+    background: "#eee",
   },
 
-  avatarWrap: { display: "flex", justifyContent: "center", marginTop: -45 },
+  banner: {
+    height: 140,
+    background: "#000",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    position: "relative",
+  },
+  bannerBtn: {
+    position: "absolute",
+    right: 12,
+    bottom: 12,
+    background: "#fff",
+    borderRadius: "50%",
+    padding: 8,
+    border: "none",
+  },
 
+  avatarWrap: {
+    position: "relative",
+    width: 90,
+    margin: "-45px auto 10px",
+  },
   avatar: {
     width: 90,
     height: 90,
     borderRadius: "50%",
-    background: "#fff",
-    border: "2px solid #ddd",
-    position: "relative",
-    overflow: "hidden",
-    cursor: "pointer"
+    background: "#ddd",
+    backgroundSize: "cover",
+    border: "4px solid white",
   },
-
-  avatarImg: { width: "100%", height: "100%", objectFit: "cover" },
-
-  avatarPlaceholder: { width: "100%", height: "100%", background: "#eee" },
-
-  avatarEdit: {
+  avatarBtn: {
     position: "absolute",
-    right: 6,
-    bottom: 6,
-    width: 28,
-    height: 28,
-    borderRadius: "50%",
+    right: 0,
+    bottom: 0,
     background: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.18)",
-    fontSize: 14
+    borderRadius: "50%",
+    padding: 6,
+    border: "none",
   },
 
   input: {
     width: "100%",
-    marginTop: 20,
-    padding: 14,
-    borderRadius: 22,
+    marginTop: 10,
+    padding: 7,
+    borderRadius: 20,
+    background: "#f1f1f1",
+    fontSize: 16,
     border: "none",
-    background: "#f2f2f2"
   },
 
+  desc: {
+    width: "100%",
+    height: 120,
+    marginTop: 10,
+    padding: 7,
+    border: "none",
+    background: "#f1f1f1",
+    fontSize: 16,
+    borderRadius: 20,
+},
+
+  hint: {
+    fontSize: 12,
+    color: "#777",
+    marginTop:6,
+  },
+
+
   keywordBox: {
-    background: "#f2f2f2",
-    padding: 14,
-    borderRadius: 22,
-    marginTop: 16,
+    width: "100%",
+    marginTop: 10,
+    background: "#f1f1f1",
+    borderRadius: 20,
+    padding: 7,
     display: "flex",
     flexWrap: "wrap",
     gap: 8,
   },
 
-  tag: { background: "#ddd", padding: "6px 12px", borderRadius: 18 },
-  remove: { marginLeft: 6, cursor: "pointer" },
-  keywordInput: { border: "none", outline: "none", background: "transparent", minWidth: 120 },
+  pill: {
+    background: "#ddd",
+    padding: "6px 12px",
+    borderRadius: 20,
+    display: "flex",
+    gap: 6,
+    alignItems: "center",
+  },
+  keywordInput: {
+    border: "none",
+    background: "transparent",
+    flex: 1,
+    minWidth: 120,
+    outline: "none",
+  },
+  paymentRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+    marginTop: 10,
+  },
 
-  section: { marginTop: 24 },
-  muted: { fontSize: 12, color: "#777" },
-
-  paymentIcons: { display: "flex", gap: 10, marginTop: 10 },
-
-  iconBubble: {
-    width: 34,
-    height: 34,
+  
+  addPayBtn: {
+    border: "none",
+    padding: "6px 14px",
+    borderRadius: 20,
+    background: "#eee",
+  },
+  payIcon: {
+    background: "#eee",
+    padding: 8,
     borderRadius: "50%",
-    background: "#fff",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    
   },
-
-  svgIcon: { width: 20, height: 20 },
-
-  addPayment: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 22,
-    border: "none",
-    width: "100%"
-  },
-
-  textarea: {
-    marginTop: 24,
-    width: "100%",
-    height: 110,
-    borderRadius: 22,
-    border: "none",
-    padding: 14,
-    background: "#f2f2f2"
-  },
-
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)" },
 
   sheet: {
     position: "fixed",
@@ -396,42 +401,37 @@ const styles = {
     left: 0,
     right: 0,
     background: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 16
-  },
-
-  handle: {
-    width: 40,
-    height: 4,
-    background: "#ddd",
-    borderRadius: 10,
-    margin: "0 auto 12px"
-  },
-
-  payRow: { marginBottom: 12 },
-
-  payInput: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 20,
-    border: "none",
-    background: "#f2f2f2"
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: "80vh",
+    overflowY: "auto",
+    zIndex: 1000,
+    paddingBottom: 120,
+    border: "2px solid #000",      // ✅ black outline
+    boxShadow: "0 -8px 20px rgba(0,0,0,0.15)", // optional but clean
   },
 
   qrBox: {
-    marginTop: 16,
-    border: "2px dashed #ccc",
+    border: "2px dashed #000",
     borderRadius: 16,
-    height: 160,
+    padding: 24,
+    marginTop: 16,
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "column",
-    cursor: "pointer"
+    gap: 10,
+    background: "#fafafa",
   },
 
-  plus: { fontSize: 32 },
-
-  qrPreview: { width: "100%", height: "100%", objectFit: "contain" }
+  close: {
+    width: "100%",
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 20,
+    border: "none",
+    background: "#000",
+    color: "#fff",
+  },
 };

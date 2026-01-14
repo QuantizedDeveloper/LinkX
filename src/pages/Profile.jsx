@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const [tab, setTab] = useState("gigs");
 
   return (
     <div style={styles.container}>
-
       {/* cover */}
       <div style={styles.cover}></div>
 
@@ -38,20 +39,43 @@ export default function Profile() {
 
       {/* tabs */}
       <div style={styles.tabs}>
-        <div style={styles.activeTab}>gigs</div>
-        <div style={styles.inactiveTab}>about</div>
+        <div
+          style={tab === "gigs" ? styles.activeTab : styles.inactiveTab}
+          onClick={() => setTab("gigs")}
+        >
+          gigs
+        </div>
+        <div
+          style={tab === "about" ? styles.activeTab : styles.inactiveTab}
+          onClick={() => setTab("about")}
+        >
+          about
+        </div>
       </div>
 
-      {/* gigs */}
-      <GigCard
-        title="i will build landing page"
-        price="₹1500-3000"
-      />
+      {/* content */}
+      {tab === "gigs" && (
+        <>
+          <GigCard
+            title="i will build landing page"
+            price="₹1500-3000"
+          />
 
-      <GigCard
-        title="i will debug your python code"
-        price="₹500-3000"
-      />
+          <GigCard
+            title="i will debug your python code"
+            price="₹500-3000"
+          />
+        </>
+      )}
+
+      {tab === "about" && (
+        <div style={styles.about}>
+          <p>
+            Full-stack developer focused on building clean, scalable products
+            for startups, solo founders, and agencies.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -71,8 +95,6 @@ function GigCard({ title, price }) {
     </div>
   );
 }
-
-
 
 const styles = {
   container: {
@@ -147,12 +169,14 @@ const styles = {
   activeTab: {
     fontWeight: "bold",
     borderBottom: "2px solid black",
-    paddingBottom: 6
+    paddingBottom: 6,
+    cursor: "pointer"
   },
 
   inactiveTab: {
     color: "#999",
-    paddingBottom: 6
+    paddingBottom: 6,
+    cursor: "pointer"
   },
 
   gig: {
@@ -180,5 +204,10 @@ const styles = {
 
   inbox: {
     fontSize: 22
+  },
+
+  about: {
+    padding: 16,
+    lineHeight: 1.5
   }
 };

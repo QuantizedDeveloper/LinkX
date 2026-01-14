@@ -6,44 +6,20 @@ import Gigs from "../components/Gigs";
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // data state (minimal, safe)
   const [gigs, setGigs] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
   const navigate = useNavigate();
 
-  // 🔐 AUTH CHECK (NO UI / LOGIC CHANGE)
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    fetch("/api/auth/me/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(res => {
-        if (!res.ok) {
-          localStorage.removeItem("accessToken");
-          navigate("/login");
-        }
-      })
-      .catch(() => {
-        localStorage.removeItem("accessToken");
-        navigate("/login");
-      });
-  }, [navigate]);
-
-  // ✅ INITIAL LOAD (UNCHANGED)
+  // ✅ INITIAL LOAD (this replaces the broken render-time logic)
   useEffect(() => {
     loadMore();
     // eslint-disable-next-line
   }, []);
 
+  // ✅ SAME IDEA AS BEFORE, JUST SAFE
   const loadMore = () => {
     if (!hasMore) return;
 
@@ -58,6 +34,7 @@ export default function Home() {
     setGigs(prev => [...prev, ...newGigs]);
     setPage(prev => prev + 1);
 
+    // mock stop condition (REMOVE when backend added)
     if (page >= 5) {
       setHasMore(false);
     }
@@ -65,10 +42,12 @@ export default function Home() {
 
   return (
     <>
+      {/* Side menu */}
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <div style={styles.container}>
 
+        {/* Top bar */}
         <div style={styles.topBar}>
           <div
             style={styles.menu}
@@ -79,6 +58,7 @@ export default function Home() {
             <div style={styles.line}></div>
           </div>
 
+          {/* Search */}
           <div
             style={styles.search}
             onClick={() => navigate("/search")}
@@ -88,6 +68,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Upload box */}
         <div
           style={styles.uploadRow}
           onClick={() => navigate("/upload")}
@@ -100,8 +81,10 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Divider */}
         <div style={styles.divider}></div>
 
+        {/* Feed (structure unchanged) */}
         <div style={styles.feed}>
           <Gigs
             gigs={gigs}
