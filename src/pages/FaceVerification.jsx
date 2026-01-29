@@ -1,161 +1,203 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as faceapi from "face-api.js";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+axios.defaults.baseURL = "https://linkx-backend-api.onrender.com/";
+axios.defaults.withCredentials = true;
+
+
+
+const STEPS = [
+  { key: "front", text: "Look straight 😐" },
+  { key: "smile", text: "Smile 🙂" },
+  { key: "left", text: "Turn LEFT 👈" },
+  { key: "right", text: "Turn RIGHT 👉" }
+];
 
 export default function FaceVerification() {
+  const navigate = useNavigate();
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
 
   const [step, setStep] = useState(0);
-  const [frames, setFrames] = useState([]);
-  const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [captures, setCaptures] = useState([]);
+  const [ready, setReady] = useState(false);
 
-  // Define the 5 steps
-  const STEPS = [
-    { text: "Smile", key: "smile" },
-    { text: "Turn slightly left", key: "left" },
-    { text: "Turn slightly right", key: "right" },
-    { text: "Close your eyes", key: "close_eyes" },
-    { text: "Look straight at the camera", key: "front" },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState("Initializing…");
 
-  const MIN_BRIGHTNESS = 40;
-  const MAX_BRIGHTNESS = 220;
-
-  // Start video on mount
   useEffect(() => {
-    async function startCamera() {
+    let mounted = true;
+
+    async function init() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
-        });
+        const MODEL_URL = process.env.PUBLIC_URL + "/models";
+
+        // 1️⃣ Load face detector
+        setStatus("Loading face detector…");
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        setProgress(30);
+
+        // 2️⃣ Load landmarks
+        setStatus("Loading landmarks…");
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        setProgress(60);
+
+        // 3️⃣ Load recognition model
+        setStatus("Loading recognition model…");
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        setProgress(90);
+
+        // 4️⃣ Start camera (ANDROID SAFE)
+        setStatus("Starting camera…");
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true, // DO NOT force facingMode (Android bug)
+            audio: false
+          });
+        } catch (e) {
+          alert("Camera error: " + e.name);
+          throw e;
+        }
+
+        if (!mounted) return;
+
+        streamRef.current = stream;
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+
+        setProgress(100);
+        setLoading(false);
       } catch (err) {
-        setMessage("Cannot access camera: " + err.message);
+        console.error("INIT FAILED:", err);
+        alert("Failed to initialize face verification");
       }
     }
-    startCamera();
+
+    init();
+
+    return () => {
+      mounted = false;
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
   }, []);
 
-  // Capture a frame from video and perform brightness check
-  const captureFrame = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const base64 = canvas.toDataURL("image/jpeg");
+  const capture = async () => {
+    setReady(false);
 
-    // Lightweight brightness check
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let sum = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      sum += (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
-    }
-    const avgBrightness = sum / (imageData.data.length / 4);
-    if (avgBrightness < MIN_BRIGHTNESS) {
-      setMessage("Too dark! Please increase lighting.");
-      return null;
-    }
-    if (avgBrightness > MAX_BRIGHTNESS) {
-      setMessage("Too bright! Reduce light or move away from strong light.");
-      return null;
+    const detection = await faceapi
+      .detectSingleFace(
+        videoRef.current,
+        new faceapi.TinyFaceDetectorOptions({
+          inputSize: 160,
+          scoreThreshold: 0.5
+        })
+      )
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    if (!detection) {
+      alert("No face detected");
+      setReady(true);
+      return;
     }
 
-    setMessage(""); // Clear previous message
-    return base64;
-  };
+    if (!poseValid(detection, STEPS[step].key, videoRef.current)) {
+      alert("Please follow the instruction");
+      setReady(true);
+      return;
+    }
 
-  // Handle capture button
-  const handleCapture = () => {
-    const frame = captureFrame();
-    if (!frame) return; // failed brightness check
+    const updated = [
+      ...captures,
+      {
+        pose: STEPS[step].key,
+        embedding: Array.from(detection.descriptor)
+      }
+    ];
 
-    const newFrames = [...frames, { step: STEPS[step].key, base64: frame }];
-    setFrames(newFrames);
+    setCaptures(updated);
 
     if (step < STEPS.length - 1) {
       setStep(step + 1);
+      setReady(true);
     } else {
-      submitFrames(newFrames);
+      submit(updated);
     }
   };
 
-  // Submit all frames to backend
-  const submitFrames = async (framesToSend) => {
-    setSubmitting(true);
+  const submit = async (captures) => {
     try {
-      // Get email/username/password from session storage
-      const email = sessionStorage.getItem("email");
-      const username = sessionStorage.getItem("username");
-      const password = sessionStorage.getItem("password");
-
-      if (!email || !username || !password) {
-        setMessage("Session expired. Please login again.");
-        setSubmitting(false);
-        return;
-      }
-
-      const payload = {
-        email,
-        username,
-        password,
-        frames: framesToSend.map((f) => f.base64),
-      };
-
-      const res = await fetch("/api/complete_signup/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage("Face verification successful! Logging in...");
-        sessionStorage.setItem("access", data.access);
-        sessionStorage.setItem("username", data.username);
-        // Redirect or update UI as needed
-      } else {
-        setMessage(data.error || "Verification failed. Please try again.");
-        // Keep frames cached for retry
-      }
+      const embeddings = captures.map(c => c.embedding);
+      await axios.post("/api/accounts/complete-signup/", { embeddings });
+      navigate("/");
     } catch (err) {
-      setMessage("Network or server error: " + err.message);
+      alert("Face verification failed");
     }
-    setSubmitting(false);
-  };
-
-  // Retry button clears frames and resets steps
-  const handleRetry = () => {
-    setStep(0);
-    setFrames([]);
-    setMessage("");
   };
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h2>Face Verification</h2>
-      <p>{STEPS[step].text}</p>
-      <video
-        ref={videoRef}
-        style={{ width: "300px", borderRadius: "10px", border: "1px solid #ccc" }}
-      ></video>
-      <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
+    <div style={{ padding: 16 }}>
+      {loading ? (
+        <>
+          <h3>{status}</h3>
 
-      <div style={{ marginTop: "20px" }}>
-        <button onClick={handleCapture} disabled={submitting}>
-          Capture Step {step + 1}
-        </button>
-        <button onClick={handleRetry} style={{ marginLeft: "10px" }} disabled={submitting}>
-          Retry
-        </button>
-      </div>
+          <div
+            style={{
+              width: "100%",
+              height: 8,
+              background: "#ddd",
+              borderRadius: 4
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: "100%",
+                background: "#4caf50",
+                borderRadius: 4,
+                transition: "width 0.4s"
+              }}
+            />
+          </div>
 
-      <div style={{ marginTop: "20px", color: "red" }}>{message}</div>
-      <div style={{ marginTop: "20px" }}>
-        <p>Frames captured: {frames.length} / {STEPS.length}</p>
-      </div>
+          <p>{progress}%</p>
+        </>
+      ) : (
+        <>
+          <h3>{STEPS[step].text}</h3>
+
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            onLoadedData={() => setReady(true)}
+            style={{ width: 320, borderRadius: 8 }}
+          />
+
+          <br />
+
+          <button onClick={capture} disabled={!ready}>
+            Capture
+          </button>
+        </>
+      )}
     </div>
   );
+}
+
+function poseValid(result, pose, video) {
+  const nose = result.landmarks.getNose()[3].x;
+  const jaw = result.landmarks.getJawOutline();
+  const center = (jaw[0].x + jaw[16].x) / 2;
+  const ratio = (nose - center) / video.videoWidth;
+
+  if (pose === "front") return Math.abs(ratio) < 0.03;
+  if (pose === "left") return ratio < -0.05;
+  if (pose === "right") return ratio > 0.05;
+  return true;
 }

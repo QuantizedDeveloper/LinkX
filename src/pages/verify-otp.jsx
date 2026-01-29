@@ -1,11 +1,16 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
+
+axios.defaults.baseURL = "https://Linkx1.pythonanywhere.com";
+axios.defaults.withCredentials = true;
+
 
 const VerifyOtpSignup = () => {
   const navigate = useNavigate();
 
-  const email = sessionStorage.getItem("signup_email");
+  const email = sessionStorage.getItem("email");
 
   const [otp, setOtp] = useState(["", "", "", ""]);
   const inputsRef = useRef([]);
@@ -29,7 +34,7 @@ const VerifyOtpSignup = () => {
       alert("Enter complete OTP");
       return;
     }
-    axios.defaults.baseURL = "http://127.0.0.1:8001/";
+    //axios.defaults.baseURL = "http://127.0.0.1:8001/";
 
     
     try {

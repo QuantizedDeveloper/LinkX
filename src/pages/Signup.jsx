@@ -3,6 +3,14 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Signup.css";
 
+const API = axios.create({
+  baseURL: "https://linkx1.pythonanywhere.com",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: false, // IMPORTANT
+});
+
 const Signup = () => {
   const navigate = useNavigate();
 
@@ -15,97 +23,79 @@ const Signup = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
   const handleSignup = async () => {
-  if (!form.username || !form.email || !form.password) {
-    alert("All fields are required");
-    return;
-  }
+    if (!form.username || !form.email || !form.password) {
+      alert("All fields are required");
+      return;
+    }
 
-  if (!form.agree) {
-    alert("You must agree to LinkX user agreement");
-    return;
-  }
-  axios.defaults.baseURL = "http://127.0.0.1:8001/";
+    if (!form.agree) {
+      alert("You must agree to LinkX user agreement");
+      return;
+    }
 
-  try {
-    await axios.post("/api/accounts/send-signup-otp/", {
-      email: form.email,
-      username: form.username,
-    });
+    try {
+      const res = await API.post("/api/accounts/send-signup-otp/", {
+        email: form.email.trim(),
+        username: form.username.trim(),
+        password: form.password,
+      });
 
-    // ✅ store TEMPORARILY (session only)
-    sessionStorage.setItem("signup_email", form.email);
-    sessionStorage.setItem("signup_username", form.username);
-    sessionStorage.setItem("signup_password", form.password);
+      console.log("OTP sent:", res.data);
 
-    navigate("/verify-otp");
-  } catch (err) {
-    alert(err.response?.data?.error || "Signup failed");
-  }
-};
+      sessionStorage.setItem("email", form.email.trim());
+      navigate("/verify-otp");
+    } catch (err) {
+      console.log("FULL ERROR:", err);
 
+      // show full backend error if exists
+      console.log("FULL ERROR:", err.response);
+      alert(
+        JSON.stringify(err.response?.data || err.message, null, 2)
+        );
+
+    }
+  };
 
   return (
     <div className="signup-wrapper">
       <div className="signup-card">
-        <div className="logo">✖</div>
-
-        <h2 className="title">Sign up</h2>
+        <h2>Sign up</h2>
 
         <input
-          className="input"
           name="username"
           placeholder="Username"
+          value={form.username}
           onChange={handleChange}
         />
 
         <input
-          className="input"
           name="email"
           placeholder="Email"
+          value={form.email}
           onChange={handleChange}
         />
 
         <input
-          className="input"
           name="password"
           type="password"
-          placeholder="Create a password"
+          placeholder="Create password"
+          value={form.password}
           onChange={handleChange}
         />
 
-        <div className="checkbox-row">
-          <input
-            type="checkbox"
-            name="agree"
-            onChange={handleChange}
-          />
-          <span>
-            I agree to the
-            <span className="purple"> LinkX User Agreement</span>
-          </span>
-        </div>
+        <label>
+          <input type="checkbox" name="agree" checked={form.agree} onChange={handleChange} />
+          I agree to LinkX terms
+        </label>
 
-        <button className="signup-btn" onClick={handleSignup}>
-          Sign up
-        </button>
-
-        <p className="login-text">
-          Already have an account?
-          <span
-            className="purple"
-            onClick={() => navigate("/login")}
-          >
-            {" "}
-            Login
-          </span>
-        </p>
+        <button onClick={handleSignup}>Send OTP</button>
       </div>
     </div>
   );
