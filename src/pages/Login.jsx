@@ -2,11 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
+const API_BASE = "https://Linkx1.pythonanywhere.com"; // backend base URL
+
 export default function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,7 +18,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login/", {
+      const res = await fetch(`${API_BASE}/api/accounts/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -23,22 +26,27 @@ export default function Login() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        setError(data.message || "Invalid credentials");
-        setLoading(false);
+      if (!res.ok || !data.access) {
+        setError(data?.message || "Invalid credentials");
         return;
       }
 
-      // ✅ THIS WAS MISSING
+      // ⚡ Store tokens and user info FIRST
       localStorage.setItem("accessToken", data.access);
-      localStorage.setItem("username", data.username);
+      if (data.refresh) localStorage.setItem("refreshToken", data.refresh);
+      localStorage.setItem("username", data.username || "unknown");
+      localStorage.setItem("email", email);
 
-      navigate("/home");
-    } catch {
+      // ✅ Ensure tokens are available before navigating
+      setTimeout(() => {
+        navigate("/"); // safe now
+      }, 50);
+
+    } catch (err) {
       setError("Server error. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleForgotPassword = async () => {
@@ -51,7 +59,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/forgot-password/", {
+      const res = await fetch(`${API_BASE}/api/accounts/forgot-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -60,18 +68,18 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "User does not exist");
-        setLoading(false);
+        setError(data?.message || "User does not exist");
         return;
       }
 
       sessionStorage.setItem("resetEmail", email);
-      navigate("/forgot-password");
+      navigate("/forgot-password"); // make sure this matches App.jsx route
+
     } catch {
       setError("Something went wrong");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

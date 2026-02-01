@@ -8,7 +8,7 @@ const API = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: false, // IMPORTANT
+  withCredentials: true, // IMPORTANT
 });
 
 const Signup = () => {

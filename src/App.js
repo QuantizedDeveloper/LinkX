@@ -39,7 +39,7 @@ export default function App() {
       <Route path="/verify-otp" element={<VerifyOtpSignup />} />
       <Route path="/faceVerification" element={<FaceVerification />} />
       <Route path="/resetpassword" element={<ResetPassword />} />
-      <Route path="/forgotpassword" element={<ForgotPassword />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/chat/:clientId" element={<Chat />} />
       <Route path="/chatbot" element={<Chatbot />} />
 

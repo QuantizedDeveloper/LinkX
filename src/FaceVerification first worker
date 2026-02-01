@@ -10,7 +10,7 @@ const STEPS = [
   { key: "front", text: "Look straight 😐" },
   { key: "smile", text: "Smile 🙂" },
   { key: "left", text: "Turn LEFT 👈" },
-  { key: "right", text: "Turn RIGHT 👉" },
+  { key: "right", text: "Turn RIGHT 👉" }
 ];
 
 export default function FaceVerification() {
@@ -26,8 +26,6 @@ export default function FaceVerification() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("Initializing…");
 
-  const [submitting, setSubmitting] = useState(false);
-
   useEffect(() => {
     let mounted = true;
 
@@ -35,29 +33,44 @@ export default function FaceVerification() {
       try {
         const MODEL_URL = process.env.PUBLIC_URL + "/models";
 
-        // Load face-api models
+        // 1️⃣ Load face detector
         setStatus("Loading face detector…");
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         setProgress(30);
 
+        // 2️⃣ Load landmarks
         setStatus("Loading landmarks…");
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         setProgress(60);
 
+        // 3️⃣ Load recognition model
         setStatus("Loading recognition model…");
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
         setProgress(90);
 
-        // Start camera
+        // 4️⃣ Start camera (ANDROID SAFE)
         setStatus("Starting camera…");
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true, // DO NOT force facingMode (Android bug)
+            audio: false
+          });
+        } catch (e) {
+          alert("Camera error: " + e.name);
+          throw e;
+        }
 
         if (!mounted) return;
 
         streamRef.current = stream;
+
+        // IMPORTANT: video element must exist (we render it always)
+        if (!videoRef.current) {
+          throw new Error("Video element not mounted");
+        }
+
         videoRef.current.srcObject = stream;
 
         setProgress(100);
@@ -77,15 +90,16 @@ export default function FaceVerification() {
   }, []);
 
   const capture = async () => {
-    if (submitting) return;
-
     setReady(false);
 
     try {
       const detection = await faceapi
         .detectSingleFace(
           videoRef.current,
-          new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 })
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 160,
+            scoreThreshold: 0.5
+          })
         )
         .withFaceLandmarks()
         .withFaceDescriptor();
@@ -102,7 +116,14 @@ export default function FaceVerification() {
         return;
       }
 
-      const updated = [...captures, { pose: STEPS[step].key, embedding: Array.from(detection.descriptor) }];
+      const updated = [
+        ...captures,
+        {
+          pose: STEPS[step].key,
+          embedding: Array.from(detection.descriptor)
+        }
+      ];
+
       setCaptures(updated);
 
       if (step < STEPS.length - 1) {
@@ -120,73 +141,73 @@ export default function FaceVerification() {
 
   const submit = async (captures) => {
     try {
-      setSubmitting(true);
-      setStatus("Submitting…");
-
       const embeddings = captures.map((c) => c.embedding);
 
-      // ✅ Correct endpoint
-      const res = await axios.post("/api/accounts/complete-signup/", { embeddings });
-      const data = res.data;
+      await axios.post("/api/accounts/complete-signup/", { embeddings });
 
-      // ✅ Store tokens and username
-      if (data.access) localStorage.setItem("accessToken", data.access);
-      if (data.refresh) localStorage.setItem("refreshToken", data.refresh);
-      if (data.username) localStorage.setItem("username", data.username);
-
-      // Stop camera
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-
-      navigate("/"); // Auto login
+      navigate("/");
     } catch (err) {
       console.error("FACE SUBMIT ERROR:", err);
 
+      // show real backend error
       alert(
         err.response?.data?.error ||
-          err.response?.data?.message ||
           JSON.stringify(err.response?.data) ||
           err.message ||
           "Face verification failed"
       );
-
-      setSubmitting(false);
-      setReady(true);
     }
   };
 
   return (
     <div style={{ padding: 16 }}>
+      {/* IMPORTANT: keep video always mounted */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
         onLoadedData={() => setReady(true)}
-        style={{ width: 320, borderRadius: 8, display: loading ? "none" : "block" }}
+        style={{
+          width: 320,
+          borderRadius: 8,
+          display: loading ? "none" : "block"
+        }}
       />
 
       {loading ? (
         <>
           <h3>{status}</h3>
-          <div style={{ width: "100%", height: 8, background: "#ddd", borderRadius: 4 }}>
+
+          <div
+            style={{
+              width: "100%",
+              height: 8,
+              background: "#ddd",
+              borderRadius: 4
+            }}
+          >
             <div
               style={{
                 width: `${progress}%`,
                 height: "100%",
                 background: "#4caf50",
                 borderRadius: 4,
-                transition: "width 0.4s",
+                transition: "width 0.4s"
               }}
             />
           </div>
+
           <p>{progress}%</p>
         </>
       ) : (
         <>
-          <h3>{submitting ? "Submitting…" : STEPS[step].text}</h3>
+          <h3>{STEPS[step].text}</h3>
+
           <br />
-          <button onClick={capture} disabled={!ready || submitting}>
-            {submitting ? "Please wait..." : "Capture"}
+
+          <button onClick={capture} disabled={!ready}>
+            Capture
           </button>
         </>
       )}
@@ -205,4 +226,3 @@ function poseValid(result, pose, video) {
   if (pose === "right") return ratio > 0.05;
   return true;
 }
-

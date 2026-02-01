@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ResetPassword.css";
 
+const API_BASE = "https://Linkx1.pythonanywhere.com";
+
 export default function ResetPassword() {
   const navigate = useNavigate();
 
@@ -10,6 +12,7 @@ export default function ResetPassword() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +38,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/reset-password", {
+      const res = await fetch(`${API_BASE}/api/accounts/reset-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -47,8 +50,7 @@ export default function ResetPassword() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Reset failed");
-        setLoading(false);
+        setError(data?.message || "Reset failed");
         return;
       }
 
@@ -60,9 +62,9 @@ export default function ResetPassword() {
       navigate("/login");
     } catch {
       setError("Server error. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -72,14 +74,14 @@ export default function ResetPassword() {
 
         <input
           type="password"
-          placeholder="new password"
+          placeholder="New password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
         <input
           type="password"
-          placeholder="confirm password"
+          placeholder="Confirm password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />
@@ -87,7 +89,7 @@ export default function ResetPassword() {
         {error && <p className="error">{error}</p>}
 
         <button onClick={handleReset} disabled={loading}>
-          {loading ? "Please wait..." : "login"}
+          {loading ? "Please wait..." : "Reset Password"}
         </button>
       </div>
     </div>
