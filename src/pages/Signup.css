@@ -1,75 +1,87 @@
+/* Full page center */
 .signup-wrapper {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* Card */
 .signup-card {
-  width: 320px;
-  padding: 28px;
-  border: 1px solid #e0e0e0;
-  border-radius: 14px;
+  width: 360px;
+  padding: 32px 28px;
+  border: 1px solid #222;
+  border-radius: 6px;
   text-align: center;
-  background: #fff;
 }
 
-.logo {
-  font-size: 38px;
-  margin-bottom: 10px;
-}
-
-.title {
+/* Title */
+.signup-card h2 {
+  margin-bottom: 28px;
+  font-size: 22px;
   font-weight: 600;
-  margin-bottom: 18px;
 }
 
-.input {
-  width: 100%;
+/* Inputs */
+.signup-card input[type="text"],
+.signup-card input[type="email"],
+.signup-card input[type="password"],
+.signup-card input:not([type="checkbox"]) {
+  width: 92%;
   padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 22px;
-  border: 1px solid #ccc;
+  margin: 0 auto 16px auto;   /* 👈 THIS is the key */
+  display: block;             /* 👈 important */
+  border-radius: 20px;
+  border: 2px solid #333;
   outline: none;
   font-size: 14px;
 }
 
-.input:focus {
-  border-color: #000;
+
+
+.signup-card input::placeholder {
+  color: #aaa;
 }
 
-.checkbox-row {
+/* Agreement */
+.signup-card label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  margin: 12px 0 18px;
-  justify-content: center;
-}
-
-.signup-btn {
-  width: 100%;
-  padding: 12px;
-  border-radius: 22px;
-  background: #000;
-  color: #fff;
-  border: none;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-.signup-btn:hover {
-  opacity: 0.9;
-}
-
-.login-text {
+  gap: 8px;
   font-size: 13px;
-  margin-top: 14px;
+  margin-bottom: 18px;
+  text-align: left;
 }
 
-.purple {
-  color: purple;
+/* Login text */
+.signup-login {
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.signup-login span {
+  color: #6b46ff;
   cursor: pointer;
   font-weight: 500;
 }
+
+/* Button */
+.signup-card button {
+  width: 120px;
+  padding: 10px;
+  border-radius: 20px;
+  border: none;
+  background: #000;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+.signup-card button {
+  display: block;
+  margin: 10px auto 0 auto;
+}
+

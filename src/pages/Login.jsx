@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
+import { showToast } from "../utils/toast";
 
 const API_BASE = "https://Linkx1.pythonanywhere.com"; // backend base URL
 
@@ -27,7 +28,7 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok || !data.access) {
-        setError(data?.message || "Invalid credentials");
+        showToast(data?.message || "Invalid credentials");
         return;
       }
 
@@ -36,14 +37,17 @@ export default function Login() {
       if (data.refresh) localStorage.setItem("refreshToken", data.refresh);
       localStorage.setItem("username", data.username || "unknown");
       localStorage.setItem("email", email);
+      showToast("Login successful", "success");
+      
 
       // ✅ Ensure tokens are available before navigating
       setTimeout(() => {
         navigate("/"); // safe now
+        
       }, 50);
 
     } catch (err) {
-      setError("Server error. Try again.");
+      showToast("Server error. Try again.");
     } finally {
       setLoading(false);
     }
@@ -51,7 +55,7 @@ export default function Login() {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      setError("Enter email first");
+      showToast("Enter email first");
       return;
     }
 
@@ -68,11 +72,13 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.message || "User does not exist");
+        showToast(data?.message || "User does not exist");
         return;
       }
 
       sessionStorage.setItem("resetEmail", email);
+      showToast("Password reset OTP sent to email", "success");
+      
       navigate("/forgot-password"); // make sure this matches App.jsx route
 
     } catch {

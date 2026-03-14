@@ -1,62 +1,92 @@
+/* Full page center */
 .login-wrapper {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f2f2f2;
+  background: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* Card */
 .login-card {
   background: #fff;
-  width: 340px;
-  padding: 30px;
-  border-radius: 16px;
+  width: 360px;
+  padding: 32px 28px;
+  border: 1px solid #222;
+  border-radius: 6px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
+/* Title */
 .login-card h2 {
-  margin-bottom: 25px;
+  margin-bottom: 28px;
+  font-size: 22px;
+  font-weight: 600;
 }
 
+/* Inputs (same as signup) */
 .login-card input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 14px;
-  border-radius: 25px;
-  border: 1px solid #ccc;
+  width: 92%;
+  padding: 12px 14px;
+  margin: 0 auto 16px auto;
+  display: block;
+  border-radius: 20px;
+  border: 2px solid #333;
   outline: none;
+  font-size: 14px;
 }
 
+.login-card input::placeholder {
+  color: #aaa;
+}
+
+/* Links (forgot + signup) */
 .links {
-  font-size: 14px;
-  margin-bottom: 20px;
+  font-size: 13px;
+  margin-bottom: 18px;
+  text-align: center;
 }
 
 .links span {
   display: block;
   cursor: pointer;
-  color: #555;
+  color: #000;
 }
 
 .links span:first-child {
-  color: #3b82f6;
+  margin-bottom: 6px;
 }
 
+.links span:last-child {
+  color: #6b46ff;
+  font-weight: 500;
+}
+
+/* Button */
 .login-card button {
   width: 120px;
   padding: 10px;
-  border-radius: 25px;
+  border-radius: 20px;
   border: none;
-  background: black;
-  color: white;
+  background: #000;
+  color: #fff;
+  font-size: 14px;
   cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  display: block;
+  margin: 0 auto;
+}
+
+.login-card button:hover {
+  opacity: 0.9;
 }
 
 .login-card button:disabled {
   opacity: 0.6;
 }
 
+/* Error */
 .error {
   color: red;
   font-size: 13px;

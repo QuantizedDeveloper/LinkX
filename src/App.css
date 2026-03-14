@@ -1,4 +1,4 @@
-.App {
+/*.App {
   text-align: center;
 }
 
@@ -35,4 +35,10 @@
   to {
     transform: rotate(360deg);
   }
+}*/
+
+input:focus, textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
+

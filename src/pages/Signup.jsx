@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Signup.css";
+import { showToast } from "../utils/toast";
 
 const API = axios.create({
   baseURL: "https://linkx1.pythonanywhere.com",
@@ -31,12 +32,12 @@ const Signup = () => {
 
   const handleSignup = async () => {
     if (!form.username || !form.email || !form.password) {
-      alert("All fields are required");
+      showToast("All fields are required");
       return;
     }
 
     if (!form.agree) {
-      alert("You must agree to LinkX user agreement");
+      showToast("You must agree to LinkX user agreement");
       return;
     }
 
@@ -56,7 +57,7 @@ const Signup = () => {
 
       // show full backend error if exists
       console.log("FULL ERROR:", err.response);
-      alert(
+      showToast(
         JSON.stringify(err.response?.data || err.message, null, 2)
         );
 
@@ -89,6 +90,10 @@ const Signup = () => {
           value={form.password}
           onChange={handleChange}
         />
+        <div className="signup-login">
+          I already have an account{" "}<span onClick={() => navigate("/login")}>login</span>
+        </div>
+
 
         <label>
           <input type="checkbox" name="agree" checked={form.agree} onChange={handleChange} />

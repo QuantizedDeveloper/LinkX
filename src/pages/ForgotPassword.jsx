@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ForgotPassword.css";
-
+import { showToast } from "../utils/toast";
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const email = sessionStorage.getItem("resetEmail");
@@ -38,7 +38,7 @@ export default function ForgotPassword() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      const res = await fetch("https://Linkx1.pythonanywhere.com/api/accounts/verify-reset-otp/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,13 +50,16 @@ export default function ForgotPassword() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Invalid OTP");
+        showToast(data.message || "Invalid OTP");
         return;
       }
 
+      sessionStorage.setItem("resetToken", data.reset_token);
+      sessionStorage.setItem("username", data.username)
       navigate("/reset-password");
+
     } catch {
-      setError("Server error");
+      showToast("Server error");
     }
   };
 

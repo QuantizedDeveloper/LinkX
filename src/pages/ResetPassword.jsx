@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ResetPassword.css";
-
+import { showToast } from "../utils/toast";
 const API_BASE = "https://Linkx1.pythonanywhere.com";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
 
-  const username = sessionStorage.getItem("resetUsername");
+  const username = sessionStorage.getItem("username");
   const resetToken = sessionStorage.getItem("resetToken");
 
   const [password, setPassword] = useState("");
@@ -26,12 +26,12 @@ export default function ResetPassword() {
     setError("");
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      showToast("Password must be at least 8 characters");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      showToast("Passwords do not match");
       return;
     }
 
@@ -50,18 +50,18 @@ export default function ResetPassword() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.message || "Reset failed");
+        showToast(data?.message || "Reset failed");
         return;
       }
 
       // cleanup
       sessionStorage.removeItem("resetToken");
       sessionStorage.removeItem("resetEmail");
-      sessionStorage.removeItem("resetUsername");
+      sessionStorage.removeItem("username");
 
       navigate("/login");
     } catch {
-      setError("Server error. Try again.");
+      showToast("Server error. Try again.");
     } finally {
       setLoading(false);
     }

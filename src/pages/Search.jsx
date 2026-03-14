@@ -1,7 +1,34 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import Gig from "../components/Gig";
 
 export default function Search() {
   const navigate = useNavigate();
+
+  const [query, setQuery] = useState("");
+  const [gigs, setGigs] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = async (e) => {
+    if (e.key === "Enter") {
+      if (!query.trim()) return;
+
+      setLoading(true);
+
+      try {
+        const res = await fetch(
+          `https://Linkx1.pythonanywhere.com/api/gigs/search/?q=${query}`
+        );
+
+        const data = await res.json();
+        setGigs(data);
+      } catch (err) {
+        console.error("Search error:", err);
+      }
+
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={styles.page}>
@@ -19,7 +46,23 @@ export default function Search() {
         <input
           placeholder="Search gigs"
           style={styles.input}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleSearch}
         />
+      </div>
+
+      {/* RESULTS */}
+      <div style={{ marginTop: 20 }}>
+        {loading && <p>Searching...</p>}
+
+        {!loading && gigs.length === 0 && query && (
+          <p style={{ opacity: 0.6 }}>No gigs found</p>
+        )}
+
+        {gigs.map((gig) => (
+          <Gig key={gig.id} gig={gig} />
+        ))}
       </div>
     </div>
   );
@@ -72,3 +115,4 @@ const styles = {
     fontSize: 16
   }
 };
+

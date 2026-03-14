@@ -4,7 +4,8 @@ import { FiImage } from "react-icons/fi";
 
 export default function Upload() {
   const navigate = useNavigate();
-
+  const [description, setDescription] = useState("");
+  
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [delivery, setDelivery] = useState("");
@@ -12,53 +13,112 @@ export default function Upload() {
   const [tags, setTags] = useState([]);
   const [images, setImages] = useState([]);
 
-  /* ---------- TAG LOGIC (UNCHANGED) ---------- */
-
-  const tryAddTag = (value) => {
-    const tag = value.trim().toLowerCase();
-    if (!tag || tags.includes(tag) || tags.length >= 10) return;
-    setTags((prev) => [...prev, tag]);
-  };
-
-  const handleTagKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      tryAddTag(tagInput);
-      setTagInput("");
-    }
-  };
-
-  const handleTagBlur = () => {
+ /* ---------- TAG LOGIC ---------- */
+ const tryAddTag = (value) => {
+   const tag = value.trim().toLowerCase();
+   if (!tag || tags.includes(tag) || tags.length >= 10) return;
+   setTags((prev) => [...prev, tag]);
+ };
+ const handleTagKeyDown = (e) => {
+  if (e.key === "Enter" || e.key === ",") {
+    e.preventDefault();
     tryAddTag(tagInput);
     setTagInput("");
-  };
+  }
+ };
+ const handleTagBlur = () => {
+   tryAddTag(tagInput);
+   setTagInput("");
+ };
+ const removeTag = (index) => {
+  setTags(tags.filter((_, i) => i !== index));
+ };
 
-  const removeTag = (index) => {
-    setTags(tags.filter((_, i) => i !== index));
-  };
+/* ---------- IMAGE LOGIC ---------- */
+ const handleImage = (file) => {
+   if (!file) return;
+   if (images.length >= 2) {
+    alert("You can only upload up to 2 images");
+    return;
+  }
 
-  /* ---------- IMAGE LOGIC (UNCHANGED) ---------- */
-
-  const handleImage = (file) => {
-    if (!file || images.length >= 2) return;
-
-    setImages((prev) => [
-      ...prev,
-      { file, preview: URL.createObjectURL(file) },
+  setImages((prev) => [
+    ...prev,
+    { file, preview: URL.createObjectURL(file) },
     ]);
-  };
+ };
+ const removeImage = (index) => {
+  // Revoke object URL to free memory
+  URL.revokeObjectURL(images[index].preview);
+  setImages(images.filter((_, i) => i !== index));
+ };
 
-  const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
+/* ---------- BASE64 CONVERTER ---------- */
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+  });
+};
 
-  /* ---------- VALIDATION (UNCHANGED MEANING) ---------- */
+/* ---------- VALIDATION ---------- */
+const canPublish =
+  title.trim() &&
+  price.trim() &&
+  delivery.trim() &&
+  tags.length >= 2 &&
+  description.trim();
 
-  const canPublish =
-    title.trim() &&
-    price.trim() &&
-    delivery.trim() &&
-    tags.length >= 2;
+/* ---------- UPLOAD FUNCTION ---------- */
+const handlePublish = async () => {
+  if (description.length < 30) {
+    alert("Description must be at least 30 characters");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("accessToken");
+
+    const imageBase64 = await Promise.all(
+      images.map((img) => fileToBase64(img.file))
+    );
+
+    const res = await fetch(
+      "https://Linkx1.pythonanywhere.com/api/gigs/upload/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          gig_type: "fixed",
+          price: String(price),
+          delivery_days: String(delivery),
+          tags,
+          images: imageBase64,
+        }),
+      }
+    );
+
+    const data = await res.json();
+    console.log("Gig upload response:", data);
+
+    if (res.ok) {
+      alert("Gig submitted for approval");
+      navigate("/profile");
+    } else {
+      alert(JSON.stringify(data));
+    }
+  } catch (err) {
+    console.error("Upload failed:", err);
+    alert("Upload failed");
+  }
+};
 
   /* ---------- UI ---------- */
 
@@ -74,6 +134,7 @@ export default function Upload() {
 
         <button
           disabled={!canPublish}
+          onClick={handlePublish}
           style={{
             ...styles.publish,
             background: canPublish ? "#000" : "#bdbdbd",
@@ -91,6 +152,16 @@ export default function Upload() {
         onChange={(e) => setTitle(e.target.value)}
         style={styles.textarea}
       />
+      {/* Description */}
+      {/*<textarea
+      placeholder="Describe your gig..."
+      value={description} onChange={(e) => setDescription(e.target.value)}
+      style={{
+    ...styles.textarea,
+    minHeight: 100, // slightly bigger than title
+  }}
+/>*/}
+
 
       {/* Images */}
       <div style={styles.imageRow}>
@@ -118,8 +189,15 @@ export default function Upload() {
           </label>
         )}
       </div>
-
-      {/* Inputs (SHORT PILLS) */}
+      {/* Description */}
+      <textarea placeholder="Describe your gig..."
+      value={description} onChange={(e) => setDescription(e.target.value)}
+      style={{
+    ...styles.textarea,
+    minHeight: 100, // slightly bigger than title
+    }}
+/>
+      {/* Inputs */}
       <div style={styles.row}>
         <input
           placeholder="Price (₹, $, €)"
@@ -129,7 +207,7 @@ export default function Upload() {
         />
 
         <input
-          placeholder="delivery time"
+          placeholder="delivery time (days)"
           value={delivery}
           onChange={(e) => setDelivery(e.target.value)}
           style={styles.input}
@@ -156,7 +234,7 @@ export default function Upload() {
           </div>
         ))}
       </div>
-
+      
       {/* Errors */}
       {tags.length > 0 && tags.length < 2 && (
         <p style={styles.error}>Minimum 2 tags required</p>

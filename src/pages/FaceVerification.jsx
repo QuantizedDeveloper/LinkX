@@ -17,183 +17,224 @@ export default function FaceVerification() {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
 
   const [step, setStep] = useState(0);
   const [captures, setCaptures] = useState([]);
-  const [ready, setReady] = useState(false);
-
-  const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("Initializing…");
-
+  const [status, setStatus] = useState("Initializing...");
   const [submitting, setSubmitting] = useState(false);
 
+  /* =============================
+     1️⃣ LOAD MODELS
+  ============================== */
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
-    async function init() {
+    async function loadModels() {
       try {
-        const MODEL_URL = process.env.PUBLIC_URL + "/models";
+        const MODEL_URL = process.env.PUBLIC_URL + "/models/";
 
-        // Load face-api models
-        setStatus("Loading face detector…");
+        setStatus("Loading face detector...");
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-        setProgress(30);
 
-        setStatus("Loading landmarks…");
+        setStatus("Loading landmarks...");
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        setProgress(60);
 
-        setStatus("Loading recognition model…");
+        setStatus("Loading recognition model...");
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-        setProgress(90);
 
-        // Start camera
-        setStatus("Starting camera…");
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
+        if (!mountedRef.current) return;
 
-        if (!mounted) return;
-
-        streamRef.current = stream;
-        videoRef.current.srcObject = stream;
-
-        setProgress(100);
-        setLoading(false);
+        setModelsLoaded(true);
       } catch (err) {
-        console.error("INIT FAILED:", err);
-        alert("Failed to initialize face verification");
+        console.error("MODEL LOAD ERROR:", err);
+        alert(err.message);
+        //console.error("MODEL LOAD ERROR:", err);
+        //alert("Failed to load face models");
       }
     }
 
-    init();
+    loadModels();
 
     return () => {
-      mounted = false;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      mountedRef.current = false;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
     };
   }, []);
 
-  const capture = async () => {
-    if (submitting) return;
+  /* =============================
+     2️⃣ START CAMERA AFTER MODELS
+  ============================== */
+  useEffect(() => {
+    if (!modelsLoaded) return;
 
-    setReady(false);
+    async function startCamera() {
+      try {
+        setStatus("Starting camera...");
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: false,
+        });
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+
+        setCameraReady(true);
+        setStatus("Ready!");
+      } catch (err) {
+        console.error("CAMERA ERROR:", err);
+
+        if (err.name === "NotAllowedError") {
+          alert("Camera permission denied");
+        } else {
+          alert("Could not access camera");
+        }
+      }
+    }
+
+    startCamera();
+  }, [modelsLoaded]);
+
+  /* =============================
+     3️⃣ CAPTURE FUNCTION
+  ============================== */
+  const capture = async () => {
+    if (!cameraReady || submitting) return;
 
     try {
+      setStatus("Detecting face...");
+
       const detection = await faceapi
         .detectSingleFace(
           videoRef.current,
-          new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 })
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 160,
+            scoreThreshold: 0.5,
+          })
         )
         .withFaceLandmarks()
         .withFaceDescriptor();
 
       if (!detection) {
         alert("No face detected");
-        setReady(true);
+        setStatus("Ready!");
         return;
       }
 
       if (!poseValid(detection, STEPS[step].key, videoRef.current)) {
-        alert("Please follow the instruction");
-        setReady(true);
+        alert("Follow instruction properly");
+        setStatus("Ready!");
         return;
       }
 
-      const updated = [...captures, { pose: STEPS[step].key, embedding: Array.from(detection.descriptor) }];
+      const updated = [
+        ...captures,
+        {
+          pose: STEPS[step].key,
+          embedding: Array.from(detection.descriptor),
+        },
+      ];
+
       setCaptures(updated);
 
       if (step < STEPS.length - 1) {
         setStep(step + 1);
-        setReady(true);
+        setStatus("Ready!");
       } else {
         submit(updated);
       }
     } catch (err) {
       console.error("CAPTURE ERROR:", err);
-      alert("Capture failed. Try again.");
-      setReady(true);
+      alert("Capture failed");
+      setStatus("Ready!");
     }
   };
 
-  const submit = async (captures) => {
+  /* =============================
+     4️⃣ SUBMIT TO BACKEND
+  ============================== */
+  const submit = async (capturesData) => {
     try {
       setSubmitting(true);
-      setStatus("Submitting…");
+      setStatus("Submitting...");
 
-      const embeddings = captures.map((c) => c.embedding);
+      const embeddings = capturesData.map((c) => c.embedding);
 
-      // ✅ Correct endpoint
-      const res = await axios.post("/api/accounts/complete-signup/", { embeddings });
+      const res = await axios.post(
+        "/api/accounts/complete-signup/",
+        { embeddings }
+      );
+
       const data = res.data;
 
-      // ✅ Store tokens and username
       if (data.access) localStorage.setItem("accessToken", data.access);
       if (data.refresh) localStorage.setItem("refreshToken", data.refresh);
       if (data.username) localStorage.setItem("username", data.username);
 
-      // Stop camera
       streamRef.current?.getTracks().forEach((t) => t.stop());
 
-      navigate("/"); // Auto login
+      navigate("/");
     } catch (err) {
-      console.error("FACE SUBMIT ERROR:", err);
-
+      console.error("SUBMIT ERROR:", err);
       alert(
         err.response?.data?.error ||
           err.response?.data?.message ||
-          JSON.stringify(err.response?.data) ||
-          err.message ||
-          "Face verification failed"
+          "Verification failed"
       );
 
       setSubmitting(false);
-      setReady(true);
+      setStatus("Ready!");
     }
   };
 
+  /* =============================
+     UI
+  ============================== */
   return (
-    <div style={{ padding: 16 }}>
+    <div style={{ padding: 20, textAlign: "center" }}>
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        onLoadedData={() => setReady(true)}
-        style={{ width: 320, borderRadius: 8, display: loading ? "none" : "block" }}
+        style={{
+          width: 320,
+          borderRadius: 12,
+          marginBottom: 16,
+        }}
       />
 
-      {loading ? (
-        <>
-          <h3>{status}</h3>
-          <div style={{ width: "100%", height: 8, background: "#ddd", borderRadius: 4 }}>
-            <div
-              style={{
-                width: `${progress}%`,
-                height: "100%",
-                background: "#4caf50",
-                borderRadius: 4,
-                transition: "width 0.4s",
-              }}
-            />
-          </div>
-          <p>{progress}%</p>
-        </>
-      ) : (
-        <>
-          <h3>{submitting ? "Submitting…" : STEPS[step].text}</h3>
-          <br />
-          <button onClick={capture} disabled={!ready || submitting}>
-            {submitting ? "Please wait..." : "Capture"}
-          </button>
-        </>
-      )}
+      <h3>{submitting ? "Submitting..." : STEPS[step]?.text}</h3>
+      <p>{status}</p>
+
+      <button
+        onClick={capture}
+        disabled={!cameraReady || submitting}
+        style={{
+          padding: "10px 20px",
+          borderRadius: 8,
+          cursor: "pointer",
+        }}
+      >
+        {submitting ? "Please wait..." : "Capture"}
+      </button>
     </div>
   );
 }
 
+/* =============================
+   POSE VALIDATION
+============================= */
 function poseValid(result, pose, video) {
   const nose = result.landmarks.getNose()[3].x;
   const jaw = result.landmarks.getJawOutline();
@@ -203,6 +244,6 @@ function poseValid(result, pose, video) {
   if (pose === "front") return Math.abs(ratio) < 0.03;
   if (pose === "left") return ratio < -0.05;
   if (pose === "right") return ratio > 0.05;
+
   return true;
 }
-
