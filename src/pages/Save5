@@ -1,0 +1,443 @@
+import React, { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
+import Ably from "ably";
+import "./Chat.css";
+import { useNavigate } from "react-router-dom";
+
+const base_url = "https://Linkx1.pythonanywhere.com";
+
+const fixUrl = (url) => {
+  if (!url) return null;
+
+  if (url.startsWith("http://")) {
+    url = url.replace("http://", "https://");
+  }
+
+  if (url.startsWith("http")) return url;
+
+  return base_url + url;
+};
+
+export default function Chat() {
+  
+  const navigate = useNavigate();
+  const leaveChat = () => {
+    navigate(-1); // go back
+  };
+  const { username: otherUsername } = useParams();
+
+  const [conversationId, setConversationId] = useState(null);
+  const [otherUser, setOtherUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+  const [error, setError] = useState(null);
+
+  const [typing, setTyping] = useState(false);
+  const [online, setOnline] = useState(false);
+
+  const ablyRef = useRef(null);
+  const channelRef = useRef(null);
+  const bottomRef = useRef(null);
+  const typingTimeout = useRef(null);
+  const inputRef = useRef(null);
+
+  const token = localStorage.getItem("accessToken");
+  const username = localStorage.getItem("username");
+
+  
+
+  const scrollBottom = () => {
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+
+
+  // CREATE CONVERSATION
+  useEffect(() => {
+
+    const createConversation = async () => {
+
+      try {
+
+        const res = await fetch(`${base_url}/api/messaging/conversation/create/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ username: otherUsername })
+        });
+
+        const data = await res.json();
+
+        setConversationId(data.conversation_id);
+        setOtherUser(data.other_user);
+
+      } catch {
+        setError("Failed to create conversation");
+      }
+
+    };
+
+    if (otherUsername) createConversation();
+
+  }, [otherUsername]);
+
+
+
+  // LOAD MESSAGES
+  useEffect(() => {
+
+    if (!conversationId) return;
+
+    const loadMessages = async () => {
+
+      try {
+
+        const res = await fetch(
+          `${base_url}/api/messaging/messages/${conversationId}/`,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
+        const data = await res.json();
+
+        setMessages(data);
+
+        scrollBottom();
+
+        fetch(`${base_url}/api/messaging/message/read/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ conversation_id: conversationId })
+        });
+
+      } catch {
+        setError("Failed to load messages");
+      }
+
+    };
+
+    loadMessages();
+
+  }, [conversationId]);
+
+
+
+  // REALTIME CONNECTION
+  useEffect(() => {
+
+    if (!conversationId) return;
+
+    try {
+
+      ablyRef.current = new Ably.Realtime({
+
+        authCallback: async (tokenParams, callback) => {
+
+          try {
+
+            const res = await fetch(`${base_url}/api/messaging/ably-token/`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const tokenRequest = await res.json();
+
+            callback(null, tokenRequest);
+
+          } catch (err) {
+            callback(err, null);
+          }
+
+        }
+
+      });
+
+      const channel = ablyRef.current.channels.get(`chat_${conversationId}`);
+      channelRef.current = channel;
+
+
+
+      // ENTER PRESENCE
+      channel.presence.enter({ username });
+
+
+
+      // CHECK WHO IS ONLINE
+      channel.presence.get((err, members) => {
+
+        if (members.find(m => m.data.username === otherUsername)) {
+          setOnline(true);
+        }
+
+      });
+
+
+
+      channel.presence.subscribe("enter", member => {
+        if (member.data.username === otherUsername) {
+          setOnline(true);
+        }
+      });
+
+
+
+      channel.presence.subscribe("leave", member => {
+        if (member.data.username === otherUsername) {
+          setOnline(false);
+        }
+      });
+
+
+
+      // NEW MESSAGE
+      channel.subscribe("new_message", msg => {
+
+        if (!msg?.data) return;
+
+        setMessages(prev => {
+
+          if (prev.find(m => m.id === msg.data.id)) return prev;
+
+          return [...prev, msg.data];
+
+        });
+
+        scrollBottom();
+
+        fetch(`${base_url}/api/messaging/message/delivered/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ message_id: msg.data.id })
+        });
+
+      });
+
+
+
+      // TYPING
+      channel.subscribe("typing", msg => {
+
+        if (msg.data.username === username) return;
+
+        setTyping(true);
+
+        setTimeout(() => setTyping(false), 2000);
+
+      });
+
+
+
+      // READ RECEIPT
+      channel.subscribe("message_read", msg => {
+
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === msg.data.message_id
+              ? { ...m, status: "read" }
+              : m
+          )
+        );
+
+      });
+
+
+
+    } catch {
+      setError("Realtime connection failed");
+    }
+
+    return () => {
+      channelRef.current?.unsubscribe();
+      channelRef.current?.presence.leave();
+      ablyRef.current?.close();
+    };
+
+  }, [conversationId]);
+
+
+
+  // SEND MESSAGE
+  const sendMessage = async () => {
+
+    if (!text.trim()) return;
+
+    try {
+
+      const res = await fetch(`${base_url}/api/messaging/messages/send/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          conversation: conversationId,
+          text
+        })
+      });
+
+      const message = await res.json();
+
+      setText("");
+      inputRef.current?.focus();
+      
+      channelRef.current.publish("new_message", message);
+      
+      
+    } catch {
+      setError("Send message failed");
+    }
+
+  };
+
+
+
+  // TYPING EVENT
+  const sendTyping = () => {
+
+    if (typingTimeout.current) return;
+
+    channelRef.current.publish("typing", { username });
+
+    typingTimeout.current = setTimeout(() => {
+      typingTimeout.current = null;
+    }, 1000);
+
+  };
+
+
+
+  const avatar = (msg) => {
+
+    if (msg?.sender_avatar) {
+      return <img src={msg.sender_avatar} className="avatar" alt="" />;
+    }
+
+    const letter = msg?.sender_username?.charAt(0)?.toUpperCase() || "?";
+
+    return <div className="avatar-letter">{letter}</div>;
+  };
+
+
+
+  if (error) return <div style={{ padding: 20, color: "red" }}>{error}</div>;
+
+  if (!otherUser) return <div style={{ padding: 20, color: "white" }}>Loading chat...</div>;
+
+
+
+  return (
+
+    <div className="chat">
+
+      <div className="chat-header">
+          <button className="cancel-btn" onClick={leaveChat}>✕
+          </button>
+        <div className="user">
+
+          <div className="avatar-wrapper">
+
+            {otherUser?.avatar
+              ? <img src={fixUrl(otherUser.avatar)} className="avatar" alt="" onClick={() => navigate(`/public-profile/${otherUser.username}`)} />
+              : <div className="avatar-letter">{otherUser.username.charAt(0).toUpperCase()}</div>
+            }
+
+            {online && <div className="online-dot"></div>}
+
+          </div>
+
+          <div className="username">{otherUser.username}</div>
+
+        </div>
+        <button className="pay-btn">Pay</button>
+        
+        <button className="menu">⋮</button>
+    </div>
+      
+
+
+      {typing && (
+        <div className="typing-indicator">
+          {otherUser.username} typing...
+        </div>
+      )}
+
+
+
+      <div className="messages">
+
+        {messages.map(msg => {
+
+          const mine = msg.sender_username === username;
+
+          return (
+
+            <div key={msg.id} className={`message ${mine ? "mine" : ""}`}>
+
+              {/*{!mine && avatar(msg)}*/}
+
+              <div className="bubble">
+
+                <div>{msg.text}</div>
+
+                <div className="meta">
+
+                  {msg.created_at
+                    ? new Date(msg.created_at).toLocaleTimeString()
+                    : ""}
+
+                  {mine && (
+                    <span className="tick">
+                      {msg.status === "read"
+                        ? "✓✓"
+                        : msg.status === "delivered"
+                        ? "✓✓"
+                        : "✓"}
+                    </span>
+                  )}
+
+                </div>
+
+              </div>
+
+            </div>
+
+          );
+
+        })}
+
+        <div ref={bottomRef}></div>
+
+      </div>
+
+
+
+      <div className="input">
+
+        <input
+          ref={inputRef}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            sendTyping();
+          }}
+          placeholder="Type message..."
+        />
+
+        <button onClick={sendMessage}>▲</button>
+
+      </div>
+
+    </div>
+
+  );
+}

@@ -1,7 +1,31 @@
 import { Link, useLocation } from "react-router-dom";
 import { FiHome, FiUser, FiPlus } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { showToast } from "../utils/toast";
+const base_url = "https://Linkx1.pythonanywhere.com";
 
 export default function BottomNav() {
+  useEffect(() => {
+    const fetchMe = async () => {
+    try {
+      const res = await fetch(`${base_url}/freelancers/me/`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+      });
+
+      const data = await res.json();
+      setMe(data);
+    } catch (err) {
+      console.error("Failed to fetch user");
+    }
+  };
+
+  fetchMe();
+  }, []);
+  const navigate = useNavigate();
+  const [me, setMe] = useState(null);
   const location = useLocation(); // get current path
 
   return (
@@ -15,14 +39,20 @@ export default function BottomNav() {
       </Link>
 
       {/* Add / Upload */}
-      <Link to="/upload">
-        <div style={styles.plus}>
-          <FiPlus
-            size={28}
-            color={location.pathname === "/upload" ? "#000" : "#aaa"}
-          />
-        </div>
-      </Link>
+      <div style={styles.plus} onClick={() => {
+      if (!me) return;
+      if (me.is_freelancer) {
+      navigate("/upload");
+    } else {
+      showToast("Only freelancers can upload gigs");
+    }
+  }}>
+        
+  <FiPlus
+    size={28}
+    color={location.pathname === "/upload" ? "#000" : "#aaa"}
+  />
+</div>
 
       {/* Profile */}
       <Link to="/profile">

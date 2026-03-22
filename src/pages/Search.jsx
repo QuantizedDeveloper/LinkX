@@ -35,7 +35,7 @@ export default function Search() {
       {/* HEADER */}
       <div style={styles.header}>
         <span style={styles.back} onClick={() => navigate(-1)}>
-          〈
+          ✕
         </span>
         <h2 style={styles.title}>Search</h2>
       </div>

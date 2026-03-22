@@ -1,0 +1,143 @@
+return (
+    <div style={styles.page}>
+      {/* HEADER */}
+      <div style={styles.headerWrapper}>
+        <div
+          style={{
+            ...styles.banner,
+            backgroundImage: profile.banner
+              ? `url(${getFullUrl(profile.banner)})`
+              : "none",
+          }}
+        >
+          <FaEllipsisV style={styles.topLeftIcon} />
+          <FaTimes
+            style={styles.topRightIcon}
+            onClick={() => window.history.back()}
+          />
+        </div>
+
+        {/* AVATAR */}
+        <div style={styles.avatarWrapper}>
+          <div style={styles.avatar}>
+            {profile.avatar && (
+              <img
+                src={getFullUrl(profile.avatar)}
+                alt=""
+                style={styles.avatarImg}
+              />
+            )}
+          </div>
+
+          {profile.portfolio_link && (
+            <div
+              style={styles.playBtn}
+              onClick={() =>
+                window.open(profile.portfolio_link, "_blank")
+              }
+            >
+              <FaPlay size={11} color="#6C63FF" />
+            </div>
+          )}
+        </div>
+
+        {/* PAY BUTTON — RIGHT SIDE, ALIGNED WITH AVATAR */}
+        <button
+          style={styles.payBtn}
+          onClick={() => setShowPayment(!showPayment)}
+        >
+          Pay
+        </button>
+      </div>
+
+      {/* INFO */}
+      <div style={styles.infoSection}>
+        <div style={styles.nameRow}>
+          <h2 style={{ margin: 0 }}>
+            {profile.display_name || profile.username}
+          </h2>
+
+          {/* MAIL ICON */}
+          <div style={styles.messageIcon}>
+            <FiMail size={20} color="black" onClick={() => navigate(`/chat/${username}`)}
+            
+            />
+            
+            <span style={styles.redCornerTop}></span>
+            <span style={styles.redCornerBottom}></span>
+            
+          </div>
+          
+        </div>
+
+        <p style={styles.username}>@{profile.username}</p>
+        <p style={{ marginTop: 15 }}>{profile.description}</p>
+      </div>
+
+      {/* TABS */}
+      <div style={styles.tabs}>
+        <span style={styles.activeTab}>gigs</span>
+        <span style={styles.inactiveTab}>about</span>
+      </div>
+
+      {/* GIGS */}
+      <div style={styles.feed}>
+        {profile.gigs.length === 0 ? (
+          <p style={{ opacity: 0.6 }}>No gigs found</p>
+        ) : (
+          profile.gigs.map((gig) => (
+            <Gig key={gig.id} gig={gig} />
+          ))
+        )}
+      </div>
+
+      {/* SIDE PAYMENT PANEL */}
+      {showPayment && (
+        <div style={styles.sidePayment}>
+          {profile.upi_id && (
+            <div
+              style={styles.paymentItem}
+              onClick={() =>
+                window.open(`upi://pay?pa=${profile.upi_id}`, "_blank")
+              }
+            >
+              UPI
+            </div>
+          )}
+
+          {profile.razorpay_link && (
+            <SiRazorpay
+              size={20}
+              style={styles.paymentIcon}
+              onClick={() =>
+                window.open(profile.razorpay_link, "_blank")
+              }
+            />
+          )}
+
+          {profile.paypal_link && (
+            <SiPaypal
+              size={20}
+              style={styles.paymentIcon}
+              onClick={() =>
+                window.open(profile.paypal_link, "_blank")
+              }
+            />
+          )}
+
+          {profile.upi_qr && (
+            <img
+              src={getFullUrl(profile.upi_qr)}
+              alt="QR"
+              style={{ width: "100%", marginTop: 10 }}
+            />
+          )}
+          <button
+          onClick={() => setShowPayment(false)}
+          className="absolute top-3 right-3 text-gray-50">✕
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -8,59 +8,57 @@ export default function SideMenu({ open, onClose }) {
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.menu} onClick={(e) => e.stopPropagation()}>
-        
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.logo}>LinkX</div>
 
-          {/* cancel button (||| style as you drew) */}
-          <div style={styles.cancel} onClick={onClose}>
-            |||
+        {/* HEADER */}
+        <div style={styles.header}>
+          <div>
+            <div style={styles.logo}>LinkX</div>
+            <div style={styles.active}>
+              <span style={{ color: "green" }}>active</span> freelancers 0
+            </div>
+          </div>
+
+          <div style={styles.close} onClick={onClose}>
+            ✕
           </div>
         </div>
 
-        {/* menu items */}
-        <div
-          style={styles.menuItem}
-          onClick={() => {
-            navigate("/inbox");
-            onClose();
-          }}
-        >
-          inbox
+        {/* BUTTONS */}
+        <div style={styles.buttonsContainer}>
+
+          <div
+            style={styles.bigButton}
+            onClick={() => {
+              navigate("/inbox");
+              onClose();
+            }}
+          >
+            Inbox
+          </div>
+
+          <div
+            style={styles.bigButton}
+            onClick={() => {
+              navigate("/chatbot");
+              onClose();
+            }}
+          >
+            Linkbot
+          </div>
+
+          <div
+            style={styles.bigButton}
+            onClick={() => {
+              // placeholder
+              onClose();
+            }}
+          >
+            Support
+          </div>
+
         </div>
 
-        <div
-          style={styles.menuItem}
-          onClick={() => {
-            navigate("/top-gigs");
-            onClose();
-          }}
-        >
-          top gigs
-        </div>
-
-        <div
-          style={styles.menuItem}
-          onClick={() => {
-            navigate("/chatbot");
-            onClose();
-          }}
-        >
-          chatbot
-        </div>
-
-        <div
-          style={styles.menuItem}
-          onClick={() => {
-            navigate("/dashboard");
-            onClose();
-          }}
-        >
-          dashboard
-        </div>
-
-        {/* footer */}
+        {/* FOOTER */}
         <div style={styles.footer}>⚙</div>
       </div>
     </div>
@@ -71,47 +69,61 @@ const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.15)",
-    zIndex: 5000
+    background: "rgba(0,0,0,0.2)",
+    zIndex: 5000,
   },
 
   menu: {
     width: "75%",
     height: "100%",
     background: "#fff",
-    paddingTop: 10,
+    display: "flex",
+    flexDirection: "column",
   },
 
   header: {
     display: "flex",
-    alignItems: "center",
     justifyContent: "space-between",
-    padding: "10px 14px",
-    borderBottom: "1px solid #eee"
+    alignItems: "center",
+    padding: "14px",
+    borderBottom: "1px solid #ddd",
   },
 
   logo: {
-    fontSize: 22,
-    fontWeight: "bold"
+    fontSize: 26,
+    fontWeight: "bold",
   },
 
-  cancel: {
+  active: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+
+  close: {
     fontSize: 22,
-    fontWeight: "bold",
     cursor: "pointer",
   },
 
-  menuItem: {
-    padding: "16px 14px",
-    borderBottom: "1px solid #eee",
-    fontSize: 16,
-    cursor: "pointer"
+  buttonsContainer: {
+    padding: "20px 10px",
+  },
+
+  bigButton: {
+  background: "#ffffff",
+  padding: "16px",
+  marginBottom: "14px",
+  fontSize: "18px",
+  textAlign: "left",
+  fontWeight: "600",
+  borderRadius: "14px",
+  cursor: "pointer",
+
+  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
   },
 
   footer: {
-    position: "absolute",
-    bottom: 20,
-    left: 14,
-    fontSize: 20
-  }
+    marginTop: "auto",
+    padding: "14px",
+    fontSize: 20,
+  },
 };

@@ -286,6 +286,7 @@
 .value {
   font-size: 14px;
   font-weight: 600;
+  font-family: 'Inter', sans-serif;
 }
 
 /* MENU DROPDOWN */
@@ -336,7 +337,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 3000;
 }
 
 .gig-desc-box {

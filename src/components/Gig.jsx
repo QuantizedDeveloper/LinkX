@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { FiMail } from "react-icons/fi";
 import blackImg from "../assets/black.jpg";
 import "./gig.css";
-
+import { showToast } from "../utils/toast";
 const API_BASE = "https://Linkx1.pythonanywhere.com";
 
 // Fix Django media URL
@@ -67,15 +67,15 @@ export default function Gig({ gig }) {
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Delete failed");
+        showToast(data.error || "Delete failed");
         return;
       }
 
-      alert("Gig deleted");
+      showToast("Gig deleted");
       setDeleted(true);
     } catch (err) {
       console.error(err);
-      alert("Server error");
+      showToast("Server error");
     }
   };
 
@@ -100,10 +100,13 @@ export default function Gig({ gig }) {
             {username}
           </span>
 
-          <FiMail
-            className="gig-dm-icon"
-            onClick={() => navigate(`/chat/${username}`)}
-          />
+          <FiMail className="gig-dm-icon" onClick={() => {
+          if (loggedUser === username) {
+          showToast("You can't message yourself.");
+          return;
+          }
+          navigate(`/chat/${username}`);
+          }}/>
         </div>
 
         {/* THREE DOTS */}

@@ -4,13 +4,15 @@ import { FiEdit2, FiArrowLeft } from "react-icons/fi";
 import { FaQrcode, FaRupeeSign, FaPaypal } from "react-icons/fa";
 import { SiRazorpay } from "react-icons/si";
 import { BsCreditCard } from "react-icons/bs";
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { showToast } from "../utils/toast";
 const API_BASE = "https://Linkx1.pythonanywhere.com";
 
 export default function EditProfile() {
   const navigate = useNavigate();
   const bannerRef = useRef(null);
   const avatarRef = useRef(null);
+  const queryClient = useQueryClient();
 
   const [banner, setBanner] = useState(null);
   const [avatar, setAvatar] = useState(null);
@@ -32,41 +34,52 @@ export default function EditProfile() {
     paypal_link: "",
     upi_id: "",
     custom_payment_label: "",
+    custom_payment_details: "",
     qr: null,
     qr_preview: null,
   });
 
-  // LOAD PROFILE
-  useEffect(() => {
+  // ✅ FETCH PROFILE
+  const fetchProfile = async () => {
     const token = localStorage.getItem("accessToken");
-    fetch(`${API_BASE}/freelancers/me/`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (!d) return;
-        setName(d.display_name || "");
-        setDesc(d.description || "");
-        setPortfolio(d.portfolio_link || "");
-        setKeywords(d.tags || []);
-        if (d.avatar) setAvatar(d.avatar);
-        if (d.banner) setBanner(d.banner);
-        if (d.payments) {
-          setPayments({
-            upi_id: d.payments.upi_id || "",
-            razorpay_link: d.payments.razorpay || "",
-            paypal_link: d.payments.paypal || "",
-            custom_payment_label: d.payments.custom?.label || "",
-            custom_payment_details: d.payments.custom?.details || "",
-            qr: null,
-            qr_preview: d.payments.qr || null,
-          });
-          
-        }
 
-        
+    const res = await fetch(`${API_BASE}/freelancers/me/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch profile");
+    return res.json();
+  };
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["profile"],
+    queryFn: fetchProfile,
+  });
+
+  // ✅ SYNC DATA
+  useEffect(() => {
+    if (!data) return;
+
+    setName(data.display_name || "");
+    setDesc(data.description || "");
+    setPortfolio(data.portfolio_link || "");
+    setKeywords(data.tags || []);
+
+    setAvatar(data.avatar || null);
+    setBanner(data.banner || null);
+
+    if (data.payments) {
+      setPayments({
+        upi_id: data.payments.upi_id || "",
+        razorpay_link: data.payments.razorpay || "",
+        paypal_link: data.payments.paypal || "",
+        custom_payment_label: data.payments.custom?.label || "",
+        custom_payment_details: data.payments.custom?.details || "",
+        qr: null,
+        qr_preview: data.payments.qr || null,
       });
-  }, []);
+    }
+  }, [data]);
 
   const readImage = (f, setter) => {
     const r = new FileReader();
@@ -86,9 +99,32 @@ export default function EditProfile() {
     setKeywords(keywords.filter((_, index) => index !== i));
   };
 
-  const handleSave = async () => {
-    const token = localStorage.getItem("accessToken");
+  // ✅ SAFE SAVE (NO BLANK BUG)
+  const mutation = useMutation({
+    mutationFn: async (fd) => {
+      const token = localStorage.getItem("accessToken");
+
+      const res = await fetch(`${API_BASE}/freelancers/me/update/`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+
+      if (!res.ok) throw new Error("Update failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      // 🔥 DO NOT overwrite cache
+      queryClient.invalidateQueries(["profile"]);
+      showToast("Saved");
+      navigate("/profile")
+    },
+    onError: () => alert("Error saving profile"),
+  });
+
+  const handleSave = () => {
     const fd = new FormData();
+
     fd.append("display_name", name);
     fd.append("description", desc);
     fd.append("portfolio_link", portfolio);
@@ -98,23 +134,19 @@ export default function EditProfile() {
     fd.append("paypal_link", payments.paypal_link);
     fd.append("custom_payment_label", payments.custom_payment_label);
     fd.append("custom_payment_details", payments.custom_payment_details);
+
     if (avatarFile) fd.append("avatar", avatarFile);
     if (bannerFile) fd.append("banner", bannerFile);
     if (payments.qr) fd.append("upi_qr", payments.qr);
-    
 
-    await fetch(`${API_BASE}/freelancers/me/update/`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
-      body: fd,
-    });
-
-    alert("Saved");
+    mutation.mutate(fd);
   };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading profile</div>;
 
   return (
     <div style={s.page}>
-      {/* HEADER */}
       <div style={s.header}>
         <FiArrowLeft onClick={() => navigate(-1)} />
         <div style={s.headerTitle}>Edit Profile</div>
@@ -141,11 +173,9 @@ export default function EditProfile() {
           }} />
         </div>
 
-        {/* DISPLAY NAME */}
         <input style={s.input} placeholder="display name" value={name} onChange={e => setName(e.target.value)} />
         <p style={s.helper}>this will be displayed to clients and does not change your username <span style={s.link}>learn more</span></p>
 
-        {/* TAGS */}
         <div style={s.tagBox}>
           {keywords.map((k, i) => (
             <span key={i} style={s.tag}>
@@ -153,19 +183,11 @@ export default function EditProfile() {
               <span style={s.tagClose} onClick={() => removeTag(i)}>×</span>
             </span>
           ))}
-
-          <input
-            style={s.tagInput}
-            placeholder="+ tags"
-            value={keywordInput}
-            onChange={e => setKeywordInput(e.target.value)}
-            onKeyDown={addKeyword}
-          />
+          <input style={s.tagInput} placeholder="+ tags" value={keywordInput} onChange={e => setKeywordInput(e.target.value)} onKeyDown={addKeyword} />
         </div>
 
         <p style={s.helper}>tags helps algorithm to recommend you to clients <span style={s.link}>learn more</span></p>
 
-        {/* PAYMENT / PORTFOLIO */}
         <p style={s.boldMuted}>payment method and portfolio are mandatory.</p>
         <div style={s.row}>
           <button style={s.pill} onClick={() => setShowPaymentModal(true)}>+ add payment</button>
@@ -173,7 +195,6 @@ export default function EditProfile() {
           <button style={s.pill}>more</button>
         </div>
 
-        {/* DESCRIPTION */}
         <textarea style={s.desc} placeholder="description (optional but highly recommended)" value={desc} onChange={e => setDesc(e.target.value)} />
       </div>
 
@@ -183,10 +204,10 @@ export default function EditProfile() {
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
             <div style={s.modalHeader}>Payment Methods</div>
 
-            <div style={s.payRow}><SiRazorpay /> <input placeholder="razorpay link" value ={payments.razorpay_link} onChange={e => setPayments({ ...payments, razorpay_link: e.target.value })} /></div>
-            <div style={s.payRow}><FaPaypal /> <input placeholder="paypal info" value = {payments.paypal_link} onChange={e => setPayments({ ...payments, paypal_link: e.target.value })} /></div>
+            <div style={s.payRow}><SiRazorpay /> <input placeholder="razorpay link" value={payments.razorpay_link} onChange={e => setPayments({ ...payments, razorpay_link: e.target.value })} /></div>
+            <div style={s.payRow}><FaPaypal /> <input placeholder="paypal info" value={payments.paypal_link} onChange={e => setPayments({ ...payments, paypal_link: e.target.value })} /></div>
             <div style={s.payRow}><FaRupeeSign /> <input placeholder="upi id" value={payments.upi_id} onChange={e => setPayments({ ...payments, upi_id: e.target.value })} /></div>
-            <div style={s.payRow}><BsCreditCard /> <input placeholder="custom payment" value ={payments.custom_payment_label} onChange={e => setPayments({ ...payments, custom_payment_label: e.target.value })} /></div>
+            <div style={s.payRow}><BsCreditCard /> <input placeholder="custom payment" value={payments.custom_payment_label} onChange={e => setPayments({ ...payments, custom_payment_label: e.target.value })} /></div>
 
             <label style={s.qrBox}>
               <FaQrcode /> Upload QR
@@ -216,7 +237,6 @@ export default function EditProfile() {
     </div>
   );
 }
-
 /* ---------------- STYLES ---------------- */
 
 const s = {
@@ -228,7 +248,7 @@ const s = {
 
   card:{ maxWidth:500, margin:"0 auto", padding:14 },
 
-  banner:{ height:140, background:"#000", borderRadius:16, position:"relative", backgroundSize:"cover" },
+  banner:{ height:140, background:"#000", borderRadius:16, position:"relative", backgroundSize:"cover", objectFit: "cover"},
   editIcon:{ position:"absolute", right:10, bottom:10, background:"#fff", borderRadius:"50%", padding:8, cursor:"pointer", zIndex:10 },
 
   avatarWrap:{ marginTop:-45, display:"flex", justifyContent:"center", position:"relative" },

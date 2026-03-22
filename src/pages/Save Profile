@@ -1,0 +1,226 @@
+import { showToast } from "../utils/toast";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import Gig from "../components/Gig";
+import Gigs from "../components/Gigs"; // OPTIONAL
+
+const API_BASE = "https://Linkx1.pythonanywhere.com";
+
+export default function Profile() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState("gigs");
+
+  const [isFreelancer, setIsFreelancer] = useState(null);
+  const [agree, setAgree] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const token = localStorage.getItem("accessToken");
+  //const [myGigs, setMyGigs] = useState([]);
+  
+  // ✅ NEW PROFILE STATE
+  const [profile, setProfile] = useState(null);
+  const [myGigs, setMyGigs] = useState([]);
+  
+  const username = localStorage.getItem("username");
+
+  // ✅ Check freelancer status
+  useEffect(() => {
+    if (!token) return navigate("/login");
+
+    fetch(`${API_BASE}/freelancers/status/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setIsFreelancer(data.is_freelancer);
+      })
+      .catch(() => setIsFreelancer(false));
+  }, []);
+
+  // ✅ Load real profile data
+  useEffect(() => {
+    if (!token || !isFreelancer) return;
+
+    fetch(`${API_BASE}/freelancers/me/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("PROFILE DATA:", data);
+        setProfile(data);
+        //localStorage.setItem(data.)
+      });
+  }, [isFreelancer]);
+  useEffect(() => {
+    if (!token) return;
+
+    fetch(`${API_BASE}/api/gigs/gigs/my/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log("RAW GIGS:", data);
+
+      const fixed = data.map(g => ({
+        ...g,
+        username: g.username || g.user || "freelancer",
+        user_avatar: g.user_avatar || g.avatar || null,
+        images: [g.image1, g.image2, g.image3].filter(Boolean)
+      }));
+
+      console.log("FIXED GIGS:", fixed);
+      setMyGigs(fixed);
+    })
+    .catch(err => console.error("Gig fetch error", err));
+  }, []);
+
+
+  // ✅ Start freelancing
+  const startFreelancing = async () => {
+    if (!agree) return showToast("Accept freelancer agreement");
+    if (starting) return;
+
+    setStarting(true);
+
+    const res = await fetch(`${API_BASE}/freelancers/start/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setIsFreelancer(true);
+      showToast("You are now a freelancer 🚀");
+    } else {
+      showToast(data.error || "Error");
+    }
+
+    setStarting(false);
+  };
+
+  // ⏳ Loading state
+  if (isFreelancer === null) return <div>Loading...</div>;
+
+  // =========================================================
+  // 🚫 NOT FREELANCER SCREEN
+  // =========================================================
+  if (!isFreelancer) {
+    return (
+      <div style={styles.startContainer}>
+        <button
+          style={styles.startBtn}
+          onClick={startFreelancing}
+          disabled={starting}
+        >
+          {starting ? "Starting..." : "Start freelancing"}
+        </button>
+
+        <label style={styles.agreeRow}>
+          <input
+            type="checkbox"
+            checked={agree}
+            onChange={() => setAgree(!agree)}
+          />
+          <span style={{ marginLeft: 8, color: "#b200ff" }}>
+            linkX freelancer agreement
+          </span>
+        </label>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // ✅ FREELANCER PROFILE SCREEN
+  // =========================================================
+
+  return (
+    <div style={styles.container}>
+      {/* ✅ BANNER */}
+      <div
+        style={{
+          ...styles.cover,
+          backgroundImage: profile?.banner ? `url(${profile.banner})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      ></div>
+
+      <div style={styles.profileSection}>
+        {/* ✅ AVATAR */}
+        <div
+          style={{
+            ...styles.avatar,
+            backgroundImage: profile?.avatar ? `url(${profile.avatar})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        ></div>
+
+        <div style={styles.buttons}>
+          <button
+            style={styles.editBtn}
+            onClick={() => navigate("/edit-profile")}
+          >
+            Edit profile
+          </button>
+
+          <button style={styles.subBtn}>subscribe</button>
+        </div>
+
+        <div style={styles.text}>
+          {/* ✅ DISPLAY NAME */}
+          <div style={styles.name}>
+            {profile?.display_name || "freelancer"}
+          </div>
+
+          {/* ✅ USERNAME FROM LOCALSTORAGE */}
+          <div style={styles.handle}>@{username}</div>
+        </div>
+      </div>
+
+      {/* ✅ DESCRIPTION */}
+      <p style={styles.bio}>
+        {profile?.description || "No description yet"}
+      </p>
+
+      {/* TABS */}
+      <div style={styles.tabs}>
+        <div
+          style={tab === "gigs" ? styles.activeTab : styles.inactiveTab}
+          onClick={() => setTab("gigs")}
+        >
+          gigs
+        </div>
+        <div
+          style={tab === "about" ? styles.activeTab : styles.inactiveTab}
+          onClick={() => setTab("about")}
+        >
+          about
+        </div>
+      </div>
+
+      {/* STATIC GIGS */}
+      <div style={{ display: "flex", justifyContent: "center", width: "100%", position:"relative", left:-13, }}>
+        {tab === "gigs" && <Gigs gigs={myGigs} />}
+      </div>
+      
+
+
+
+
+
+      {/* ABOUT TAB (STATIC FOR NOW) */}
+      {tab === "about" && (
+        <div style={styles.about}>
+          <p>
+            Full-stack developer focused on building clean, scalable products
+            for startups, solo founders, and agencies.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

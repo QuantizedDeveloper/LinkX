@@ -1,192 +1,196 @@
-
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Gig from "../components/Gig";
-import Gigs from "../components/Gigs"; // OPTIONAL
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { showToast } from "../utils/toast";
+import Gigs from "../components/Gigs";
 
 const API_BASE = "https://Linkx1.pythonanywhere.com";
 
+const fixUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http://")) url = url.replace("http://", "https://");
+  if (url.startsWith("http")) return url;
+  return API_BASE + url;
+};
+
 export default function Profile() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState("gigs");
-
-  const [isFreelancer, setIsFreelancer] = useState(null);
   const [agree, setAgree] = useState(false);
-  const [starting, setStarting] = useState(false);
+
+  const username = localStorage.getItem("username") || "user";
   const token = localStorage.getItem("accessToken");
-  //const [myGigs, setMyGigs] = useState([]);
-  
-  // ✅ NEW PROFILE STATE
-  const [profile, setProfile] = useState(null);
-  const [myGigs, setMyGigs] = useState([]);
-  
-  const username = localStorage.getItem("username");
 
-  // ✅ Check freelancer status
   useEffect(() => {
-    if (!token) return navigate("/login");
+    if (!token) navigate("/login");
+  }, [navigate, token]);
 
-    fetch(`${API_BASE}/freelancers/status/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setIsFreelancer(data.is_freelancer);
-      })
-      .catch(() => setIsFreelancer(false));
-  }, []);
-
-  // ✅ Load real profile data
-  useEffect(() => {
-    if (!token || !isFreelancer) return;
-
-    fetch(`${API_BASE}/freelancers/me/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        console.log("PROFILE DATA:", data);
-        setProfile(data);
-        //localStorage.setItem(data.)
+  // =========================
+  // Fetch freelancer status
+  // =========================
+  const { data: statusData, isLoading: statusLoading } = useQuery({
+    queryKey: ["freelancerStatus"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/freelancers/status/`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-  }, [isFreelancer]);
-  useEffect(() => {
-    if (!token) return;
+      if (!res.ok) throw new Error("Failed to fetch freelancer status");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 0,
+    onError: (err) => showToast("Error fetching freelancer status: " + err.message),
+  });
 
-    fetch(`${API_BASE}/api/gigs/gigs/my/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log("RAW GIGS:", data);
+  const isFreelancer = statusData?.is_freelancer ?? false;
 
-      const fixed = data.map(g => ({
+  // =========================
+  // Fetch profile
+  // =========================
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/freelancers/me/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 0,
+    onError: (err) => showToast("Error fetching profile: " + err.message),
+  });
+
+  const profile = profileData || {};
+
+  // =========================
+  // Fetch gigs
+  // =========================
+  const { data: gigsData, isLoading: gigsLoading } = useQuery({
+    queryKey: ["myGigs"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/gigs/gigs/my/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch gigs");
+      const data = await res.json();
+      return data.map((g) => ({
         ...g,
         username: g.username || g.user || "freelancer",
-        user_avatar: g.user_avatar || g.avatar || null,
-        images: [g.image1, g.image2, g.image3].filter(Boolean)
+        user_avatar: fixUrl(g.user_avatar || g.avatar || null),
+        images: [g.image1, g.image2, g.image3].filter(Boolean).map(fixUrl),
       }));
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 0,
+    onError: (err) => showToast("Error fetching gigs: " + err.message),
+  });
 
-      console.log("FIXED GIGS:", fixed);
-      setMyGigs(fixed);
-    })
-    .catch(err => console.error("Gig fetch error", err));
-  }, []);
+  const safeGigs = gigsData || [];
 
+  // =========================
+  // Start freelancing mutation
+  // =========================
+  const startMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/freelancers/start/`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to start freelancing");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["freelancerStatus"]);
+      showToast("You are now a freelancer 🚀");
+    },
+    onError: (err) => showToast("Start freelancing failed: " + err.message),
+  });
 
-  // ✅ Start freelancing
-  const startFreelancing = async () => {
-    if (!agree) return alert("Accept freelancer agreement");
-    if (starting) return;
-
-    setStarting(true);
-
-    const res = await fetch(`${API_BASE}/freelancers/start/`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      setIsFreelancer(true);
-      alert("You are now a freelancer 🚀");
-    } else {
-      alert(data.error || "Error");
+  const startFreelancing = () => {
+    if (!agree) {
+      showToast("Accept freelancer agreement");
+      return;
     }
-
-    setStarting(false);
+    startMutation.mutate();
   };
 
-  // ⏳ Loading state
-  if (isFreelancer === null) return <div>Loading...</div>;
+  // =========================
+  // Loading states
+  // =========================
+  if (statusLoading || (isFreelancer && profileLoading) || gigsLoading) {
+    return <div>Loading...</div>;
+  }
 
-  // =========================================================
-  // 🚫 NOT FREELANCER SCREEN
-  // =========================================================
+  // =========================
+  // Not a freelancer yet
+  // =========================
   if (!isFreelancer) {
     return (
       <div style={styles.startContainer}>
         <button
           style={styles.startBtn}
           onClick={startFreelancing}
-          disabled={starting}
+          disabled={startMutation.isLoading}
         >
-          {starting ? "Starting..." : "Start freelancing"}
+          {startMutation.isLoading ? "Starting..." : "Start freelancing"}
         </button>
-
         <label style={styles.agreeRow}>
-          <input
-            type="checkbox"
-            checked={agree}
-            onChange={() => setAgree(!agree)}
-          />
-          <span style={{ marginLeft: 8, color: "#b200ff" }}>
-            linkX freelancer agreement
-          </span>
+          <input type="checkbox" checked={agree} onChange={() => setAgree(!agree)} />
+          <span style={{ marginLeft: 8, color: "#b200ff" }}>linkX freelancer agreement</span>
         </label>
       </div>
     );
   }
 
-  // =========================================================
-  // ✅ FREELANCER PROFILE SCREEN
-  // =========================================================
-
+  // =========================
+  // Freelancer profile render
+  // =========================
   return (
     <div style={styles.container}>
-      {/* ✅ BANNER */}
+      {/* Cover banner */}
       <div
         style={{
           ...styles.cover,
-          backgroundImage: profile?.banner ? `url(${profile.banner})` : undefined,
+          backgroundImage: profile.banner ? `url(${fixUrl(profile.banner)})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       ></div>
 
+      {/* Profile section */}
       <div style={styles.profileSection}>
-        {/* ✅ AVATAR */}
         <div
           style={{
             ...styles.avatar,
-            backgroundImage: profile?.avatar ? `url(${profile.avatar})` : undefined,
+            backgroundImage: profile.avatar ? `url(${fixUrl(profile.avatar)})` : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
         ></div>
 
         <div style={styles.buttons}>
-          <button
-            style={styles.editBtn}
-            onClick={() => navigate("/edit-profile")}
-          >
+          <button style={styles.editBtn} onClick={() => navigate("/edit-profile")}>
             Edit profile
           </button>
-
-          <button style={styles.subBtn}>subscribe</button>
+          {/* ========================= */}
+          {/* Pay/Subscribe button */}
+          <button style={styles.subBtn}>Subscribe</button>
+          {/* Three dots menu 
+          <button style={styles.menuBtn}>⋮</button>*/}
         </div>
 
         <div style={styles.text}>
-          {/* ✅ DISPLAY NAME */}
-          <div style={styles.name}>
-            {profile?.display_name || "freelancer"}
-          </div>
-
-          {/* ✅ USERNAME FROM LOCALSTORAGE */}
+          <div style={styles.name}>{profile.display_name || "freelancer"}</div>
           <div style={styles.handle}>@{username}</div>
         </div>
       </div>
 
-      {/* ✅ DESCRIPTION */}
-      <p style={styles.bio}>
-        {profile?.description || "No description yet"}
-      </p>
+      <p style={styles.bio}>{profile.description || "No description yet"}</p>
 
-      {/* TABS */}
+      {/* Tabs */}
       <div style={styles.tabs}>
         <div
           style={tab === "gigs" ? styles.activeTab : styles.inactiveTab}
@@ -202,29 +206,20 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* STATIC GIGS */}
-      <div style={{ display: "flex", justifyContent: "center", width: "100%", position:"relative", left:-13, }}>
-        {tab === "gigs" && <Gigs gigs={myGigs} />}
-      </div>
-      
+      {tab === "gigs" && (
+        <div style={{ display: "flex", justifyContent: "center", width: "100%", position: "relative", left: -13 }}>
+          <Gigs gigs={safeGigs} />
+        </div>
+      )}
 
-
-
-
-
-      {/* ABOUT TAB (STATIC FOR NOW) */}
       {tab === "about" && (
         <div style={styles.about}>
-          <p>
-            Full-stack developer focused on building clean, scalable products
-            for startups, solo founders, and agencies.
-          </p>
+          <p>{profile.about || "No additional info yet"}</p>
         </div>
       )}
     </div>
   );
 }
-
 /*function GigCard({ title, price }) {
   return (
     <div style={styles.gig}>

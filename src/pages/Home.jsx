@@ -1,9 +1,32 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+
 import SideMenu from "../components/SideMenu";
-import Gig from "../components/Gig"; // ✅ correct import
+import Gig from "../components/Gig";
+import { showToast } from "../utils/toast";
+
+const base_url = "https://Linkx1.pythonanywhere.com";
+
+const fixUrl = (url) => {
+  if (!url) return null;
+
+  if (url.startsWith("http://")) {
+    url = url.replace("http://", "https://");
+  }
+
+  if (url.startsWith("http")) return url;
+
+  return base_url + url;
+};
 
 export default function Home() {
+  const navigate = useNavigate();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const username = localStorage.getItem("username");
+
+  // ✅ Logout (unchanged)
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -12,55 +35,63 @@ export default function Home() {
     window.location.href = "/login";
   };
 
-  const navigate = useNavigate();
-
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // REAL DATA STATE
-  const [gigs, setGigs] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const username = localStorage.getItem("username")
-
-  // Protect route
+  // ✅ Protect route (unchanged)
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    
     if (!token) navigate("/login");
   }, [navigate]);
 
-  // Initial load
-  useEffect(() => {
-    loadMore();
-    // eslint-disable-next-line
-  }, []);
+  // =========================
+  // ✅ FETCH ME (React Query)
+  // =========================
+  const fetchMe = async () => {
+    const res = await fetch(`${base_url}/freelancers/me/`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
 
-  // Fetch gigs from backend
-  const loadMore = async () => {
-  if (loading || !hasMore) return;
-  setLoading(true);
+    if (!res.ok) throw new Error("Failed to fetch user");
 
-  try {
+    return res.json();
+  };
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: fetchMe,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // =========================
+  // ✅ FETCH GIGS (Infinite)
+  // =========================
+  const fetchGigs = async ({ pageParam = 1 }) => {
     const res = await fetch(
-      `https://Linkx1.pythonanywhere.com/api/gigs/?page=${page}`
+      `${base_url}/api/gigs/?page=${pageParam}`
     );
 
     const data = await res.json();
 
-    // 👇 FIXED: use data.results
-    if (!data.results || data.results.length === 0) {
-      setHasMore(false);
-    } else {
-      setGigs((prev) => [...prev, ...data.results]);
-      setPage((prev) => prev + 1);
-    }
-  } catch (err) {
-    console.error("Gig fetch error:", err);
-  }
+    return {
+      gigs: data.results || [],
+      nextPage: data.next ? pageParam + 1 : undefined,
+    };
+  };
 
-  setLoading(false);
-};
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["gigs"],
+    queryFn: fetchGigs,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // flatten pages
+  const gigs = data?.pages.flatMap((page) => page.gigs) || [];
 
   return (
     <>
@@ -82,8 +113,24 @@ export default function Home() {
           </div>
         </div>
 
-        <div style={styles.uploadRow} onClick={() => navigate("/upload")}>
-          <div style={styles.avatar}></div>
+        {/* Upload Row */}
+        <div
+          style={styles.uploadRow}
+          onClick={() => {
+            if (profile?.is_freelancer) {
+              navigate("/upload");
+            } else {
+              showToast("Only freelancers can upload gigs");
+            }
+          }}
+        >
+          {profile?.avatar ? (
+            <img src={fixUrl(profile.avatar)} style={styles.avatar} alt="" />
+          ) : (
+            <div style={styles.avatarFallback}>
+              {username ? username.charAt(0).toUpperCase() : "?"}
+            </div>
+          )}
 
           <div>
             <div style={styles.name}>{username}</div>
@@ -92,23 +139,50 @@ export default function Home() {
         </div>
 
         <div style={styles.divider}></div>
+
+        {/* Feed */}
         <div style={styles.feed}>
-          <div style={{ }}>{gigs.map((gig) => (
-          <Gig key ={gig.id} gig={gig} />
-          ))}
+          <div>
+            {gigs.map((gig) => (
+              <Gig key={gig.id} gig={gig} />
+            ))}
+          </div>
+
+          {isFetchingNextPage && <p>Loading...</p>}
+
+          {hasNextPage && !isFetchingNextPage && (
+            <button onClick={() => fetchNextPage()}>
+              Load More
+            </button>
+          )}
         </div>
-          
-          {loading && <p>Loading...</p>}
-          {hasMore && !loading && (
-          <button onClick={loadMore}>Load More</button>
-        )}
-      </div>
-        
       </div>
     </>
   );
 }
+
 const styles = {
+  avatarFallback: {
+    width:44,
+    height: 44,
+    borderRadius: "50%",
+    marginRight: 10,
+    background: "#f4f4f4",
+    // ✅ center text
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    // ✅ text style
+    fontWeight: "bold",
+    fontSize: 18,
+    color: "#000",
+    // ✅ black outline
+    boxShadow: "0 0 0 2px black",
+    fontFamily: "Inter, sans-serif"
+  },
+  
+  
+  
   container: {
     paddingBottom: 90
   },
@@ -164,15 +238,17 @@ const styles = {
     display: "flex",
     alignItems: "center",
     padding: "10px 14px",
-    cursor: "pointer"
+    cursor: "pointer",
+    fontFamily: "Inter, sans-serif"
   },
 
   avatar: {
     width: 44,
     height: 44,
     borderRadius: "50%",
-    background: "black",
-    marginRight: 10
+    //background: "black",
+    marginRight: 10,
+    objectFit: "cover"
   },
 
   name: {
@@ -191,7 +267,7 @@ const styles = {
     marginTop: 6
   },
 
-  feed: {
+  /*feed: {
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
@@ -199,5 +275,15 @@ const styles = {
     gap: "20px",
     maxWidth: "490px",   // 👈 controls gig size
     margin: "0 auto"
+  }*/
+  feed: {
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+    position: "relative",
+    left: -13,
+    fontFamily: "Inter, sans-serif"
   }
 };
+
+

@@ -1,44 +1,168 @@
-import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { FaTimes, FaEllipsisV, FaPlay } from "react-icons/fa";
 import { FiMail } from "react-icons/fi";
-import { SiRazorpay, SiPaypal } from "react-icons/si";
 import Gig from "../components/Gig";
-import { useNavigate } from "react-router-dom";
-export default function PublicProfile() {
-  const navigate = useNavigate();
-  const { username } = useParams();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showPayment, setShowPayment] = useState(false);
+import "./Chat.css";
+import { showToast } from "../utils/toast";
+// ================= PAYMENT MODAL =================
+function PaymentModal({ paymentInfo, onClose }) {
+  const [showQR, setShowQR] = useState(null);
 
-  useEffect(() => {
-    fetch(
-      `https://Linkx1.pythonanywhere.com/freelancers/public-profile/${username}/`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setProfile(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, [username]);
+  if (!paymentInfo) return null;
 
-  const getFullUrl = (url) => {
+  const copyUPI = (upi) => {
+    navigator.clipboard.writeText(upi);
+    showToast("UPI ID copied");
+  };
+
+  const items = [
+    paymentInfo.razorpay_link && {
+      name: "Razorpay",
+      type: "link",
+      link: paymentInfo.razorpay_link,
+    },
+    paymentInfo.paypal_link && {
+      name: "PayPal",
+      type: "link",
+      link: paymentInfo.paypal_link,
+    },
+    (paymentInfo.upi_id || paymentInfo.upi_qr) && {
+      name: "UPI",
+      type: "upi",
+      upi_id: paymentInfo.upi_id,
+      qr: paymentInfo.upi_qr,
+    },
+  ].filter(Boolean);
+
+  const fixUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
     return `https://Linkx1.pythonanywhere.com${url}`;
   };
 
-  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h3>Payment Methods</h3>
+
+        <button className="close-btn" onClick={onClose}>
+          ✕
+        </button>
+
+        <ul className="payment-list">
+          {items.map((item, idx) => (
+            <li key={idx} className="payment-item">
+              <div className="payment-name">{item.name}</div>
+
+              {item.type === "link" && (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pay-btn-link"
+                >
+                  Pay
+                </a>
+              )}
+
+              {item.type === "upi" && (
+                <div className="upi-actions">
+                  {item.qr && (
+                    <button
+                      className="upi-btn"
+                      onClick={() => setShowQR(item.qr)}
+                    >
+                      Scan QR
+                    </button>
+                  )}
+
+                  {item.upi_id && (
+                    <button
+                      className="upi-btn"
+                      onClick={() => copyUPI(item.upi_id)}
+                    >
+                      Copy UPI ID
+                    </button>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {showQR && (
+          <div
+            className="qr-modal-overlay"
+            onClick={() => setShowQR(null)}
+          >
+            <div
+              className="qr-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img src={fixUrl(showQR)} alt="UPI QR" className="qr-image" />
+              <button onClick={() => setShowQR(null)}>Close</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ================= MAIN COMPONENT =================
+export default function PublicProfile() {
+  const navigate = useNavigate();
+  const { username } = useParams();
+
+  const [showPayment, setShowPayment] = useState(false);
+
+  const base_url = "https://Linkx1.pythonanywhere.com";
+  const token = localStorage.getItem("accessToken");
+
+  // ✅ PROFILE QUERY (CACHED)
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["publicProfile", username],
+    queryFn: async () => {
+      const res = await fetch(
+        `${base_url}/freelancers/public-profile/${username}/`
+      );
+      if (!res.ok) throw new Error("Profile error");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5 min cache
+    cacheTime: 1000 * 60 * 10, // stays in memory
+  });
+
+  // ✅ PAYMENT QUERY (CACHED)
+  const { data: paymentInfo } = useQuery({
+    queryKey: ["paymentInfo", username],
+    queryFn: async () => {
+      const res = await fetch(
+        `${base_url}/freelancers/payment-info/${username}/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Payment error");
+      return res.json();
+    },
+    enabled: !!username,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const getFullUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return `${base_url}${url}`;
+  };
+
+  if (isLoading) return <div style={{ padding: 20 }}>Loading...</div>;
   if (!profile) return <div style={{ padding: 20 }}>Profile not found</div>;
 
   return (
     <div style={styles.page}>
-      {/* HEADER */}
       <div style={styles.headerWrapper}>
         <div
           style={{
@@ -55,7 +179,6 @@ export default function PublicProfile() {
           />
         </div>
 
-        {/* AVATAR */}
         <div style={styles.avatarWrapper}>
           <div style={styles.avatar}>
             {profile.avatar && (
@@ -70,121 +193,73 @@ export default function PublicProfile() {
           {profile.portfolio_link && (
             <div
               style={styles.playBtn}
-              onClick={() =>
-                window.open(profile.portfolio_link, "_blank")
-              }
+              onClick={() => window.open(profile.portfolio_link, "_blank")}
             >
               <FaPlay size={11} color="#6C63FF" />
             </div>
           )}
         </div>
 
-        {/* PAY BUTTON — RIGHT SIDE, ALIGNED WITH AVATAR */}
         <button
           style={styles.payBtn}
-          onClick={() => setShowPayment(!showPayment)}
+          onClick={() => setShowPayment(true)}
         >
           Pay
         </button>
       </div>
 
-      {/* INFO */}
       <div style={styles.infoSection}>
         <div style={styles.nameRow}>
           <h2 style={{ margin: 0 }}>
             {profile.display_name || profile.username}
           </h2>
 
-          {/* MAIL ICON */}
           <div style={styles.messageIcon}>
-            <FiMail size={20} color="black" onClick={() => navigate(`/chat/${username}`)}
-            
+            <FiMail
+              size={20}
+              color="black"
+              onClick={() => navigate(`/chat/${username}`)}
             />
-            
+
             <span style={styles.redCornerTop}></span>
             <span style={styles.redCornerBottom}></span>
-            
           </div>
-          
         </div>
 
         <p style={styles.username}>@{profile.username}</p>
         <p style={{ marginTop: 15 }}>{profile.description}</p>
       </div>
 
-      {/* TABS */}
       <div style={styles.tabs}>
         <span style={styles.activeTab}>gigs</span>
         <span style={styles.inactiveTab}>about</span>
       </div>
 
-      {/* GIGS */}
-      <div style={{ padding: 16 }}>
+      <div style={styles.feed}>
         {profile.gigs.length === 0 ? (
           <p style={{ opacity: 0.6 }}>No gigs found</p>
         ) : (
-          profile.gigs.map((gig) => (
-            <Gig key={gig.id} gig={gig} />
-          ))
+          profile.gigs.map((gig) => <Gig key={gig.id} gig={gig} />)
         )}
       </div>
 
-      {/* SIDE PAYMENT PANEL */}
       {showPayment && (
-        <div style={styles.sidePayment}>
-          {profile.upi_id && (
-            <div
-              style={styles.paymentItem}
-              onClick={() =>
-                window.open(`upi://pay?pa=${profile.upi_id}`, "_blank")
-              }
-            >
-              UPI
-            </div>
-          )}
-
-          {profile.razorpay_link && (
-            <SiRazorpay
-              size={20}
-              style={styles.paymentIcon}
-              onClick={() =>
-                window.open(profile.razorpay_link, "_blank")
-              }
-            />
-          )}
-
-          {profile.paypal_link && (
-            <SiPaypal
-              size={20}
-              style={styles.paymentIcon}
-              onClick={() =>
-                window.open(profile.paypal_link, "_blank")
-              }
-            />
-          )}
-
-          {profile.upi_qr && (
-            <img
-              src={getFullUrl(profile.upi_qr)}
-              alt="QR"
-              style={{ width: "100%", marginTop: 10 }}
-            />
-          )}
-          <button
-          onClick={() => setShowPayment(false)}
-          className="absolute top-3 right-3 text-gray-50">✕
-          </button>
-        </div>
+        <PaymentModal
+          paymentInfo={paymentInfo}
+          onClose={() => setShowPayment(false)}
+        />
       )}
     </div>
   );
 }
 
+
+
 /* ================= STYLES ================= */
 
 const styles = {
   page: {
-    background: "#f5f5f5",
+    background: "white",
     minHeight: "100vh",
   },
 
@@ -251,7 +326,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    border: "black",
+    border: "1px solid black",
   },
 
   /* PAY BUTTON aligned with avatar */
@@ -345,4 +420,13 @@ const styles = {
     marginBottom: 10,
     fontWeight: 500,
   },
+  feed: {
+    display: "flex",
+    justifyContent: "center",
+    width: "80%",
+    position: "relative",
+    left: 18,
+    flexDirection: "column",
+    fontFamily: "Inter, sans-serif"
+  }
 };
