@@ -390,7 +390,7 @@ export default function Chat() {
         </button>
       ) : null}
 
-      <button className="menu">⋮</button>
+      
     </div>
 
     {/* ✅ SCROLL AREA */}

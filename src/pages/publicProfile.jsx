@@ -210,7 +210,8 @@ export default function PublicProfile() {
 
       <div style={styles.infoSection}>
         <div style={styles.nameRow}>
-          <h2 style={{ margin: 0 }}>
+          <h2 style={{ margin: 0,
+          fontFamily: "Inter, sans-serif"}}>
             {profile.display_name || profile.username}
           </h2>
 
@@ -343,17 +344,20 @@ const styles = {
 
   infoSection: {
     padding: "60px 16px 16px 16px",
+    fontFamily: "Inter, sans-serif"
   },
 
   nameRow: {
     display: "flex",
     alignItems: "center",
     gap: 10,
+    fontFamily: "Inter, sans-serif"
   },
 
   username: {
     opacity: 0.6,
     marginTop: 5,
+    fontFamily: "Inter, sans-serif"
   },
 
   messageIcon: {
@@ -393,6 +397,7 @@ const styles = {
   activeTab: {
     borderBottom: "2px solid black",
     paddingBottom: 6,
+    fontFamily: "Inter, sans-serif"
   },
 
   inactiveTab: {

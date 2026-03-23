@@ -2,7 +2,13 @@ import { useNavigate } from "react-router-dom";
 
 export default function SideMenu({ open, onClose }) {
   const navigate = useNavigate();
-
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    window.location.href = "/login";
+  };
   if (!open) return null;
 
   return (
@@ -59,7 +65,10 @@ export default function SideMenu({ open, onClose }) {
         </div>
 
         {/* FOOTER */}
-        <div style={styles.footer}>⚙</div>
+        <div style={styles.footer}>
+          <button onClick={handleLogout}>Logout</button>
+          
+        </div>
       </div>
     </div>
   );
@@ -125,5 +134,8 @@ const styles = {
     marginTop: "auto",
     padding: "14px",
     fontSize: 20,
+    color:"red",
+    border:"none",
+    background:"#ccc by"
   },
 };

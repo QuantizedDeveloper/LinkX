@@ -27,13 +27,13 @@ export default function Home() {
   const username = localStorage.getItem("username");
 
   // ✅ Logout (unchanged)
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("username");
-    localStorage.removeItem("email");
-    window.location.href = "/login";
-  };
+  //const handleLogout = () => {
+   // localStorage.removeItem("accessToken");
+   // localStorage.removeItem("refreshToken");
+   // localStorage.removeItem("username");
+   // localStorage.removeItem("email");
+   // window.location.href = "/login";
+ // };
 
   // ✅ Protect route (unchanged)
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function Home() {
 
   return (
     <>
-      <button onClick={handleLogout}>Logout</button>
+      {/*}<button onClick={handleLogout}>Logout</button>*/}
 
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
 

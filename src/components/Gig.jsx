@@ -4,6 +4,10 @@ import { FiMail } from "react-icons/fi";
 import blackImg from "../assets/black.jpg";
 import "./gig.css";
 import { showToast } from "../utils/toast";
+import ReviewSection from "./ReviewSection";
+
+
+
 const API_BASE = "https://Linkx1.pythonanywhere.com";
 
 // Fix Django media URL
@@ -94,9 +98,7 @@ export default function Gig({ gig }) {
           />
 
           <span
-            className="gig-username"
-            onClick={() => navigate(`/user/${username}`)}
-          >
+            className="gig-username">
             {username}
           </span>
 
@@ -166,6 +168,7 @@ export default function Gig({ gig }) {
         <div>
           <div className="label">Delivery</div>
           <div className="value">{deliveryTime}</div>
+          <ReviewSection gigId={gig.id} />
         </div>
       </div>
 
