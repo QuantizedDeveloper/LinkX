@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "./ReviewSection.css";
+import { showToast } from "../utils/toast";
 const ReviewSection = ({ gigId }) => {
   const [open, setOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
 
-  const [rating, setRating] = useState("");
+  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-
+  const base_url = "https://Linkx1.pythonanywhere.com";
+  const token = localStorage.getItem("accessToken")
   // fetch reviews
   const fetchReviews = async () => {
     try {
-      const res = await fetch(`/api/gigs/${gigId}/reviews/`);
+      const res = await fetch(`${base_url}/api/gigs/gigs/${gigId}/reviews/`);
       const data = await res.json();
 
       setReviews(data.reviews || []);
@@ -30,23 +31,25 @@ const ReviewSection = ({ gigId }) => {
 
   // submit review
   const handleSubmit = async () => {
-    if (!rating) return alert("Give rating");
+    if (!rating) return showToast("Select rating");
 
     try {
-      const res = await fetch(`/api/gigs/${gigId}/review/create/`, {
+      const res = await fetch(`${base_url}/api/gigs/gigs/${gigId}/review/create/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ rating: Number(rating), comment }),
+          "Authorization": `Bearer ${token}`
+          },
+        //},
+        body: JSON.stringify({ rating, comment }),
       });
 
       if (res.ok) {
-        setRating("");
+        setRating(0);
         setComment("");
-        fetchReviews(); // refresh after submit
+        fetchReviews();
       } else {
-        console.log("Failed to submit");
+        console.log("Failed");
       }
     } catch (err) {
       console.error(err);
@@ -54,63 +57,85 @@ const ReviewSection = ({ gigId }) => {
   };
 
   return (
-  <div>
+    <div>
+      {/* BUTTON */}
+      <button onClick={() => setOpen(true)} className="review-btn">
+        ⭐ {avgRating.toFixed(1)} · {totalReviews}
+      </button>
 
-    {/* ⭐ BUTTON */}
-    <button onClick={() => setOpen(true)} className="review-btn">
-      ⭐ {avgRating.toFixed(1)} ({totalReviews} Reviews)
-    </button>
+      {/* MODAL */}
+      {open && (
+        <div className="modal-overlay" onClick={() => setOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
 
-    {/* MODAL */}
-    {open && (
-      <div className="modal-overlay" onClick={() => setOpen(false)}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setOpen(false)}>✕</button>
 
-          <button className="close-btn" onClick={() => setOpen(false)}>✕</button>
+            {/* HEADER */}
+            <div className="review-summary">
+              <h3>Reviews</h3>
+              <div className="rating-overview">
+                <span className="big-rating">⭐ {avgRating.toFixed(1)}</span>
+                <span className="total-reviews">{totalReviews} reviews</span>
+              </div>
+            </div>
 
-          <h3>Reviews</h3>
-          <p>⭐ {avgRating.toFixed(1)} ({totalReviews})</p>
+            {/* REVIEW LIST */}
+            <div className="review-list">
+              {reviews.length === 0 ? (
+                <p className="no-reviews">No reviews yet</p>
+              ) : (
+                reviews.map((r, i) => (
+                  <div key={i} className="review-card">
+                    <div className="review-header">
+                      <div className="avatar">
+                        {r.user ? r.user[0].toUpperCase() : "U"}
+                      </div>
+                      <div>
+                        <strong>{r.user}</strong>
+                        <div className="stars">⭐ {r.rating}</div>
+                      </div>
+                    </div>
+                    <p className="review-text">{r.comment}</p>
+                  </div>
+                ))
+              )}
+            </div>
 
-          {/* FORM */}
-          <div className="review-form">
-            <input
-              type="number"
-              min="1"
-              max="5"
-              value={rating}
-              onChange={(e) => setRating(e.target.value)}
-              placeholder="Rating (1-5)"
-            />
+            {/* GIVE REVIEW */}
+            <div className="give-review">
+              <p>Give review</p>
 
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Write comment..."
-            />
+              <div className="star-input">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    onClick={() => setRating(star)}
+                    className={star <= rating ? "active" : ""}
+                  >
+                    ⭐
+                  </span>
+                ))}
+              </div>
 
-            <button onClick={handleSubmit}>Submit</button>
-          </div>
-
-          {/* LIST */}
-          <div className="review-list">
-            {reviews.length === 0 ? (
-              <p>No reviews yet</p>
-            ) : (
-              reviews.map((r, i) => (
-                <div key={i} className="review-item">
-                  <strong>{r.user}</strong>
-                  <p>⭐ {r.rating}</p>
-                  <p>{r.comment}</p>
+              {rating > 0 && (
+                <div className="review-input-area">
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Why did you give this rating?"
+                  />
+                  <button onClick={handleSubmit} className="submit-btn">
+                    Submit Review
+                  </button>
                 </div>
-              ))
-            )}
+              )}
+            </div>
+
           </div>
-
         </div>
-      </div>
-    )}
-
-  </div>
+      )}
+    </div>
   );
 };
+
 export default ReviewSection;

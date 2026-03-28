@@ -1,7 +1,8 @@
 
 
 .gig-post {
-  width: 100%;
+  width: 92%;
+  max-width: 420px;
   /*max-width: 420px;*/
   background: #fff;
   border-radius: 16px;
@@ -60,8 +61,13 @@
   display: flex;
   overflow-x: auto;
   gap: 10px;
+  height: 180px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  
+  
+  
+  
 }
 
 .gig-media::-webkit-scrollbar {
@@ -70,15 +76,22 @@
 
 .gig-media-item {
   flex: 0 0 85%;
+  height: 180px;   /* 🔥 FIX: fixed height */
   scroll-snap-align: start;
+  overflow: hidden;
+  border-radius: 14px;
+  
+  height: 100%;
+  
+  display: flex;
+  width: 100%;
+  object-fit: cover;
 }
 
 .gig-media img {
   width: 100%;
-  height: 200px;
-  border-radius: 14px;
+  height: 100%;
   object-fit: cover;
-  background: #000;
 }
 
 /* footer */
@@ -87,6 +100,8 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 12px;
+
+  
 }
 
 .label {
@@ -99,7 +114,7 @@
   font-weight: 600;
   font-family: 'Inter', sans-serif;
   position: relative;
-  left:5;
+  left:5px;
 }
 
 /* MENU DROPDOWN */
@@ -172,4 +187,22 @@
 .create-at {
   color:grey;
   font-size:12px;
+}
+
+
+
+.left-section {
+  display: flex;
+  align-items: center;
+}
+
+.right-section {
+  display: flex;
+  gap: 20px;   /* 🔥 controls spacing between price & delivery */
+  align-items: center;
+}
+
+.price-box, .delivery-box {
+  display: flex;
+  flex-direction: column;
 }

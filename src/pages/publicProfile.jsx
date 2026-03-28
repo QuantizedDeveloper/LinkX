@@ -6,6 +6,7 @@ import { FiMail } from "react-icons/fi";
 import Gig from "../components/Gig";
 import "./Chat.css";
 import { showToast } from "../utils/toast";
+import { useEffect } from "react";
 // ================= PAYMENT MODAL =================
 function PaymentModal({ paymentInfo, onClose }) {
   const [showQR, setShowQR] = useState(null);
@@ -120,7 +121,10 @@ export default function PublicProfile() {
 
   const base_url = "https://Linkx1.pythonanywhere.com";
   const token = localStorage.getItem("accessToken");
-
+  const [ratingData, setRatingData] = useState({
+    avg_rating: 0,
+    total_reviews: 0,
+  });
   // ✅ PROFILE QUERY (CACHED)
   const { data: profile, isLoading } = useQuery({
     queryKey: ["publicProfile", username],
@@ -157,6 +161,24 @@ export default function PublicProfile() {
     if (url.startsWith("http")) return url;
     return `${base_url}${url}`;
   };
+  useEffect(() => {
+    const fetchRating = async () => {
+    try {
+      const res = await fetch(`${base_url}/api/gigs/api/users/${username}/profile-rating/`);
+      const data = await res.json();
+      setRatingData(data);
+    } catch (err) {
+      console.error("Failed to fetch rating", err);
+    }
+   };
+   if (username) {
+     fetchRating();
+   }
+  }, [username]);
+  
+  
+  
+  
 
   if (isLoading) return <div style={{ padding: 20 }}>Loading...</div>;
   if (!profile) return <div style={{ padding: 20 }}>Profile not found</div>;
@@ -214,6 +236,7 @@ export default function PublicProfile() {
           fontFamily: "Inter, sans-serif"}}>
             {profile.display_name || profile.username}
           </h2>
+          
 
           <div style={styles.messageIcon}>
             <FiMail
@@ -226,8 +249,13 @@ export default function PublicProfile() {
             <span style={styles.redCornerBottom}></span>
           </div>
         </div>
-
-        <p style={styles.username}>@{profile.username}</p>
+        <p styles = {styles.username}>
+            @{profile.username} {ratingData.total_reviews > 0 ? (
+            <> ⭐{ratingData.avg_rating}({ratingData.total_reviews})</>
+        ) : (
+        <>⭐ New</>
+        )}
+        </p>
         <p style={{ marginTop: 15 }}>{profile.description}</p>
       </div>
 
@@ -350,7 +378,7 @@ const styles = {
   nameRow: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 5,
     fontFamily: "Inter, sans-serif"
   },
 
@@ -435,3 +463,6 @@ const styles = {
     fontFamily: "Inter, sans-serif"
   }
 };
+
+
+{/*<p style={styles.username}>@{profile.username}</p>*/}

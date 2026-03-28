@@ -21,6 +21,10 @@ export default function Profile() {
 
   const username = localStorage.getItem("username") || "user";
   const token = localStorage.getItem("accessToken");
+  const [ratingData, setRatingData] = useState({
+    avg_rating: 0,
+    total_reviews: 0,
+  });
 
   useEffect(() => {
     if (!token) navigate("/login");
@@ -116,6 +120,20 @@ export default function Profile() {
     }
     startMutation.mutate();
   };
+  useEffect(() => {
+    const fetchRating = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/gigs/api/users/${username}/profile-rating/`);
+      const data = await res.json();
+      setRatingData(data);
+    } catch (err) {
+      console.error("Failed to fetch rating", err);
+    }
+   };
+   if (username) {
+     fetchRating();
+   }
+  }, [username]);
 
   // =========================
   // Loading states
@@ -184,7 +202,12 @@ export default function Profile() {
 
         <div style={styles.text}>
           <div style={styles.name}>{profile.display_name || "freelancer"}</div>
-          <div style={styles.handle}>@{username}</div>
+          <div style={styles.handle}>@{username}
+         {ratingData.total_reviews > 0 ? (
+        <> ⭐{ratingData.avg_rating}({ratingData.total_reviews})</>
+        ) : (
+        <>⭐ New</>
+        )}</div>
         </div>
       </div>
 

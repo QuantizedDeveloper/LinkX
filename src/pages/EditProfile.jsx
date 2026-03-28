@@ -6,6 +6,7 @@ import { SiRazorpay } from "react-icons/si";
 import { BsCreditCard } from "react-icons/bs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "../utils/toast";
+
 const API_BASE = "https://Linkx1.pythonanywhere.com";
 
 export default function EditProfile() {
@@ -14,6 +15,8 @@ export default function EditProfile() {
   const avatarRef = useRef(null);
   const queryClient = useQueryClient();
 
+  const [experienceYears, setExperienceYears] = useState("");
+  const [country, setCountry] = useState("");
   const [banner, setBanner] = useState(null);
   const [avatar, setAvatar] = useState(null);
   const [bannerFile, setBannerFile] = useState(null);
@@ -39,14 +42,11 @@ export default function EditProfile() {
     qr_preview: null,
   });
 
-  // ✅ FETCH PROFILE
   const fetchProfile = async () => {
     const token = localStorage.getItem("accessToken");
-
     const res = await fetch(`${API_BASE}/freelancers/me/`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
     if (!res.ok) throw new Error("Failed to fetch profile");
     return res.json();
   };
@@ -56,10 +56,11 @@ export default function EditProfile() {
     queryFn: fetchProfile,
   });
 
-  // ✅ SYNC DATA
   useEffect(() => {
     if (!data) return;
 
+    setExperienceYears(data.experience_years || "");
+    setCountry(data.country || "");
     setName(data.display_name || "");
     setDesc(data.description || "");
     setPortfolio(data.portfolio_link || "");
@@ -99,7 +100,6 @@ export default function EditProfile() {
     setKeywords(keywords.filter((_, index) => index !== i));
   };
 
-  // ✅ SAFE SAVE (NO BLANK BUG)
   const mutation = useMutation({
     mutationFn: async (fd) => {
       const token = localStorage.getItem("accessToken");
@@ -114,12 +114,11 @@ export default function EditProfile() {
       return res.json();
     },
     onSuccess: () => {
-      // 🔥 DO NOT overwrite cache
       queryClient.invalidateQueries(["profile"]);
       showToast("Saved");
-      navigate("/profile")
+      navigate("/profile");
     },
-    onError: () => alert("Error saving profile"),
+    onError: () => showToast("Error saving profile"),
   });
 
   const handleSave = () => {
@@ -135,6 +134,8 @@ export default function EditProfile() {
     fd.append("custom_payment_label", payments.custom_payment_label);
     fd.append("custom_payment_details", payments.custom_payment_details);
 
+    fd.append("experience_years", experienceYears || "");
+    fd.append("country", country || "");
     if (avatarFile) fd.append("avatar", avatarFile);
     if (bannerFile) fd.append("banner", bannerFile);
     if (payments.qr) fd.append("upi_qr", payments.qr);
@@ -147,8 +148,9 @@ export default function EditProfile() {
 
   return (
     <div style={s.page}>
+      {/* HEADER */}
       <div style={s.header}>
-        <FiArrowLeft onClick={() => navigate(-1)} />
+        <FiArrowLeft size={20} onClick={() => navigate(-1)} />
         <div style={s.headerTitle}>Edit Profile</div>
         <button style={s.saveBtn} onClick={handleSave}>Save</button>
       </div>
@@ -156,70 +158,131 @@ export default function EditProfile() {
       <div style={s.card}>
         {/* BANNER */}
         <div style={{ ...s.banner, backgroundImage: banner && `url(${banner})` }}>
-          <button style={s.editIcon} onClick={() => bannerRef.current.click()}><FiEdit2 /></button>
-          <input hidden ref={bannerRef} type="file" onChange={e => {
-            const f = e.target.files[0]; if (!f) return;
-            setBannerFile(f); readImage(f, setBanner);
+          <button style={s.editIcon} onClick={() => bannerRef.current.click()}>
+            <FiEdit2 />
+          </button>
+          <input hidden ref={bannerRef} type="file" onChange={(e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            setBannerFile(f);
+            readImage(f, setBanner);
           }} />
         </div>
 
         {/* AVATAR */}
         <div style={s.avatarWrap}>
           <div style={{ ...s.avatar, backgroundImage: avatar && `url(${avatar})` }} />
-          <button style={s.avatarEdit} onClick={() => avatarRef.current.click()}><FiEdit2 /></button>
-          <input hidden ref={avatarRef} type="file" onChange={e => {
-            const f = e.target.files[0]; if (!f) return;
-            setAvatarFile(f); readImage(f, setAvatar);
+          <button style={s.avatarEdit} onClick={() => avatarRef.current.click()}>
+            <FiEdit2 size={14} />
+          </button>
+          <input hidden ref={avatarRef} type="file" onChange={(e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            setAvatarFile(f);
+            readImage(f, setAvatar);
           }} />
         </div>
 
-        <input style={s.input} placeholder="display name" value={name} onChange={e => setName(e.target.value)} />
-        <p style={s.helper}>this will be displayed to clients and does not change your username <span style={s.link}>learn more</span></p>
+        {/* NAME */}
+        <input
+          style={s.input}
+          placeholder="display name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoComplete="name"
+        />
 
+        <p style={s.helper}>
+          this will be displayed to clients and does not change your username
+        </p>
+
+        {/* COUNTRY + EXPERIENCE */}
+        <div style={s.inlineRow}>
+          <input style={s.countryInput} placeholder="country" value = {country}
+          
+            onChange={(e) => setCountry(e.target.value)}
+          autoComplete="name"
+          />
+          <input style={s.expInput} placeholder="experience"value = {experienceYears}
+           onChange={(e) => setExperienceYears(e.target.value)}
+          autoComplete="name"/>
+        </div>
+
+        {/* TAGS */}
         <div style={s.tagBox}>
           {keywords.map((k, i) => (
             <span key={i} style={s.tag}>
               {k}
-              <span style={s.tagClose} onClick={() => removeTag(i)}>×</span>
+              <span onClick={() => removeTag(i)}>×</span>
             </span>
           ))}
-          <input style={s.tagInput} placeholder="+ tags" value={keywordInput} onChange={e => setKeywordInput(e.target.value)} onKeyDown={addKeyword} />
+          <input
+            style={s.tagInput}
+            placeholder="+ tags"
+            value={keywordInput}
+            onChange={(e) => setKeywordInput(e.target.value)}
+            onKeyDown={addKeyword}
+          />
         </div>
 
-        <p style={s.helper}>tags helps algorithm to recommend you to clients <span style={s.link}>learn more</span></p>
+        <p style={s.helper}>tags helps algorithm to recommend you</p>
 
-        <p style={s.boldMuted}>payment method and portfolio are mandatory.</p>
-        <div style={s.row}>
+        {/* ACTIONS */}
+        <div style={s.actionRow}>
           <button style={s.pill} onClick={() => setShowPaymentModal(true)}>+ add payment</button>
-          <button style={s.pill} onClick={() => setShowPortfolioModal(true)}>+ portfolio link</button>
+          <button style={s.pill} onClick={() => setShowPortfolioModal(true)}>+ portfolio</button>
           <button style={s.pill}>more</button>
         </div>
 
-        <textarea style={s.desc} placeholder="description (optional but highly recommended)" value={desc} onChange={e => setDesc(e.target.value)} />
+        {/* DESCRIPTION */}
+        <textarea
+          style={s.desc}
+          placeholder="description (optional but recommended)"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+        />
       </div>
 
       {/* PAYMENT MODAL */}
       {showPaymentModal && (
         <div style={s.modalBg} onClick={() => setShowPaymentModal(false)}>
-          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+          <div style={s.modalBox} onClick={(e) => e.stopPropagation()}>
             <div style={s.modalHeader}>Payment Methods</div>
 
-            <div style={s.payRow}><SiRazorpay /> <input placeholder="razorpay link" value={payments.razorpay_link} onChange={e => setPayments({ ...payments, razorpay_link: e.target.value })} /></div>
-            <div style={s.payRow}><FaPaypal /> <input placeholder="paypal info" value={payments.paypal_link} onChange={e => setPayments({ ...payments, paypal_link: e.target.value })} /></div>
-            <div style={s.payRow}><FaRupeeSign /> <input placeholder="upi id" value={payments.upi_id} onChange={e => setPayments({ ...payments, upi_id: e.target.value })} /></div>
-            <div style={s.payRow}><BsCreditCard /> <input placeholder="custom payment" value={payments.custom_payment_label} onChange={e => setPayments({ ...payments, custom_payment_label: e.target.value })} /></div>
+            {[{ icon: <SiRazorpay />, key: "razorpay_link", placeholder: "Razorpay link" },
+              { icon: <FaPaypal />, key: "paypal_link", placeholder: "PayPal" },
+              { icon: <FaRupeeSign />, key: "upi_id", placeholder: "UPI ID" },
+              { icon: <BsCreditCard />, key: "custom_payment_label", placeholder: "Custom payment" }
+            ].map((item, i) => (
+              <div key={i} style={s.payInput}>
+                {item.icon}
+                <input
+                  placeholder={item.placeholder}
+                  value={payments[item.key]}
+                  onChange={(e) =>
+                    setPayments({ ...payments, [item.key]: e.target.value })
+                  }
+                />
+              </div>
+            ))}
 
-            <label style={s.qrBox}>
+            <label style={s.qrUpload}>
               <FaQrcode /> Upload QR
-              <input hidden type="file" onChange={e => {
+              <input hidden type="file" onChange={(e) => {
                 const f = e.target.files[0];
-                readImage(f, img => setPayments(p => ({ ...p, qr_preview: img, qr: f })));
+                readImage(f, (img) =>
+                  setPayments((p) => ({ ...p, qr_preview: img, qr: f }))
+                );
               }} />
             </label>
 
-            {payments.qr_preview && <img src={payments.qr_preview} style={s.qrPreview} />}
+            {payments.qr_preview && (
+              <img src={payments.qr_preview} style={s.qrPreview} />
+            )}
 
-            <button style={s.modalSave} onClick={() => setShowPaymentModal(false)}>Save</button>
+            <button style={s.modalSave} onClick={() => setShowPaymentModal(false)}>
+              Save
+            </button>
           </div>
         </div>
       )}
@@ -227,57 +290,83 @@ export default function EditProfile() {
       {/* PORTFOLIO MODAL */}
       {showPortfolioModal && (
         <div style={s.modalBg} onClick={() => setShowPortfolioModal(false)}>
-          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+          <div style={s.modalBox} onClick={(e) => e.stopPropagation()}>
             <div style={s.modalHeader}>Portfolio Link</div>
-            <input style={s.input} placeholder="https://your-site.com" value={portfolio} onChange={e => setPortfolio(e.target.value)} />
-            <button style={s.modalSave} onClick={() => setShowPortfolioModal(false)}>Save</button>
+            <input
+              style={s.input}
+              placeholder="https://your-site.com"
+              value={portfolio}
+              onChange={(e) => setPortfolio(e.target.value)}
+              inputMode="url"
+            />
+            <button style={s.modalSave} onClick={() => setShowPortfolioModal(false)}>
+              Save
+            </button>
           </div>
         </div>
       )}
     </div>
   );
 }
-/* ---------------- STYLES ---------------- */
 
 const s = {
-  page:{ background:"#eee", minHeight:"100vh" },
+  page: { background: "#f5f5f5", minHeight: "100vh" },
+  header: { display: "flex", justifyContent: "space-between", padding: 14, background: "#fff" },
+  headerTitle: { fontWeight: 600 },
+  saveBtn: { background: "#eee", borderRadius: 20, border: "none", padding: "6px 16px" },
+  card: { maxWidth: 500, margin: "0 auto", padding: 16 },
 
-  header:{ display:"flex", justifyContent:"space-between", padding:15, fontWeight:"bold" },
-  headerTitle:{ fontSize:18 },
-  saveBtn:{ background:"#ddd", borderRadius:20, border:"none", padding:"6px 14px" },
+  banner: { height: 150, background: "#000", borderRadius: 16, position: "relative", backgroundSize: "cover" },
+  editIcon: { position: "absolute", right: 12, bottom: 12, background: "#fff", borderRadius: "50%", padding: 8 },
 
-  card:{ maxWidth:500, margin:"0 auto", padding:14 },
+  avatarWrap: { marginTop: -50, display: "flex", justifyContent: "center", position: "relative" },
+  avatar: { width: 90, height: 90, borderRadius: "50%", background: "#ccc", border: "4px solid #f5f5f5", backgroundSize: "cover" },
+  avatarEdit: { position: "absolute", bottom: 0, right: "calc(50% - 45px)", transform: "translateX(50%)", background: "#fff", borderRadius: "50%", padding: 6 },
 
-  banner:{ height:140, background:"#000", borderRadius:16, position:"relative", backgroundSize:"cover", objectFit: "cover"},
-  editIcon:{ position:"absolute", right:10, bottom:10, background:"#fff", borderRadius:"50%", padding:8, cursor:"pointer", zIndex:10 },
-
-  avatarWrap:{ marginTop:-45, display:"flex", justifyContent:"center", position:"relative" },
-  avatar:{ width:80, height:80, borderRadius:"50%", background:"#ccc", border:"4px solid #eee", backgroundSize:"cover" },
-  avatarEdit:{ position:"absolute", right:"38%", bottom:0, background:"#fff", borderRadius:"50%", padding:6, cursor:"pointer" },
-
-  input:{ width:"90%", padding:"12px 14px", borderRadius:20, border:"none", background:"#e6e6e6", fontSize:15, marginTop:10 },
-  desc:{ width:"90%", padding:"12px 14px", borderRadius:20, border:"none", background:"#e6e6e6", fontSize:15, marginTop:10, minHeight:80, resize:"none" },
-
-  helper:{ fontSize:12, opacity:.6, marginTop:4 },
-  link:{ color:"#a020f0" },
-
-  tagBox:{ background:"#e6e6e6", borderRadius:20, padding:10, display:"flex", flexWrap:"wrap", gap:6, alignItems:"center", minHeight:45, width:"90%" },
-  tag:{ background:"#fff", padding:"5px 10px", borderRadius:15, fontSize:14, display:"flex", alignItems:"center", gap:6, maxWidth:"100%" },
-  tagClose:{ fontSize:14, cursor:"pointer", opacity:.6 },
-  tagInput:{ border:"none", background:"transparent", flex:1, minWidth:80, fontSize:14 },
-
-  boldMuted:{ fontWeight:"bold", opacity:.7, marginTop:12 },
-  row:{ display:"flex", gap:10, marginTop:10 },
-  pill:{ background:"#e6e6e6", borderRadius:20, border:"none", padding:"8px 14px" },
-
-  modalBg:{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", justifyContent:"center", alignItems:"center" },
-  modalBox:{ background:"#fff", width:"90%", borderRadius:20, padding:15 },
-  modalHeader:{ fontWeight:"bold", marginBottom:10 },
-  payRow:{ display:"flex", alignItems:"center", gap:10, background:"#f2f2f2", padding:10, borderRadius:12, marginBottom:10,outline: "none",
-  border: "none", boxShadow: "none",
+  input: { width: "93%", padding: 12, borderRadius: 20, border: "none", background: "#eaeaea", marginTop: 12 },
+  smallInput: { flex: 1, padding: 10, borderRadius: 20, border: "none", background: "#eaeaea", margin:5 },
+  
+  inlineRow: {
+    display: "flex",
+    gap: 10,
+    marginTop: 10,
+    width: "100%",
+  },
+  countryInput: {
+    width: 80, // 🔥 fixed small field
+    padding: 12,
+    borderRadius: 20,
+    border: "none",
+    background: "#eaeaea",
+    textAlign: "center",
     
   },
-  qrBox:{ display:"flex", gap:10, background:"#f2f2f2", padding:10, borderRadius:12, cursor:"pointer" },
-  qrPreview:{ width:120, marginTop:10, borderRadius:12 },
-  modalSave:{ marginTop:10, width:"100%", padding:10, borderRadius:20, border:"none", background:"#ddd" },
+  expInput: {
+    width: 80, // 🔥 fixed small field
+    padding: 12,
+    borderRadius: 20,
+    border: "none",
+    background: "#eaeaea",
+    textAlign: "center",
+  },
+  helper: { fontSize: 12, opacity: 0.6, marginTop: 4 },
+
+  tagBox: { background: "#eaeaea", borderRadius: 20, padding: 10, display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 },
+  tag: { background: "#fff", padding: "5px 10px", borderRadius: 15 },
+  tagInput: { border: "none", background: "transparent", flex: 1 },
+
+  actionRow: { display: "flex", gap: 10, marginTop: 12 },
+  pill: { background: "#eaeaea", borderRadius: 20, border: "none", padding: "8px 14px" },
+
+  desc: { width: "93%", padding: 12, borderRadius: 20, border: "none", background: "#eaeaea", marginTop: 12, minHeight: 90 },
+
+  modalBg: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", justifyContent: "center", alignItems: "center" },
+  modalBox: { background: "#fff", width: "90%", borderRadius: 20, padding: 16 },
+  modalHeader: { fontWeight: 600, marginBottom: 12 },
+
+  payInput: { display: "flex", alignItems: "center", gap: 10, background: "#f2f2f2", padding: 10, borderRadius: 14, marginBottom: 10, border: "hidden "},
+  qrUpload: { display: "flex", gap: 10, background: "#f2f2f2", padding: 10, borderRadius: 14, cursor: "pointer" },
+  qrPreview: { width: 120, borderRadius: 10, marginTop: 10 },
+
+  modalSave: { width: "100%", marginTop: 14, padding: 12, borderRadius: 20, border: "none", background: "#eaeaea" },
 };

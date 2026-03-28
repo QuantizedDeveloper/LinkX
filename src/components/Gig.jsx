@@ -148,30 +148,34 @@ export default function Gig({ gig }) {
       <div className="gig-title">{title}</div>
 
       {/* IMAGES */}
-      <div className="gig-media">
-        {finalImages.map((img, i) => (
-          <div className="gig-media-item" key={i}>
-            <img src={img} alt="gig" />
-          </div>
-        ))}
+      {finalImages.length > 0 && (
+      <div className="gig-media">   {finalImages.map((img, i) => (
+      <div className="gig-media-item" key={i}>
+        <img src={img} alt="gig" />
       </div>
+      ))}
+      </div>
+    )}
       {/* create at*/}
       <div className = "create-at">{created_at}</div>
       
       {/* FOOTER */}
       <div className="gig-footer">
-        <div>
-          <div className="label">Price</div>
-          <div className="value">{price}</div>
-        </div>
-
-        <div>
-          <div className="label">Delivery</div>
-          <div className="value">{deliveryTime}</div>
+        <div className="left-section">
           <ReviewSection gigId={gig.id} />
         </div>
+        <div className="right-section">
+          <div className="price-box">
+            <div className="label">Price</div>
+            <div className="value">{price}</div>
+          </div>
+          <div className="delivery-box">
+            <div className="label">Delivery</div>
+            <div className="value">{deliveryTime}</div>
+          </div>
+        </div>
       </div>
-
+      
       {/* DESCRIPTION POPUP */}
       {showDesc && (
         <div className="gig-desc-popup">
