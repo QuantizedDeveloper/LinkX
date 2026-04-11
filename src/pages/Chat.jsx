@@ -6,7 +6,8 @@ import { SiRazorpay } from "react-icons/si";
 import { FaPaypal, FaQrcode, FaSpinner } from "react-icons/fa";
 import "./Chat.css";
 import { showToast } from "../utils/toast";
-const base_url = "https://Linkx1.pythonanywhere.com";
+//const base_url = "https://Linkx1.pythonanywhere.com";
+const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
 const fixUrl = (url) => {
   if (!url) return null;

@@ -6,8 +6,9 @@ import { SiRazorpay } from "react-icons/si";
 import { BsCreditCard } from "react-icons/bs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "../utils/toast";
-
-const API_BASE = "https://Linkx1.pythonanywhere.com";
+import { FiCamera } from "react-icons/fi";
+//const API_BASE = "https://Linkx1.pythonanywhere.com";
+const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -158,22 +159,29 @@ export default function EditProfile() {
       <div style={s.card}>
         {/* BANNER */}
         <div style={{ ...s.banner, backgroundImage: banner && `url(${banner})` }}>
-          <button style={s.editIcon} onClick={() => bannerRef.current.click()}>
-            <FiEdit2 />
-          </button>
-          <input hidden ref={bannerRef} type="file" onChange={(e) => {
-            const f = e.target.files[0];
-            if (!f) return;
-            setBannerFile(f);
-            readImage(f, setBanner);
-          }} />
+          <button style={s.editIcon}
+          onClick={() => bannerRef.current && bannerRef.current.click()}>
+            <FiCamera size={16} />
+            </button>
+        
+          <input
+          ref={bannerRef}
+          type="file"
+          style={{ display: "none" }}
+          onChange={(e) => {
+          const f = e.target.files[0];
+          if (!f) return;
+          setBannerFile(f);
+          readImage(f, setBanner);
+          }}
+        />
         </div>
 
         {/* AVATAR */}
         <div style={s.avatarWrap}>
           <div style={{ ...s.avatar, backgroundImage: avatar && `url(${avatar})` }} />
           <button style={s.avatarEdit} onClick={() => avatarRef.current.click()}>
-            <FiEdit2 size={14} />
+            <FiCamera size={16} />
           </button>
           <input hidden ref={avatarRef} type="file" onChange={(e) => {
             const f = e.target.files[0];
@@ -317,7 +325,17 @@ const s = {
   card: { maxWidth: 500, margin: "0 auto", padding: 16 },
 
   banner: { height: 150, background: "#000", borderRadius: 16, position: "relative", backgroundSize: "cover" },
-  editIcon: { position: "absolute", right: 12, bottom: 12, background: "#fff", borderRadius: "50%", padding: 8 },
+  editIcon: {
+    position: "absolute",
+    right: 10,
+    bottom: 10,
+    background: "#fff",
+    borderRadius: "50%",
+    padding: 8,
+    cursor: "pointer",
+    zIndex: 100, // 🔥 VERY IMPORTANT
+    pointerEvents: "auto", // 🔥 ADD THIS
+  },
 
   avatarWrap: { marginTop: -50, display: "flex", justifyContent: "center", position: "relative" },
   avatar: { width: 90, height: 90, borderRadius: "50%", background: "#ccc", border: "4px solid #f5f5f5", backgroundSize: "cover" },
@@ -339,6 +357,7 @@ const s = {
     border: "none",
     background: "#eaeaea",
     textAlign: "center",
+    fontFamily: "Inter, sans-serif"
     
   },
   expInput: {
@@ -348,12 +367,13 @@ const s = {
     border: "none",
     background: "#eaeaea",
     textAlign: "center",
+    fontFamily: "Inter, sans-serif"
   },
   helper: { fontSize: 12, opacity: 0.6, marginTop: 4 },
 
-  tagBox: { background: "#eaeaea", borderRadius: 20, padding: 10, display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 },
-  tag: { background: "#fff", padding: "5px 10px", borderRadius: 15 },
-  tagInput: { border: "none", background: "transparent", flex: 1 },
+  tagBox: { background: "#eaeaea", borderRadius: 20, padding: 10, display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, fontFamily: "Inter, sans-serif"},
+  tag: { background: "#fff", padding: "5px 10px", borderRadius: 15, fontFamily: "Inter, sans-serif" },
+  tagInput: { border: "none", background: "transparent", flex: 1, fontFamily: "Inter, sans-serif" },
 
   actionRow: { display: "flex", gap: 10, marginTop: 12 },
   pill: { background: "#eaeaea", borderRadius: 20, border: "none", padding: "8px 14px" },

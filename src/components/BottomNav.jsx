@@ -3,7 +3,9 @@ import { FiHome, FiUser, FiPlus } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../utils/toast";
-const base_url = "https://Linkx1.pythonanywhere.com";
+//const base_url = "https://Linkx1.pythonanywhere.com";
+
+const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function BottomNav() {
   useEffect(() => {

@@ -3,8 +3,8 @@ import Ably from "ably";
 import { useNavigate } from "react-router-dom";
 import "./Inbox.css";
 
-const API = "https://Linkx1.pythonanywhere.com";
-
+//const API = "https://Linkx1.pythonanywhere.com";
+const API = "https://linkx-backend-api-linkx-backend.hf.space"
 export default function Inbox({ username }) {
   const leaveChat = () => {
     navigate(-1); // go back

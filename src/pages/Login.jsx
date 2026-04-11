@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import { showToast } from "../utils/toast";
 
-const API_BASE = "https://Linkx1.pythonanywhere.com"; // backend base URL
+//const API_BASE = "https://Linkx1.pythonanywhere.com"; // backend base URL
+const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function Login() {
   const navigate = useNavigate();

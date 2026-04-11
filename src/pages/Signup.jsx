@@ -5,7 +5,8 @@ import "./Signup.css";
 import { showToast } from "../utils/toast";
 
 const API = axios.create({
-  baseURL: "https://linkx1.pythonanywhere.com",
+  //baseURL: "https://linkx1.pythonanywhere.com"
+  baseURL: "https://linkx-backend-api-linkx-backend.hf.space",
   headers: {
     "Content-Type": "application/json",
   },

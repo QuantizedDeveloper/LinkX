@@ -4,7 +4,9 @@ import "./VerifyOtp.css";
 import axios from "axios";
 import { showToast } from "../utils/toast";
 
-axios.defaults.baseURL = "https://Linkx1.pythonanywhere.com";
+//axios.defaults.baseURL = "https://Linkx1.pythonanywhere.com";
+axios.defaults.baseURL = "https://linkx-backend-api-linkx-backend.hf.space"
+
 axios.defaults.withCredentials = true;
 
 

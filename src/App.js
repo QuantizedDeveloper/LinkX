@@ -19,33 +19,13 @@ import Chat from "./pages/Chat";
 import Chatbot from "./pages/Chatbot";
 import { useEffect } from "react";
 import PublicProfile from "./pages/publicProfile"
+
+import useAutoRefresh from "./useAutoRefresh"
+const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
+
+
 export default function App() {
-  useEffect(() => {
-    const refresh = async () => {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) return console.log("no refresh token");
-      try {
-        const res = await fetch("https://Linkx1.pythonanywhere.com/api/auth/refresh/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
-      
-       const data = await res.json();
-       localStorage.setItem("accessToken", data.access);
-       console.log("Auto refreshed token");
-    } catch {
-      localStorage.clear();
-      console.log("Session expired");
-    }
-  };
-
-  refresh(); // refresh on load
-  const interval = setInterval(refresh, 1000 * 60 * 4); // every 4 minutes
-
-  return () => clearInterval(interval);
-}, []);
-
+  useAutoRefresh()
   return (
     <Routes>
 

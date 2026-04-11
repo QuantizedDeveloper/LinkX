@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiImage } from "react-icons/fi";
+import { showToast } from "../utils/toast";
+
+const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -38,7 +41,7 @@ export default function Upload() {
  const handleImage = (file) => {
    if (!file) return;
    if (images.length >= 2) {
-    alert("You can only upload up to 2 images");
+    showToast("You can only upload up to 2 images");
     return;
   }
 
@@ -74,7 +77,7 @@ const canPublish =
 /* ---------- UPLOAD FUNCTION ---------- */
 const handlePublish = async () => {
   if (description.length < 30) {
-    alert("Description must be at least 30 characters");
+    showToast("Description must be at least 30 characters");
     return;
   }
 
@@ -86,7 +89,7 @@ const handlePublish = async () => {
     );
 
     const res = await fetch(
-      "https://Linkx1.pythonanywhere.com/api/gigs/upload/",
+      `${base_url}/api/gigs/upload/`,
       {
         method: "POST",
         headers: {
@@ -109,14 +112,14 @@ const handlePublish = async () => {
     console.log("Gig upload response:", data);
 
     if (res.ok) {
-      alert("Gig submitted for approval");
+      showToast("Gig submitted for approval");
       navigate("/profile");
     } else {
-      alert(JSON.stringify(data));
+      showToast(JSON.stringify(data));
     }
   } catch (err) {
     console.error("Upload failed:", err);
-    alert("Upload failed");
+    showToast("Upload failed");
   }
 };
 

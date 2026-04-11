@@ -1,12 +1,12 @@
 /* Button */
 .review-btn {
-  background: black;
-  color: white;
+  background: white;
+  color: grey;
   padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
   border: none;
-  font-size: 12px;
+  font-size: 20px;
 }
 
 /* MODAL */

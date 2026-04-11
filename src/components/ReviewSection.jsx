@@ -9,7 +9,9 @@ const ReviewSection = ({ gigId }) => {
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const base_url = "https://Linkx1.pythonanywhere.com";
+  //const base_url = "https://Linkx1.pythonanywhere.com";
+  const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
+  
   const token = localStorage.getItem("accessToken")
   // fetch reviews
   const fetchReviews = async () => {
@@ -60,8 +62,9 @@ const ReviewSection = ({ gigId }) => {
     <div>
       {/* BUTTON */}
       <button onClick={() => setOpen(true)} className="review-btn">
-        ⭐ {avgRating.toFixed(1)} · {totalReviews}
+        ⭐ {avgRating?.toFixed(1) || "0.0"}  {totalReviews?.split?.("•")?.[0] || " "}
       </button>
+      
 
       {/* MODAL */}
       {open && (

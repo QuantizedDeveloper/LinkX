@@ -6,19 +6,8 @@ import SideMenu from "../components/SideMenu";
 import Gig from "../components/Gig";
 import { showToast } from "../utils/toast";
 
-const base_url = "https://Linkx1.pythonanywhere.com";
-
-const fixUrl = (url) => {
-  if (!url) return null;
-
-  if (url.startsWith("http://")) {
-    url = url.replace("http://", "https://");
-  }
-
-  if (url.startsWith("http")) return url;
-
-  return base_url + url;
-};
+//const base_url = "https://Linkx1.pythonanywhere.com";
+const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -34,7 +23,7 @@ export default function Home() {
    // localStorage.removeItem("email");
    // window.location.href = "/login";
  // };
-
+ 
   // ✅ Protect route (unchanged)
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -125,7 +114,7 @@ export default function Home() {
           }}
         >
           {profile?.avatar ? (
-            <img src={fixUrl(profile.avatar)} style={styles.avatar} alt="" />
+            <img src={profile.avatar} style={styles.avatar} alt="" />
           ) : (
             <div style={styles.avatarFallback}>
               {username ? username.charAt(0).toUpperCase() : "?"}
@@ -146,15 +135,24 @@ export default function Home() {
             {gigs.map((gig) => (
               <Gig key={gig.id} gig={gig} />
             ))}
-          </div>
-
-          {isFetchingNextPage && <p>Loading...</p>}
-
-          {hasNextPage && !isFetchingNextPage && (
+            {isFetchingNextPage && <p>Loading...</p>}
+            {hasNextPage && !isFetchingNextPage && (
             <button onClick={() => fetchNextPage()}>
               Load More
             </button>
-          )}
+            )}
+          </div>
+
+          
+
+          {/*<div style= {styles.loadmore}>
+            {/*}{hasNextPage && !isFetchingNextPage && (
+            <button onClick={() => fetchNextPage()}>
+              Load More
+            </button>
+            )}
+          </div>*/}
+          
         </div>
       </div>
     </>
@@ -283,6 +281,12 @@ const styles = {
     position: "relative",
     left: -13,
     fontFamily: "Inter, sans-serif"
+  },
+  loadmore: {
+    display:"flex",
+    flexDirection:"column",
+    alignItems: "center",
+    marginTop: "20px"
   }
 };
 

@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import * as faceapi from "face-api.js";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { showToast } from "../utils/toast";
+//axios.defaults.baseURL = "https://Linkx1.pythonanywhere.com";
+axios.defaults.baseURL = "https://linkx-backend-api-linkx-backend.hf.space";
 
-axios.defaults.baseURL = "https://Linkx1.pythonanywhere.com";
 axios.defaults.withCredentials = true;
 
 const STEPS = [
@@ -51,7 +53,7 @@ export default function FaceVerification() {
         setModelsLoaded(true);
       } catch (err) {
         console.error("MODEL LOAD ERROR:", err);
-        alert(err.message);
+        showToast(err.message);
         //console.error("MODEL LOAD ERROR:", err);
         //alert("Failed to load face models");
       }
@@ -95,9 +97,9 @@ export default function FaceVerification() {
         console.error("CAMERA ERROR:", err);
 
         if (err.name === "NotAllowedError") {
-          alert("Camera permission denied");
+          showToast("Camera permission denied");
         } else {
-          alert("Could not access camera");
+          showToast("Could not access camera");
         }
       }
     }
@@ -126,13 +128,13 @@ export default function FaceVerification() {
         .withFaceDescriptor();
 
       if (!detection) {
-        alert("No face detected");
+        showToast("No face detected");
         setStatus("Ready!");
         return;
       }
 
       if (!poseValid(detection, STEPS[step].key, videoRef.current)) {
-        alert("Follow instruction properly");
+        showToast("Follow instruction properly");
         setStatus("Ready!");
         return;
       }
@@ -155,7 +157,7 @@ export default function FaceVerification() {
       }
     } catch (err) {
       console.error("CAPTURE ERROR:", err);
-      alert("Capture failed");
+      showToast("Capture failed");
       setStatus("Ready!");
     }
   };
@@ -186,7 +188,7 @@ export default function FaceVerification() {
       navigate("/");
     } catch (err) {
       console.error("SUBMIT ERROR:", err);
-      alert(
+      showToast(
         err.response?.data?.error ||
           err.response?.data?.message ||
           "Verification failed"

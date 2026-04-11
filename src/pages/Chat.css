@@ -65,7 +65,7 @@ body {
 
 .username{
   font-weight:600;
-   
+  font-family: Inter, sans-serif;
 }
 
 .handle{

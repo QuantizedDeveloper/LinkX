@@ -7,6 +7,17 @@ import Gig from "../components/Gig";
 import "./Chat.css";
 import { showToast } from "../utils/toast";
 import { useEffect } from "react";
+import {
+  FaBriefcase,
+  FaGlobeAsia,
+  FaLayerGroup,
+  FaRegCommentDots,
+  FaStar,
+  FaCalendarAlt
+} from "react-icons/fa";
+
+
+
 // ================= PAYMENT MODAL =================
 function PaymentModal({ paymentInfo, onClose }) {
   const [showQR, setShowQR] = useState(null);
@@ -37,11 +48,11 @@ function PaymentModal({ paymentInfo, onClose }) {
     },
   ].filter(Boolean);
 
-  const fixUrl = (url) => {
+  {/*const fixUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
-    return `https://Linkx1.pythonanywhere.com${url}`;
-  };
+    return `https://linkx-backend-api-linkx-backend.hf.space${url}`;*/}
+  ;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -102,7 +113,7 @@ function PaymentModal({ paymentInfo, onClose }) {
               className="qr-modal"
               onClick={(e) => e.stopPropagation()}
             >
-              <img src={fixUrl(showQR)} alt="UPI QR" className="qr-image" />
+              <img src={showQR} alt="UPI QR" className="qr-image" />
               <button onClick={() => setShowQR(null)}>Close</button>
             </div>
           </div>
@@ -116,10 +127,12 @@ function PaymentModal({ paymentInfo, onClose }) {
 export default function PublicProfile() {
   const navigate = useNavigate();
   const { username } = useParams();
-
+  const [activeTab, setActiveTab] = useState("gigs");
   const [showPayment, setShowPayment] = useState(false);
 
-  const base_url = "https://Linkx1.pythonanywhere.com";
+  //const base_url = "https://Linkx1.pythonanywhere.com";
+  const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
+  
   const token = localStorage.getItem("accessToken");
   const [ratingData, setRatingData] = useState({
     avg_rating: 0,
@@ -139,6 +152,20 @@ export default function PublicProfile() {
     cacheTime: 1000 * 60 * 10, // stays in memory
   });
 
+const { data: aboutData, isLoading: aboutLoading } = useQuery({
+  queryKey: ["aboutProfile", username],
+  queryFn: async () => {
+    const res = await fetch(
+      `${base_url}/freelancers/${username}/about/`
+    );
+    if (!res.ok) throw new Error("About error");
+    return res.json();
+  },
+  enabled: !!username,
+});
+  
+  
+
   // ✅ PAYMENT QUERY (CACHED)
   const { data: paymentInfo } = useQuery({
     queryKey: ["paymentInfo", username],
@@ -156,11 +183,11 @@ export default function PublicProfile() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const getFullUrl = (url) => {
+  {/*const getFullUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
     return `${base_url}${url}`;
-  };
+  };*/}
   useEffect(() => {
     const fetchRating = async () => {
     try {
@@ -186,14 +213,13 @@ export default function PublicProfile() {
   return (
     <div style={styles.page}>
       <div style={styles.headerWrapper}>
-        <div
-          style={{
-            ...styles.banner,
-            backgroundImage: profile.banner
-              ? `url(${getFullUrl(profile.banner)})`
-              : "none",
-          }}
-        >
+        <div style={{
+        ...styles.banner,
+        backgroundImage: profile.banner
+        ? `url(${profile.banner})`
+        : "none",
+        }}>
+        <p style = {styles.error}>{profile?.banner}</p>
           <FaEllipsisV style={styles.topLeftIcon} />
           <FaTimes
             style={styles.topRightIcon}
@@ -205,7 +231,7 @@ export default function PublicProfile() {
           <div style={styles.avatar}>
             {profile.avatar && (
               <img
-                src={getFullUrl(profile.avatar)}
+                src={profile.avatar}
                 alt=""
                 style={styles.avatarImg}
               />
@@ -260,17 +286,68 @@ export default function PublicProfile() {
       </div>
 
       <div style={styles.tabs}>
-        <span style={styles.activeTab}>gigs</span>
-        <span style={styles.inactiveTab}>about</span>
+        <span style={activeTab === "gigs" ? styles.activeTab : styles.inactiveTab}
+        onClick={() => setActiveTab("gigs")}>gigs
+        </span>
+        <span style={activeTab === "about" ? styles.activeTab : styles.inactiveTab} onClick={() => setActiveTab("about")}>
+          about</span>
       </div>
 
       <div style={styles.feed}>
-        {profile.gigs.length === 0 ? (
-          <p style={{ opacity: 0.6 }}>No gigs found</p>
-        ) : (
-          profile.gigs.map((gig) => <Gig key={gig.id} gig={gig} />)
-        )}
+        {activeTab === "gigs" ? (
+        profile.gigs.length === 0 ? (
+        <p style={{ opacity: 0.6 }}>No gigs found</p>
+    ) : (
+      profile.gigs.map((gig) => <Gig key={gig.id} gig={gig} />)
+    )
+  ) : (
+    <div style={styles.aboutSection}>
+  {aboutLoading ? (
+    <p>Loading...</p>
+  ) : (
+    <>
+      <div style={styles.row}>
+        <FaBriefcase style={styles.icon} />
+        <span><strong>Experience:</strong> {aboutData?.experience || "N/A"}</span>
       </div>
+
+      <div style={styles.row}>
+        <FaGlobeAsia style={styles.icon} />
+        <span><strong>Region:</strong> {aboutData?.location || "N/A"}</span>
+      </div>
+
+      <div style={styles.row}>
+        <FaLayerGroup style={styles.icon} />
+        <span><strong>Total Gigs:</strong> {aboutData?.total_gigs ?? 0}</span>
+      </div>
+
+      <div style={styles.row}>
+        <FaRegCommentDots style={styles.icon} />
+        <span><strong>Total Reviews:</strong> {aboutData?.total_reviews ?? 0}</span>
+      </div>
+
+      <div style={styles.row}>
+        <FaStar style={{ ...styles.icon, color: "#f4b400" }} />
+        <span><strong>Avg Rating:</strong> {aboutData?.avg_rating ?? 0}</span>
+      </div>
+
+      <div style={styles.row}>
+        <FaCalendarAlt style={styles.icon} />
+        <span style={styles.value}>
+          {aboutData?.created_at
+    ? new Date(aboutData.created_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "N/A"}
+    </span>
+      </div>
+    </>
+    )}
+  </div>
+  )}
+</div>
 
       {showPayment && (
         <PaymentModal
@@ -368,6 +445,7 @@ const styles = {
     padding: "8px 24px",
     borderRadius: 20,
     cursor: "pointer",
+    fontFamily: "Inter, sans-serif"
   },
 
   infoSection: {
@@ -420,6 +498,7 @@ const styles = {
     paddingLeft: 16,
     borderBottom: "1px solid #ddd",
     marginTop: 10,
+    fontFamily: "Inter, sans-serif"
   },
 
   activeTab: {
@@ -430,6 +509,7 @@ const styles = {
 
   inactiveTab: {
     opacity: 0.6,
+    fontFamily: "Inter, sans-serif"
   },
 
   sidePayment: {
@@ -461,7 +541,25 @@ const styles = {
     left: 18,
     flexDirection: "column",
     fontFamily: "Inter, sans-serif"
-  }
+  },
+  row: {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  marginBottom: "12px",
+  fontSize: "14px"
+    
+  },
+  icon: {
+  fontSize: "16px",
+  color: "#555",
+  minWidth: "18px"
+    
+  },
+  error: {
+    color:"white",
+    alignItems:"center",
+  },
 };
 
 

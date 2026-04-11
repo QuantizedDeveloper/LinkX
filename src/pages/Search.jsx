@@ -2,6 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Gig from "../components/Gig";
 
+
+
+const base_url = "https://linkx-backend-api-linkx-backend.hf.space"
 export default function Search() {
   const navigate = useNavigate();
 
@@ -17,7 +20,7 @@ export default function Search() {
 
       try {
         const res = await fetch(
-          `https://Linkx1.pythonanywhere.com/api/gigs/search/?q=${query}`
+          `${base_url}/api/gigs/search/?q=${query}`
         );
 
         const data = await res.json();

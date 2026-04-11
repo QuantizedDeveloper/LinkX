@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "../utils/toast";
 import Gigs from "../components/Gigs";
 
-const API_BASE = "https://Linkx1.pythonanywhere.com";
+//const API_BASE = "https://Linkx1.pythonanywhere.com";
+const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 const fixUrl = (url) => {
   if (!url) return null;

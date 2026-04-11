@@ -8,8 +8,9 @@ import ReviewSection from "./ReviewSection";
 
 
 
-const API_BASE = "https://Linkx1.pythonanywhere.com";
+//const API_BASE = "https://Linkx1.pythonanywhere.com";
 
+const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 // Fix Django media URL
 const fixUrl = (url) => {
   if (!url) return null;
@@ -33,7 +34,7 @@ export default function Gig({ gig }) {
     ? gig.images
     : [gig?.image1, gig?.image2, gig?.image3];
 
-  const images = imagesArray.filter(Boolean).map(fixUrl);
+  const images = imagesArray.filter(Boolean);
   const finalImages = images.length > 0 ? images : [];
 
   // ---------------- OWNER CHECK ----------------
@@ -107,6 +108,7 @@ export default function Gig({ gig }) {
           showToast("You can't message yourself.");
           return;
           }
+          
           navigate(`/chat/${username}`);
           }}/>
         </div>
