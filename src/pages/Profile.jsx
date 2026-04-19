@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+
 import { showToast } from "../utils/toast";
 import Gigs from "../components/Gigs";
+import { fetchWithAuth } from "../utils/api";
 
-//const API_BASE = "https://Linkx1.pythonanywhere.com";
 const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
+// =========================
+// Helpers
+// =========================
 const fixUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http://")) url = url.replace("http://", "https://");
@@ -14,104 +22,139 @@ const fixUrl = (url) => {
   return API_BASE + url;
 };
 
+const fixCloudinaryUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  return `https://res.cloudinary.com/dd04focej/${url}`;
+};
+
 export default function Profile() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const [tab, setTab] = useState("gigs");
   const [agree, setAgree] = useState(false);
 
   const username = localStorage.getItem("username") || "user";
   const token = localStorage.getItem("accessToken");
-  const [ratingData, setRatingData] = useState({
-    avg_rating: 0,
-    total_reviews: 0,
-  });
 
+  // =========================
+  // Protect route
+  // =========================
   useEffect(() => {
     if (!token) navigate("/login");
   }, [navigate, token]);
 
   // =========================
-  // Fetch freelancer status
+  // Freelancer status
   // =========================
-  const { data: statusData, isLoading: statusLoading } = useQuery({
+  const { data: statusData } = useQuery({
     queryKey: ["freelancerStatus"],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/freelancers/status/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch freelancer status");
+      const res = await fetchWithAuth(`/freelancers/status/`);
+      if (!res.ok) throw new Error("Failed");
       return res.json();
     },
     staleTime: 5 * 60 * 1000,
-    retry: 0,
-    onError: (err) => showToast("Error fetching freelancer status: " + err.message),
+    cacheTime: 30 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
+    onError: (err) =>
+      showToast("Error fetching freelancer status: " + err.message),
   });
 
   const isFreelancer = statusData?.is_freelancer ?? false;
 
   // =========================
-  // Fetch profile
+  // Profile
   // =========================
-  const { data: profileData, isLoading: profileLoading } = useQuery({
+  const { data: profileData } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/freelancers/me/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchWithAuth(`/freelancers/me/`);
       if (!res.ok) throw new Error("Failed to fetch profile");
       return res.json();
     },
     staleTime: 5 * 60 * 1000,
-    retry: 0,
-    onError: (err) => showToast("Error fetching profile: " + err.message),
+    cacheTime: 30 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
+    onError: (err) =>
+      showToast("Error fetching profile: " + err.message),
   });
 
   const profile = profileData || {};
 
   // =========================
-  // Fetch gigs
+  // Gigs
   // =========================
-  const { data: gigsData, isLoading: gigsLoading } = useQuery({
+  const { data: gigsData } = useQuery({
     queryKey: ["myGigs"],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/gigs/gigs/my/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchWithAuth(`/api/gigs/gigs/my/`);
       if (!res.ok) throw new Error("Failed to fetch gigs");
       const data = await res.json();
+
       return data.map((g) => ({
         ...g,
         username: g.username || g.user || "freelancer",
         user_avatar: fixUrl(g.user_avatar || g.avatar || null),
-        images: [g.image1, g.image2, g.image3].filter(Boolean).map(fixUrl),
+        images: [g.image1, g.image2, g.image3]
+          .filter(Boolean)
+          .map(fixCloudinaryUrl),
       }));
     },
     staleTime: 5 * 60 * 1000,
-    retry: 0,
-    onError: (err) => showToast("Error fetching gigs: " + err.message),
+    cacheTime: 30 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
+    onError: (err) =>
+      showToast("Error fetching gigs: " + err.message),
   });
 
   const safeGigs = gigsData || [];
 
   // =========================
-  // Start freelancing mutation
+  // Rating (FIXED)
+  // =========================
+  const { data: ratingData } = useQuery({
+    queryKey: ["rating", username],
+    queryFn: async () => {
+      const res = await fetchWithAuth(
+        `/api/gigs/api/users/${username}/profile-rating/`
+      );
+      return res.json();
+    },
+    enabled: !!username,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+    keepPreviousData: true,
+  });
+
+  // =========================
+  // Start freelancing
   // =========================
   const startMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`${API_BASE}/freelancers/start/`, {
+      const res = await fetchWithAuth(`/freelancers/start/`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to start freelancing");
+      if (!res.ok) throw new Error(data.error || "Failed");
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["freelancerStatus"]);
       showToast("You are now a freelancer 🚀");
     },
-    onError: (err) => showToast("Start freelancing failed: " + err.message),
+    onError: (err) =>
+      showToast("Start freelancing failed: " + err.message),
   });
 
   const startFreelancing = () => {
@@ -121,30 +164,9 @@ export default function Profile() {
     }
     startMutation.mutate();
   };
-  useEffect(() => {
-    const fetchRating = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/gigs/api/users/${username}/profile-rating/`);
-      const data = await res.json();
-      setRatingData(data);
-    } catch (err) {
-      console.error("Failed to fetch rating", err);
-    }
-   };
-   if (username) {
-     fetchRating();
-   }
-  }, [username]);
 
   // =========================
-  // Loading states
-  // =========================
-  if (statusLoading || (isFreelancer && profileLoading) || gigsLoading) {
-    return <div>Loading...</div>;
-  }
-
-  // =========================
-  // Not a freelancer yet
+  // Not freelancer UI
   // =========================
   if (!isFreelancer) {
     return (
@@ -152,67 +174,80 @@ export default function Profile() {
         <button
           style={styles.startBtn}
           onClick={startFreelancing}
-          disabled={startMutation.isLoading}
         >
           {startMutation.isLoading ? "Starting..." : "Start freelancing"}
         </button>
+
         <label style={styles.agreeRow}>
-          <input type="checkbox" checked={agree} onChange={() => setAgree(!agree)} />
-          <span style={{ marginLeft: 8, color: "#b200ff" }}>linkX freelancer agreement</span>
+          <input
+            type="checkbox"
+            checked={agree}
+            onChange={() => setAgree(!agree)}
+          />
+          <span style={{ marginLeft: 8, color: "#b200ff" }}>
+            linkX freelancer agreement
+          </span>
         </label>
       </div>
     );
   }
 
   // =========================
-  // Freelancer profile render
+  // MAIN UI (NO BLOCKING)
   // =========================
   return (
     <div style={styles.container}>
-      {/* Cover banner */}
+      {/* Cover */}
       <div
         style={{
           ...styles.cover,
-          backgroundImage: profile.banner ? `url(${fixUrl(profile.banner)})` : undefined,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundImage: profile.banner
+            ? `url(${fixUrl(profile.banner)})`
+            : undefined,
         }}
-      ></div>
+      />
 
-      {/* Profile section */}
+      {/* Profile */}
       <div style={styles.profileSection}>
         <div
           style={{
             ...styles.avatar,
-            backgroundImage: profile.avatar ? `url(${fixUrl(profile.avatar)})` : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundImage: profile.avatar
+              ? `url(${fixUrl(profile.avatar)})`
+              : undefined,
           }}
-        ></div>
+        />
 
         <div style={styles.buttons}>
-          <button style={styles.editBtn} onClick={() => navigate("/edit-profile")}>
+          <button
+            style={styles.editBtn}
+            onClick={() => navigate("/edit-profile")}
+          >
             Edit profile
           </button>
-          {/* ========================= */}
-          {/* Pay/Subscribe button */}
+
           <button style={styles.subBtn}>Subscribe</button>
-          {/* Three dots menu 
-          <button style={styles.menuBtn}>⋮</button>*/}
         </div>
 
         <div style={styles.text}>
-          <div style={styles.name}>{profile.display_name || "freelancer"}</div>
-          <div style={styles.handle}>@{username}
-         {ratingData.total_reviews > 0 ? (
-        <> ⭐{ratingData.avg_rating}({ratingData.total_reviews})</>
-        ) : (
-        <>⭐ New</>
-        )}</div>
+          <div style={styles.name}>
+            {profile.display_name || "freelancer"}
+          </div>
+
+          <div style={styles.handle}>
+            @{username}
+            {ratingData?.total_reviews > 0 ? (
+              <> ⭐{ratingData.avg_rating}({ratingData.total_reviews})</>
+            ) : (
+              <> ⭐New</>
+            )}
+          </div>
         </div>
       </div>
 
-      <p style={styles.bio}>{profile.description || "No description yet"}</p>
+      <p style={styles.bio}>
+        {profile.description || "No description yet"}
+      </p>
 
       {/* Tabs */}
       <div style={styles.tabs}>
@@ -222,6 +257,7 @@ export default function Profile() {
         >
           gigs
         </div>
+
         <div
           style={tab === "about" ? styles.activeTab : styles.inactiveTab}
           onClick={() => setTab("about")}
@@ -230,14 +266,18 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Gigs */}
       {tab === "gigs" && (
-        <div style={{ display: "flex", justifyContent: "center", width: "100%", position: "relative", left: -13 }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          {!gigsData && <p>Loading gigs...</p>}
           <Gigs gigs={safeGigs} />
         </div>
       )}
 
+      {/* About */}
       {tab === "about" && (
         <div style={styles.about}>
+          {!profileData && <p>Loading...</p>}
           <p>{profile.about || "No additional info yet"}</p>
         </div>
       )}
@@ -269,7 +309,9 @@ const styles = {
 
   cover: {
     height: 150,
-    background: "#000"
+    background: "#000",
+    backgroundSize: "cover",
+    backgroundPosition: "center top",
   },
 
   profileSection: {
@@ -282,7 +324,9 @@ const styles = {
     height: 80,
     borderRadius: "50%",
     background: "#ddd",
-    border: "4px solid white"
+    border: "4px solid white",
+    backgroundSize: "cover",
+    backgroundPosition: "center top",
   },
 
   buttons: {

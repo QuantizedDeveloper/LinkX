@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiImage } from "react-icons/fi";
 import { showToast } from "../utils/toast";
-
+import { fetchWithAuth } from "../utils/api";
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function Upload() {
@@ -88,25 +88,21 @@ const handlePublish = async () => {
       images.map((img) => fileToBase64(img.file))
     );
 
-    const res = await fetch(
-      `${base_url}/api/gigs/upload/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          gig_type: "fixed",
-          price: String(price),
-          delivery_days: String(delivery),
-          tags,
-          images: imageBase64,
-        }),
-      }
-    );
+    const res = await fetchWithAuth(`/api/gigs/upload/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        description,
+        gig_type: "fixed",
+        price: String(price),
+        delivery_days: String(delivery),
+        tags,
+        images: imageBase64,
+      }),
+    });
 
     const data = await res.json();
     console.log("Gig upload response:", data);
@@ -118,8 +114,8 @@ const handlePublish = async () => {
       showToast(JSON.stringify(data));
     }
   } catch (err) {
-    console.error("Upload failed:", err);
-    showToast("Upload failed");
+    console.error(err);
+    showToast("Something went wrong");
   }
 };
 

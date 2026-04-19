@@ -6,7 +6,8 @@ import { FiMail } from "react-icons/fi";
 import Gig from "../components/Gig";
 import "./Chat.css";
 import { showToast } from "../utils/toast";
-import { useEffect } from "react";
+import { fetchWithAuth } from "../utils/api";
+
 import {
   FaBriefcase,
   FaGlobeAsia,
@@ -15,8 +16,6 @@ import {
   FaStar,
   FaCalendarAlt
 } from "react-icons/fa";
-
-
 
 // ================= PAYMENT MODAL =================
 function PaymentModal({ paymentInfo, onClose }) {
@@ -48,20 +47,12 @@ function PaymentModal({ paymentInfo, onClose }) {
     },
   ].filter(Boolean);
 
-  {/*const fixUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith("http")) return url;
-    return `https://linkx-backend-api-linkx-backend.hf.space${url}`;*/}
-  ;
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3>Payment Methods</h3>
 
-        <button className="close-btn" onClick={onClose}>
-          ✕
-        </button>
+        <button className="close-btn" onClick={onClose}>✕</button>
 
         <ul className="payment-list">
           {items.map((item, idx) => (
@@ -69,12 +60,7 @@ function PaymentModal({ paymentInfo, onClose }) {
               <div className="payment-name">{item.name}</div>
 
               {item.type === "link" && (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="pay-btn-link"
-                >
+                <a href={item.link} target="_blank" rel="noreferrer" className="pay-btn-link">
                   Pay
                 </a>
               )}
@@ -82,19 +68,13 @@ function PaymentModal({ paymentInfo, onClose }) {
               {item.type === "upi" && (
                 <div className="upi-actions">
                   {item.qr && (
-                    <button
-                      className="upi-btn"
-                      onClick={() => setShowQR(item.qr)}
-                    >
+                    <button className="upi-btn" onClick={() => setShowQR(item.qr)}>
                       Scan QR
                     </button>
                   )}
 
                   {item.upi_id && (
-                    <button
-                      className="upi-btn"
-                      onClick={() => copyUPI(item.upi_id)}
-                    >
+                    <button className="upi-btn" onClick={() => copyUPI(item.upi_id)}>
                       Copy UPI ID
                     </button>
                   )}
@@ -105,14 +85,8 @@ function PaymentModal({ paymentInfo, onClose }) {
         </ul>
 
         {showQR && (
-          <div
-            className="qr-modal-overlay"
-            onClick={() => setShowQR(null)}
-          >
-            <div
-              className="qr-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
+          <div className="qr-modal-overlay" onClick={() => setShowQR(null)}>
+            <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
               <img src={showQR} alt="UPI QR" className="qr-image" />
               <button onClick={() => setShowQR(null)}>Close</button>
             </div>
@@ -123,103 +97,93 @@ function PaymentModal({ paymentInfo, onClose }) {
   );
 }
 
-// ================= MAIN COMPONENT =================
+// ================= MAIN =================
 export default function PublicProfile() {
   const navigate = useNavigate();
   const { username } = useParams();
+
   const [activeTab, setActiveTab] = useState("gigs");
   const [showPayment, setShowPayment] = useState(false);
 
-  //const base_url = "https://Linkx1.pythonanywhere.com";
-  const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
-  
-  const token = localStorage.getItem("accessToken");
-  const [ratingData, setRatingData] = useState({
-    avg_rating: 0,
-    total_reviews: 0,
-  });
-  // ✅ PROFILE QUERY (CACHED)
-  const { data: profile, isLoading } = useQuery({
+  const currentUser = localStorage.getItem("username");
+
+  const fixCloudinaryUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return `https://res.cloudinary.com/dd04focej/${url}`;
+  };
+
+  // ================= PROFILE =================
+  const { data: profile } = useQuery({
     queryKey: ["publicProfile", username],
     queryFn: async () => {
-      const res = await fetch(
-        `${base_url}/freelancers/public-profile/${username}/`
-      );
+      const res = await fetchWithAuth(`/freelancers/public-profile/${username}/`);
       if (!res.ok) throw new Error("Profile error");
       return res.json();
     },
-    staleTime: 1000 * 60 * 5, // 5 min cache
-    cacheTime: 1000 * 60 * 10, // stays in memory
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
   });
 
-const { data: aboutData, isLoading: aboutLoading } = useQuery({
-  queryKey: ["aboutProfile", username],
-  queryFn: async () => {
-    const res = await fetch(
-      `${base_url}/freelancers/${username}/about/`
-    );
-    if (!res.ok) throw new Error("About error");
-    return res.json();
-  },
-  enabled: !!username,
-});
-  
-  
+  // ================= ABOUT =================
+  const { data: aboutData, isLoading: aboutLoading } = useQuery({
+    queryKey: ["aboutProfile", username],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/freelancers/${username}/about/`);
+      if (!res.ok) throw new Error("About error");
+      return res.json();
+    },
+    enabled: !!username,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
+  });
 
-  // ✅ PAYMENT QUERY (CACHED)
+  // ================= PAYMENT =================
   const { data: paymentInfo } = useQuery({
     queryKey: ["paymentInfo", username],
     queryFn: async () => {
-      const res = await fetch(
-        `${base_url}/freelancers/payment-info/${username}/`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetchWithAuth(`/freelancers/payment-info/${username}/`);
       if (!res.ok) throw new Error("Payment error");
       return res.json();
     },
     enabled: !!username,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
   });
 
-  {/*const getFullUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith("http")) return url;
-    return `${base_url}${url}`;
-  };*/}
-  useEffect(() => {
-    const fetchRating = async () => {
-    try {
-      const res = await fetch(`${base_url}/api/gigs/api/users/${username}/profile-rating/`);
-      const data = await res.json();
-      setRatingData(data);
-    } catch (err) {
-      console.error("Failed to fetch rating", err);
-    }
-   };
-   if (username) {
-     fetchRating();
-   }
-  }, [username]);
-  
-  
-  
-  
+  // ================= RATING =================
+  const { data: ratingData } = useQuery({
+    queryKey: ["rating", username],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`/api/gigs/api/users/${username}/profile-rating/`);
+      return res.json();
+    },
+    enabled: !!username,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+    keepPreviousData: true,
+  });
 
-  if (isLoading) return <div style={{ padding: 20 }}>Loading...</div>;
-  if (!profile) return <div style={{ padding: 20 }}>Profile not found</div>;
+  if (!profile) return <div style={{ padding: 20 }}>Loading...</div>;
 
   return (
     <div style={styles.page}>
       <div style={styles.headerWrapper}>
         <div style={{
-        ...styles.banner,
-        backgroundImage: profile.banner
-        ? `url(${profile.banner})`
-        : "none",
+          ...styles.banner,
+          backgroundImage: profile.banner
+            ? `url(${fixCloudinaryUrl(profile.banner)})`
+            : "none",
         }}>
-        <p style = {styles.error}>{profile?.banner}</p>
           <FaEllipsisV style={styles.topLeftIcon} />
           <FaTimes
             style={styles.topRightIcon}
@@ -231,7 +195,7 @@ const { data: aboutData, isLoading: aboutLoading } = useQuery({
           <div style={styles.avatar}>
             {profile.avatar && (
               <img
-                src={profile.avatar}
+                src={fixCloudinaryUrl(profile.avatar)}
                 alt=""
                 style={styles.avatarImg}
               />
@@ -248,106 +212,109 @@ const { data: aboutData, isLoading: aboutLoading } = useQuery({
           )}
         </div>
 
-        <button
-          style={styles.payBtn}
-          onClick={() => setShowPayment(true)}
-        >
+        <button style={styles.payBtn} onClick={() => setShowPayment(true)}>
           Pay
         </button>
       </div>
 
       <div style={styles.infoSection}>
         <div style={styles.nameRow}>
-          <h2 style={{ margin: 0,
-          fontFamily: "Inter, sans-serif"}}>
-            {profile.display_name || profile.username}
-          </h2>
-          
+          <h2 style={{ margin: 0 }}>{profile.display_name || profile.username}</h2>
 
-          <div style={styles.messageIcon}>
-            <FiMail
-              size={20}
-              color="black"
-              onClick={() => navigate(`/chat/${username}`)}
-            />
-
-            <span style={styles.redCornerTop}></span>
-            <span style={styles.redCornerBottom}></span>
+          <div
+            style={styles.messageIcon}
+            onClick={() => {
+              if (currentUser === username) {
+                showToast("You cannot message yourself");
+                return;
+              }
+              navigate(`/chat/${username}`);
+            }}
+          >
+            <FiMail size={20} color="black" />
           </div>
         </div>
-        <p styles = {styles.username}>
-            @{profile.username} {ratingData.total_reviews > 0 ? (
-            <> ⭐{ratingData.avg_rating}({ratingData.total_reviews})</>
-        ) : (
-        <>⭐ New</>
-        )}
+
+        <p>
+          @{profile.username}{" "}
+          {ratingData?.total_reviews > 0
+            ? `⭐${ratingData.avg_rating}(${ratingData.total_reviews})`
+            : "⭐ New"}
         </p>
+
         <p style={{ marginTop: 15 }}>{profile.description}</p>
       </div>
 
       <div style={styles.tabs}>
-        <span style={activeTab === "gigs" ? styles.activeTab : styles.inactiveTab}
-        onClick={() => setActiveTab("gigs")}>gigs
+        <span
+          style={activeTab === "gigs" ? styles.activeTab : styles.inactiveTab}
+          onClick={() => setActiveTab("gigs")}
+        >
+          gigs
         </span>
-        <span style={activeTab === "about" ? styles.activeTab : styles.inactiveTab} onClick={() => setActiveTab("about")}>
-          about</span>
+        <span
+          style={activeTab === "about" ? styles.activeTab : styles.inactiveTab}
+          onClick={() => setActiveTab("about")}
+        >
+          about
+        </span>
       </div>
 
       <div style={styles.feed}>
         {activeTab === "gigs" ? (
-        profile.gigs.length === 0 ? (
-        <p style={{ opacity: 0.6 }}>No gigs found</p>
-    ) : (
-      profile.gigs.map((gig) => <Gig key={gig.id} gig={gig} />)
-    )
-  ) : (
-    <div style={styles.aboutSection}>
-  {aboutLoading ? (
-    <p>Loading...</p>
-  ) : (
-    <>
-      <div style={styles.row}>
-        <FaBriefcase style={styles.icon} />
-        <span><strong>Experience:</strong> {aboutData?.experience || "N/A"}</span>
-      </div>
+          profile.gigs?.length === 0 ? (
+            <p style={{ opacity: 0.6 }}>No gigs found</p>
+          ) : (
+            profile.gigs.map((gig) => <Gig key={gig.id} gig={gig} />)
+          )
+        ) : (
+          <div style={styles.aboutSection}>
+            {aboutLoading ? (
+              <p>Loading...</p>
+            ) : (
+              <>
+                <div style={styles.row}>
+                  <FaBriefcase style={styles.icon} />
+                  <span><strong>Experience:</strong> {aboutData?.experience || "N/A"}</span>
+                </div>
 
-      <div style={styles.row}>
-        <FaGlobeAsia style={styles.icon} />
-        <span><strong>Region:</strong> {aboutData?.location || "N/A"}</span>
-      </div>
+                <div style={styles.row}>
+                  <FaGlobeAsia style={styles.icon} />
+                  <span><strong>Region:</strong> {aboutData?.location || "N/A"}</span>
+                </div>
 
-      <div style={styles.row}>
-        <FaLayerGroup style={styles.icon} />
-        <span><strong>Total Gigs:</strong> {aboutData?.total_gigs ?? 0}</span>
-      </div>
+                <div style={styles.row}>
+                  <FaLayerGroup style={styles.icon} />
+                  <span><strong>Total Gigs:</strong> {aboutData?.total_gigs ?? 0}</span>
+                </div>
 
-      <div style={styles.row}>
-        <FaRegCommentDots style={styles.icon} />
-        <span><strong>Total Reviews:</strong> {aboutData?.total_reviews ?? 0}</span>
-      </div>
+                <div style={styles.row}>
+                  <FaRegCommentDots style={styles.icon} />
+                  <span><strong>Total Reviews:</strong> {aboutData?.total_reviews ?? 0}</span>
+                </div>
 
-      <div style={styles.row}>
-        <FaStar style={{ ...styles.icon, color: "#f4b400" }} />
-        <span><strong>Avg Rating:</strong> {aboutData?.avg_rating ?? 0}</span>
-      </div>
+                <div style={styles.row}>
+                  <FaStar style={{ ...styles.icon, color: "#f4b400" }} />
+                  <span><strong>Avg Rating:</strong> {aboutData?.avg_rating ?? 0}</span>
+                </div>
 
-      <div style={styles.row}>
-        <FaCalendarAlt style={styles.icon} />
-        <span style={styles.value}>
-          {aboutData?.created_at
-    ? new Date(aboutData.created_at).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "N/A"}
-    </span>
+                <div style={styles.row}>
+                  <FaCalendarAlt style={styles.icon} />
+                  <span>
+                    {aboutData?.created_at
+                      ? new Date(aboutData.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "N/A"}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
-    </>
-    )}
-  </div>
-  )}
-</div>
 
       {showPayment && (
         <PaymentModal
@@ -358,8 +325,6 @@ const { data: aboutData, isLoading: aboutLoading } = useQuery({
     </div>
   );
 }
-
-
 
 /* ================= STYLES ================= */
 
@@ -558,7 +523,7 @@ const styles = {
   },
   error: {
     color:"white",
-    alignItems:"center",
+    alignItems:"center"
   },
 };
 

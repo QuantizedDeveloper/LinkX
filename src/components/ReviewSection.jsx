@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./ReviewSection.css";
 import { showToast } from "../utils/toast";
+import { fetchWithAuth } from "../utils/api";
 const ReviewSection = ({ gigId }) => {
   const [open, setOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
@@ -16,7 +17,9 @@ const ReviewSection = ({ gigId }) => {
   // fetch reviews
   const fetchReviews = async () => {
     try {
-      const res = await fetch(`${base_url}/api/gigs/gigs/${gigId}/reviews/`);
+      const res = await fetchWithAuth(
+        `/api/gigs/gigs/${gigId}/reviews/`
+        );
       const data = await res.json();
 
       setReviews(data.reviews || []);
@@ -36,15 +39,18 @@ const ReviewSection = ({ gigId }) => {
     if (!rating) return showToast("Select rating");
 
     try {
-      const res = await fetch(`${base_url}/api/gigs/gigs/${gigId}/review/create/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+      const res = await fetchWithAuth(
+        `/api/gigs/gigs/${gigId}/review/create/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        //},
-        body: JSON.stringify({ rating, comment }),
-      });
+          body: JSON.stringify({ rating, comment }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to create review");
+      const data = await res.json();
 
       if (res.ok) {
         setRating(0);

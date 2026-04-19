@@ -25,7 +25,7 @@ const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 
 export default function App() {
-  useAutoRefresh()
+  useAutoRefresh();
   return (
     <Routes>
 

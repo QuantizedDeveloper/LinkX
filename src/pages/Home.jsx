@@ -5,6 +5,7 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import SideMenu from "../components/SideMenu";
 import Gig from "../components/Gig";
 import { showToast } from "../utils/toast";
+import { fetchWithAuth } from "../utils/api";
 
 //const base_url = "https://Linkx1.pythonanywhere.com";
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
@@ -15,55 +16,49 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const username = localStorage.getItem("username");
 
-  // ✅ Logout (unchanged)
-  //const handleLogout = () => {
-   // localStorage.removeItem("accessToken");
-   // localStorage.removeItem("refreshToken");
-   // localStorage.removeItem("username");
-   // localStorage.removeItem("email");
-   // window.location.href = "/login";
- // };
- 
   // ✅ Protect route (unchanged)
+  const [checkedAuth, setCheckedAuth] = useState(false);
   useEffect(() => {
+    const timer = setTimeout(() => {
     const token = localStorage.getItem("accessToken");
-    if (!token) navigate("/login");
-  }, [navigate]);
+
+    if (!token) {
+      navigate("/login");
+    }
+
+    setCheckedAuth(true);
+  }, 100); // small delay
+
+  return () => clearTimeout(timer);
+}, [navigate]);
+  
 
   // =========================
   // ✅ FETCH ME (React Query)
   // =========================
   const fetchMe = async () => {
-    const res = await fetch(`${base_url}/freelancers/me/`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    });
-
+    const res = await fetchWithAuth("/freelancers/me/");
     if (!res.ok) throw new Error("Failed to fetch user");
-
     return res.json();
+    
   };
-
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: fetchMe,
     staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,     // 🔥 keep cache longer
+    refetchOnMount: "always",         // 🔥 avoid flicker
   });
 
   // =========================
   // ✅ FETCH GIGS (Infinite)
   // =========================
   const fetchGigs = async ({ pageParam = 1 }) => {
-    const res = await fetch(
-      `${base_url}/api/gigs/?page=${pageParam}`
-    );
-
+    const res = await fetchWithAuth(`/api/gigs/?page=${pageParam}`);
     const data = await res.json();
-
     return {
       gigs: data.results || [],
-      nextPage: data.next ? pageParam + 1 : undefined,
+      nextPage: data.next ? pageParam + 1: undefined,
     };
   };
 
@@ -72,20 +67,25 @@ export default function Home() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isLoading,
   } = useInfiniteQuery({
     queryKey: ["gigs"],
     queryFn: fetchGigs,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,   // 🔥 keeps data in memory
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,       // 🔥 prevents blank reload
+    keepPreviousData: true,      // 🔥 keeps old data visible
   });
 
-  // flatten pages
-  const gigs = data?.pages.flatMap((page) => page.gigs) || [];
-
+  // flatten pages safely
+  const gigs = data?.pages?.flatMap((page) => page.gigs) ?? [];
+  if (!checkedAuth) {
+    return null; // no white flash
+    }
   return (
     <>
-      {/*}<button onClick={handleLogout}>Logout</button>*/}
-
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <div style={styles.container}>
@@ -132,27 +132,21 @@ export default function Home() {
         {/* Feed */}
         <div style={styles.feed}>
           <div>
+            {/* 🔥 prevents blank screen */}
+            {gigs.length === 0 && isLoading && <p>Loading...</p>}
+
             {gigs.map((gig) => (
               <Gig key={gig.id} gig={gig} />
             ))}
+
             {isFetchingNextPage && <p>Loading...</p>}
+
             {hasNextPage && !isFetchingNextPage && (
-            <button onClick={() => fetchNextPage()}>
-              Load More
-            </button>
+              <button onClick={() => fetchNextPage()}>
+                Load More
+              </button>
             )}
           </div>
-
-          
-
-          {/*<div style= {styles.loadmore}>
-            {/*}{hasNextPage && !isFetchingNextPage && (
-            <button onClick={() => fetchNextPage()}>
-              Load More
-            </button>
-            )}
-          </div>*/}
-          
         </div>
       </div>
     </>
@@ -277,9 +271,9 @@ const styles = {
   feed: {
     display: "flex",
     justifyContent: "center",
-    width: "100%",
+    width: "85%",
     position: "relative",
-    left: -13,
+    left: 13,
     fontFamily: "Inter, sans-serif"
   },
   loadmore: {

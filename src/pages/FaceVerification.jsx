@@ -11,8 +11,8 @@ axios.defaults.withCredentials = true;
 const STEPS = [
   { key: "front", text: "Look straight 😐" },
   { key: "smile", text: "Smile 🙂" },
-  { key: "left", text: "Turn LEFT 👈" },
-  { key: "right", text: "Turn RIGHT 👉" },
+  { key: "left", text: "Turn RIGHT 👉" },
+  { key: "right", text: "Turn LEFT 👈" },
 ];
 
 export default function FaceVerification() {

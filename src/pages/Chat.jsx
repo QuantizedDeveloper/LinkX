@@ -6,6 +6,7 @@ import { SiRazorpay } from "react-icons/si";
 import { FaPaypal, FaQrcode, FaSpinner } from "react-icons/fa";
 import "./Chat.css";
 import { showToast } from "../utils/toast";
+import { fetchWithAuth } from "../utils/api";
 //const base_url = "https://Linkx1.pythonanywhere.com";
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
@@ -154,18 +155,20 @@ export default function Chat() {
   } = useQuery({
     queryKey: ["conversation", otherUsername],
     queryFn: async () => {
-      const res = await fetch(`${base_url}/api/messaging/conversation/create/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ username: otherUsername }),
-      });
+      const res = await fetchWithAuth(
+        `/api/messaging/conversation/create/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username: otherUsername }),
+  }
+);
 
-      if (!res.ok) throw new Error("Conversation failed");
+if (!res.ok) throw new Error("Conversation failed");
 
-      return res.json();
+return res.json();
     },
     enabled: !!otherUsername,
   });
@@ -174,35 +177,34 @@ export default function Chat() {
   const otherUser = conversationData?.other_user;
 
   // ---------------- MESSAGES ----------------
-  const {
-    data: messagesData = [],
-    error: msgError,
-  } = useQuery({
-    queryKey: ["messages", conversationId],
-    queryFn: async () => {
-      const res = await fetch(`${base_url}/api/messaging/messages/${conversationId}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  // ---------------- MESSAGES ----------------
+const {
+  data: messagesData = [],
+  error: msgError,
+} = useQuery({
+  queryKey: ["messages", conversationId],
+  queryFn: async () => {
+    const res = await fetchWithAuth(
+      `/api/messaging/messages/${conversationId}/`
+    );
+    if (!res.ok) throw new Error("Messages failed");
 
-      if (!res.ok) throw new Error("Messages failed");
+    const data = await res.json();
 
-      const data = await res.json();
+    // ✅ mark as read
+    await fetchWithAuth(`/api/messaging/message/read/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ conversation_id: conversationId }),
+    });
 
-      // mark read
-      fetch(`${base_url}/api/messaging/message/read/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ conversation_id: conversationId }),
-      });
-
-      return data;
-    },
-    enabled: !!conversationId,
-  });
-
+    return data;
+  },
+  enabled: !!conversationId,
+});
+    
   // sync messages
   useEffect(() => {
     if (messagesData) {
@@ -218,9 +220,11 @@ export default function Chat() {
   } = useQuery({
     queryKey: ["paymentInfo", otherUsername],
     queryFn: async () => {
-      const res = await fetch(`${base_url}/freelancers/payment-info/${otherUsername}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchWithAuth(
+        `/freelancers/payment-info/${otherUsername}/`
+        );
+      if (!res.ok) throw new Error("Payment info failed");
+      const data = await res.json();
 
       if (!res.ok) throw new Error("Not freelancer");
 
@@ -236,12 +240,14 @@ export default function Chat() {
     try {
       ablyRef.current = new Ably.Realtime({
         authCallback: async (_, cb) => {
-          const res = await fetch(`${base_url}/api/messaging/ably-token/`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await fetchWithAuth(`/api/messaging/ably-token/`);
+          if (!res.ok) {
+            cb("Token fetch failed", null);
+            return;
+          }
           const tokenRequest = await res.json();
           cb(null, tokenRequest);
-        },
+          },
       });
 
       const channel = ablyRef.current.channels.get(`chat_${conversationId}`);
@@ -262,24 +268,31 @@ export default function Chat() {
       });
 
       // new message
-      channel.subscribe("new_message", msg => {
+      channel.subscribe("new_message", async (msg) => {
         if (!msg?.data) return;
-
         setMessages(prev => {
           if (prev.find(m => m.id === msg.data.id)) return prev;
           return [...prev, msg.data];
+          
         });
-
         scrollBottom();
-
-        fetch(`${base_url}/api/messaging/message/delivered/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ message_id: msg.data.id }),
-        });
+        // ✅ FIXED delivered call
+        try {
+          await fetchWithAuth(
+            `/api/messaging/message/delivered/`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message_id: msg.data.id }),
+            }
+          );
+          
+        } catch (err) {
+          console.log("Delivered update failed", err);
+        }
+        
       });
 
       // typing
@@ -313,26 +326,26 @@ export default function Chat() {
   // ---------------- SEND ----------------
   const sendMessage = async () => {
     if (!text.trim()) return;
-
-    const res = await fetch(`${base_url}/api/messaging/messages/send/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        conversation: conversationId,
-        text,
-      }),
-    });
-
+    const res = await fetchWithAuth(
+      `/api/messaging/messages/send/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversation: conversationId,
+          text,
+        }),
+      }
+    );
+    if (!res.ok) throw new Error("Send message failed");
     const message = await res.json();
-
     setText("");
     inputRef.current?.focus();
-
     channelRef.current.publish("new_message", message);
   };
+  
 
   const sendTyping = () => {
     if (!channelRef.current || typingTimeout.current) return;

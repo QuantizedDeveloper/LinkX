@@ -7,6 +7,7 @@ import { BsCreditCard } from "react-icons/bs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "../utils/toast";
 import { FiCamera } from "react-icons/fi";
+import { fetchWithAuth } from "../utils/api";
 //const API_BASE = "https://Linkx1.pythonanywhere.com";
 const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
@@ -102,25 +103,31 @@ export default function EditProfile() {
   };
 
   const mutation = useMutation({
-    mutationFn: async (fd) => {
-      const token = localStorage.getItem("accessToken");
+  mutationFn: async (fd) => {
+    const token = localStorage.getItem("accessToken");
 
-      const res = await fetch(`${API_BASE}/freelancers/me/update/`, {
+    const res = await fetchWithAuth(
+      `/freelancers/me/update/`,
+      {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
         body: fd,
-      });
+      }
+    );
 
-      if (!res.ok) throw new Error("Update failed");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["profile"]);
-      showToast("Saved");
-      navigate("/profile");
-    },
-    onError: () => showToast("Error saving profile"),
-  });
+    if (!res.ok) throw new Error("Update failed");
+    return res.json();
+  },
+
+  onSuccess: () => {
+    queryClient.invalidateQueries(["profile"]);
+    showToast("Saved");
+    navigate("/profile");
+  },
+
+  onError: () => {
+    showToast("Error saving profile");
+  },
+});
 
   const handleSave = () => {
     const fd = new FormData();

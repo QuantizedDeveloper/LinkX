@@ -3,6 +3,8 @@ import { FiHome, FiUser, FiPlus } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../utils/toast";
+import { fetchWithAuth } from "../utils/api";
+
 //const base_url = "https://Linkx1.pythonanywhere.com";
 
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
@@ -11,14 +13,10 @@ export default function BottomNav() {
   useEffect(() => {
     const fetchMe = async () => {
     try {
-      const res = await fetch(`${base_url}/freelancers/me/`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
-
+      const res = await fetchWithAuth(`/freelancers/me/`);
       const data = await res.json();
       setMe(data);
+      
     } catch (err) {
       console.error("Failed to fetch user");
     }

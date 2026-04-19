@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Ably from "ably";
 import { useNavigate } from "react-router-dom";
 import "./Inbox.css";
-
+import { fetchWithAuth } from "../utils/api";
 //const API = "https://Linkx1.pythonanywhere.com";
 const API = "https://linkx-backend-api-linkx-backend.hf.space"
 export default function Inbox({ username }) {
@@ -20,23 +20,25 @@ export default function Inbox({ username }) {
 
   // ✅ Load inbox
   const loadInbox = async () => {
-    const res = await fetch(`${API}/api/messaging/inbox/`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setConversations(data);
-  };
+  const res = await fetchWithAuth("/api/messaging/inbox/");
+  if (!res.ok) throw new Error("Failed to fetch inbox");
+  const data = await res.json();
+  setConversations(data);
+};
 
-  useEffect(() => {
-    loadInbox();
-  }, []);
+useEffect(() => {
+  loadInbox();
+}, []);
 
   // ✅ Ably setup
   useEffect(() => {
     const client = new Ably.Realtime({
       authUrl: `${API}/api/messaging/ably-token/`,
-      authHeaders: { Authorization: `Bearer ${token}` },
+      authHeaders: () => ({
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      }),
     });
+    
 
     clientRef.current = client;
 

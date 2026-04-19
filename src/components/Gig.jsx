@@ -1,16 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { FiMail } from "react-icons/fi";
 import blackImg from "../assets/black.jpg";
 import "./gig.css";
 import { showToast } from "../utils/toast";
 import ReviewSection from "./ReviewSection";
-
-
-
-//const API_BASE = "https://Linkx1.pythonanywhere.com";
-
+import { fetchWithAuth } from "../utils/api";
 const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
+
 // Fix Django media URL
 const fixUrl = (url) => {
   if (!url) return null;
@@ -18,7 +15,7 @@ const fixUrl = (url) => {
   return API_BASE + url;
 };
 
-export default function Gig({ gig }) {
+function Gig({ gig }) {
   const navigate = useNavigate();
   const menuRef = useRef();
 
@@ -29,7 +26,10 @@ export default function Gig({ gig }) {
   const description = gig?.description || "No description yet";
   const price = gig?.price || "Price not set";
   const deliveryTime = gig?.delivery_days || "Delivery time not set";
-  const created_at = gig?.created_at ? gig.created_at.split("T")[0] : "time undefined";
+  const created_at = gig?.created_at
+    ? gig.created_at.split("T")[0]
+    : "time undefined";
+
   const imagesArray = Array.isArray(gig?.images)
     ? gig.images
     : [gig?.image1, gig?.image2, gig?.image3];
@@ -47,6 +47,15 @@ export default function Gig({ gig }) {
   const [showDesc, setShowDesc] = useState(false);
   const [deleted, setDeleted] = useState(false);
 
+  // ---------------- CLOUDINARY OPTIMIZATION ----------------
+  const fixCloudinaryUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+
+    // 🔥 THIS IS THE BIGGEST SPEED BOOST
+    return `https://res.cloudinary.com/dd04focej/image/upload/w_400,q_auto,f_auto/${url}`;
+  };
+
   // ---------------- CLICK OUTSIDE CLOSE ----------------
   useEffect(() => {
     const handler = (e) => {
@@ -63,13 +72,12 @@ export default function Gig({ gig }) {
     if (!window.confirm("Delete this gig?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/gigs/gigs/delete/${gig.id}/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const res = await fetchWithAuth(
+        `/api/gigs/gigs/delete/${gig.id}/`,
+        {
+          method: "DELETE",
+          }
+        )
       if (!res.ok) {
         const data = await res.json();
         showToast(data.error || "Delete failed");
@@ -95,30 +103,28 @@ export default function Gig({ gig }) {
             src={avatar}
             alt="user"
             className="gig-avatar"
+            loading="lazy"   // 🔥 added
             onClick={() => navigate(`/public-profile/${username}`)}
           />
 
-          <span
-            className="gig-username">
-            {username}
-          </span>
+          <span className="gig-username">{username}</span>
 
-          <FiMail className="gig-dm-icon" onClick={() => {
-          if (loggedUser === username) {
-          showToast("You can't message yourself.");
-          return;
-          }
-          
-          navigate(`/chat/${username}`);
-          }}/>
+          <FiMail
+            className="gig-dm-icon"
+            onClick={() => {
+              if (loggedUser === username) {
+                showToast("You can't message yourself.");
+                return;
+              }
+              navigate(`/chat/${username}`);
+            }}
+          />
         </div>
 
-        {/* THREE DOTS */}
         <span className="gig-menu" onClick={() => setMenuOpen(!menuOpen)}>
           ⋯
         </span>
 
-        {/* MENU */}
         {menuOpen && (
           <div className="gig-menu-dropdown" ref={menuRef}>
             <div className="gig-menu-close" onClick={() => setMenuOpen(false)}>
@@ -151,16 +157,22 @@ export default function Gig({ gig }) {
 
       {/* IMAGES */}
       {finalImages.length > 0 && (
-      <div className="gig-media">   {finalImages.map((img, i) => (
-      <div className="gig-media-item" key={i}>
-        <img src={img} alt="gig" />
-      </div>
-      ))}
-      </div>
-    )}
-      {/* create at*/}
-      <div className = "create-at">{created_at}</div>
-      
+        <div className="gig-media">
+          {finalImages.map((img, i) => (
+            <div className="gig-media-item" key={i}>
+              <img
+                src={fixCloudinaryUrl(img)}
+                alt="gig"
+                loading="lazy"   // 🔥 HUGE impact
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* DATE */}
+      <div className="create-at">{created_at}</div>
+
       {/* FOOTER */}
       <div className="gig-footer">
         <div className="left-section">
@@ -177,12 +189,15 @@ export default function Gig({ gig }) {
           </div>
         </div>
       </div>
-      
+
       {/* DESCRIPTION POPUP */}
       {showDesc && (
         <div className="gig-desc-popup">
           <div className="gig-desc-box">
-            <span className="gig-desc-close" onClick={() => setShowDesc(false)}>
+            <span
+              className="gig-desc-close"
+              onClick={() => setShowDesc(false)}
+            >
               ×
             </span>
             <h4>Description</h4>
@@ -193,3 +208,6 @@ export default function Gig({ gig }) {
     </div>
   );
 }
+
+// 🔥 Prevent unnecessary re-renders
+export default memo(Gig);

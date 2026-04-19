@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Gig from "../components/Gig";
-
+import { fetchWithAuth } from "../utils/api";
 
 
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space"
@@ -19,10 +19,9 @@ export default function Search() {
       setLoading(true);
 
       try {
-        const res = await fetch(
-          `${base_url}/api/gigs/search/?q=${query}`
-        );
-
+        const res = await fetchWithAuth(
+          `/api/gigs/search/?q=${encodeURIComponent(query)}`
+          );
         const data = await res.json();
         setGigs(data);
       } catch (err) {
