@@ -61,8 +61,7 @@ export const fetchWithAuth = async (url, options = {}) => {
   let token = localStorage.getItem("accessToken");
 
   if (!token) {
-    window.location.href = "/google-login";
-    return;
+    throw new Error("No access token");
   }
 
   const isFormData = options.body instanceof FormData;
@@ -80,34 +79,49 @@ export const fetchWithAuth = async (url, options = {}) => {
 
   let res = await makeRequest(token);
 
-  // 🔁 Handle token refresh safely
+  // 🔁 HANDLE 401 (TOKEN EXPIRED)
   if (res.status === 401) {
     if (!isRefreshing) {
       isRefreshing = true;
 
       refreshPromise = (async () => {
-        const refreshToken = localStorage.getItem("refreshToken");
+        try {
+          const refreshToken = localStorage.getItem("refreshToken");
 
-        const refreshRes = await fetch(API_BASE + "/api/token/refresh/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
+          if (!refreshToken) {
+            throw new Error("No refresh token");
+          }
 
-        if (!refreshRes.ok) {
+          const refreshRes = await fetch(API_BASE + "/api/token/refresh/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refresh: refreshToken }),
+          });
+
+          if (!refreshRes.ok) {
+            throw new Error("Refresh failed");
+          }
+
+          const data = await refreshRes.json();
+
+          localStorage.setItem("accessToken", data.access);
+
+          // optional (only if backend returns it)
+          if (data.refresh) {
+            localStorage.setItem("refreshToken", data.refresh);
+          }
+
+          return data.access;
+        } catch (err) {
+          console.error("Refresh error:", err);
           localStorage.clear();
           window.location.href = "/login";
-          throw new Error("Refresh failed");
+          throw err;
+        } finally {
+          isRefreshing = false;
         }
-
-        const data = await refreshRes.json();
-        localStorage.setItem("accessToken", data.access);
-        localStorage.setItem("refreshToken", data.refresh)
-        localStorage.setItem("username", data.username)
-        isRefreshing = false;
-        return data.access;
       })();
     }
 
