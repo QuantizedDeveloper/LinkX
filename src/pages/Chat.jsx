@@ -2,12 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Ably from "ably";
 import { useQuery } from "@tanstack/react-query";
-import { SiRazorpay } from "react-icons/si";
-import { FaPaypal, FaQrcode, FaSpinner } from "react-icons/fa";
+import { FaSpinner } from "react-icons/fa";
 import "./Chat.css";
 import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "../utils/api";
-//const base_url = "https://Linkx1.pythonanywhere.com";
+
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
 const fixUrl = (url) => {
@@ -17,103 +16,52 @@ const fixUrl = (url) => {
   return base_url + url;
 };
 
-// ---------------- PAYMENT MODAL ----------------
+//////////////////// PAYMENT MODAL ////////////////////
 function PaymentModal({ paymentInfo, onClose }) {
-  const [showQR, setShowQR] = React.useState(null);
+  const [showQR, setShowQR] = useState(null);
 
   if (!paymentInfo) return null;
 
   const copyUPI = (upi) => {
     navigator.clipboard.writeText(upi);
-    showToast("UPI ID copied");
+    showToast("UPI copied");
   };
-
-  const items = [
-    paymentInfo.razorpay_link && {
-      name: "Razorpay",
-      type: "link",
-      link: paymentInfo.razorpay_link,
-    },
-    paymentInfo.paypal_link && {
-      name: "PayPal",
-      type: "link",
-      link: paymentInfo.paypal_link,
-    },
-    (paymentInfo.upi_id || paymentInfo.upi_qr) && {
-      name: "UPI",
-      type: "upi",
-      upi_id: paymentInfo.upi_id,
-      qr: paymentInfo.upi_qr,
-    },
-  ].filter(Boolean);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3>Payment Methods</h3>
 
-        <button className="close-btn" onClick={onClose}>
-          ✕
-        </button>
+        <button className="close-btn" onClick={onClose}>✕</button>
 
-        <ul className="payment-list">
-          {items.map((item, idx) => (
-            <li key={idx} className="payment-item">
-              <div className="payment-name">{item.name}</div>
+        {paymentInfo.razorpay_link && (
+          <a href={paymentInfo.razorpay_link} target="_blank" rel="noreferrer">
+            Pay with Razorpay
+          </a>
+        )}
 
-              {/* LINK PAYMENTS */}
-              {item.type === "link" && (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="pay-btn-link"
-                >
-                  Pay
-                </a>
-              )}
+        {paymentInfo.paypal_link && (
+          <a href={paymentInfo.paypal_link} target="_blank" rel="noreferrer">
+            Pay with PayPal
+          </a>
+        )}
 
-              {/* UPI */}
-              {item.type === "upi" && (
-                <div className="upi-actions">
-                  {item.qr && (
-                    <button
-                      className="upi-btn"
-                      onClick={() => setShowQR(item.qr)}
-                    >
-                      Scan QR
-                    </button>
-                  )}
+        {paymentInfo.upi_id && (
+          <button onClick={() => copyUPI(paymentInfo.upi_id)}>
+            Copy UPI ID
+          </button>
+        )}
 
-                  {item.upi_id && (
-                    <button
-                      className="upi-btn"
-                      onClick={() => copyUPI(item.upi_id)}
-                    >
-                      Copy UPI ID
-                    </button>
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+        {paymentInfo.upi_qr && (
+          <button onClick={() => setShowQR(paymentInfo.upi_qr)}>
+            Show QR
+          </button>
+        )}
 
-        {/* QR POPUP */}
         {showQR && (
-          <div
-            className="qr-modal-overlay"
-            onClick={() => setShowQR(null)}
-          >
-            <div
-              className="qr-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img src={fixUrl(showQR)} alt="UPI QR" className="qr-image" />
-              <button onClick={() => setShowQR(null)}>
-                Close
-              </button>
-            </div>
+          <div className="qr-modal">
+            <img src={fixUrl(showQR)} alt="QR" />
+            <button onClick={() => setShowQR(null)}>Close</button>
           </div>
         )}
       </div>
@@ -121,25 +69,24 @@ function PaymentModal({ paymentInfo, onClose }) {
   );
 }
 
-// ---------------- MAIN CHAT ----------------
+//////////////////// MAIN CHAT ////////////////////
+
+
 export default function Chat() {
   const navigate = useNavigate();
   const { username: otherUsername } = useParams();
-
-  const token = localStorage.getItem("accessToken");
   const username = localStorage.getItem("username");
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const [online, setOnline] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const ablyRef = useRef(null);
   const channelRef = useRef(null);
   const bottomRef = useRef(null);
   const typingTimeout = useRef(null);
-  const inputRef = useRef(null);
 
   const scrollBottom = () => {
     setTimeout(() => {
@@ -148,27 +95,15 @@ export default function Chat() {
   };
 
   // ---------------- CONVERSATION ----------------
-  const {
-    data: conversationData,
-    isLoading: convoLoading,
-    error: convoError,
-  } = useQuery({
+  const { data: conversationData } = useQuery({
     queryKey: ["conversation", otherUsername],
     queryFn: async () => {
-      const res = await fetchWithAuth(
-        `/api/messaging/conversation/create/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ username: otherUsername }),
-  }
-);
-
-if (!res.ok) throw new Error("Conversation failed");
-
-return res.json();
+      const res = await fetchWithAuth(`/api/messaging/conversation/create/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: otherUsername }),
+      });
+      return res.json();
     },
     enabled: !!otherUsername,
   });
@@ -177,175 +112,197 @@ return res.json();
   const otherUser = conversationData?.other_user;
 
   // ---------------- MESSAGES ----------------
-  // ---------------- MESSAGES ----------------
-const {
-  data: messagesData = [],
-  error: msgError,
-} = useQuery({
-  queryKey: ["messages", conversationId],
-  queryFn: async () => {
-    const res = await fetchWithAuth(
-      `/api/messaging/messages/${conversationId}/`
-    );
-    if (!res.ok) throw new Error("Messages failed");
-
-    const data = await res.json();
-
-    // ✅ mark as read
-    await fetchWithAuth(`/api/messaging/message/read/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ conversation_id: conversationId }),
-    });
-
-    return data;
-  },
-  enabled: !!conversationId,
-});
-    
-  // sync messages
-  useEffect(() => {
-    if (messagesData) {
-      setMessages(messagesData);
-      scrollBottom();
-    }
-  }, [messagesData]);
-
-  // ---------------- PAYMENT ----------------
-  const {
-    data: paymentInfo,
-    isLoading: paymentLoading,
-  } = useQuery({
-    queryKey: ["paymentInfo", otherUsername],
+  const { data: messagesData = [] } = useQuery({
+    queryKey: ["messages", conversationId],
     queryFn: async () => {
       const res = await fetchWithAuth(
-        `/freelancers/payment-info/${otherUsername}/`
-        );
-      if (!res.ok) throw new Error("Payment info failed");
+        `/api/messaging/messages/${conversationId}/`
+      );
       const data = await res.json();
 
-      if (!res.ok) throw new Error("Not freelancer");
+      // mark read
+      await fetchWithAuth(`/api/messaging/message/read/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation_id: conversationId }),
+      });
 
-      return res.json();
+      return data;
     },
-    enabled: !!otherUsername,
+    enabled: !!conversationId,
   });
+
+  useEffect(() => {
+    setMessages(messagesData);
+    scrollBottom();
+  }, [messagesData]);
 
   // ---------------- ABLY ----------------
   useEffect(() => {
     if (!conversationId) return;
 
-    try {
-      ablyRef.current = new Ably.Realtime({
-        authCallback: async (_, cb) => {
-          const res = await fetchWithAuth(`/api/messaging/ably-token/`);
-          if (!res.ok) {
-            cb("Token fetch failed", null);
-            return;
-          }
-          const tokenRequest = await res.json();
-          cb(null, tokenRequest);
-          },
-      });
+    let mounted = true;
 
-      const channel = ablyRef.current.channels.get(`chat_${conversationId}`);
-      channelRef.current = channel;
-
-      channel.presence.enter({ username });
-
-      channel.presence.get((err, members) => {
-        if (members.find(m => m.data.username === otherUsername)) setOnline(true);
-      });
-
-      channel.presence.subscribe("enter", m => {
-        if (m.data.username === otherUsername) setOnline(true);
-      });
-
-      channel.presence.subscribe("leave", m => {
-        if (m.data.username === otherUsername) setOnline(false);
-      });
-
-      // new message
-      channel.subscribe("new_message", async (msg) => {
-        if (!msg?.data) return;
-        setMessages(prev => {
-          if (prev.find(m => m.id === msg.data.id)) return prev;
-          return [...prev, msg.data];
-          
-        });
-        scrollBottom();
-        // ✅ FIXED delivered call
+    ablyRef.current = new Ably.Realtime({
+      authCallback: async (_, cb) => {
         try {
-          await fetchWithAuth(
-            `/api/messaging/message/delivered/`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ message_id: msg.data.id }),
-            }
-          );
-          
-        } catch (err) {
-          console.log("Delivered update failed", err);
+          const res = await fetchWithAuth(`/api/messaging/ably-token/`);
+          const token = await res.json();
+          cb(null, token);
+        } catch {
+          cb("error", null);
         }
-        
-      });
+      },
+    });
 
-      // typing
-      channel.subscribe("typing", msg => {
-        if (msg.data.username !== username) {
-          setTyping(true);
-          setTimeout(() => setTyping(false), 2000);
+    const channel = ablyRef.current.channels.get(`chat_${conversationId}`);
+    channelRef.current = channel;
+
+    // PRESENCE
+    channel.presence.enter({ username });
+
+    channel.presence.subscribe("enter", (m) => {
+      if (m.data.username === otherUsername) setOnline(true);
+    });
+
+    channel.presence.subscribe("leave", (m) => {
+      if (m.data.username === otherUsername) setOnline(false);
+    });
+
+    // NEW MESSAGE
+    channel.subscribe("new_message", async (msg) => {
+      if (!mounted) return;
+
+      const incoming = msg.data;
+
+      setMessages((prev) => {
+        if (prev.some((m) => String(m.id) === String(incoming.id))) {
+          return prev;
         }
+        return [...prev, incoming];
       });
 
-      // read
-      channel.subscribe("message_read", msg => {
-        setMessages(prev =>
-          prev.map(m =>
-            m.id === msg.data.message_id ? { ...m, status: "read" } : m
-          )
-        );
-      });
+      scrollBottom();
 
-    } catch (e) {
-      console.error("Ably error", e);
-    }
+      // mark delivered
+      try {
+        await fetchWithAuth(`/api/messaging/message/delivered/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message_id: incoming.id,
+          }),
+        });
+      } catch {}
+    });
+
+    // DELIVERED
+    channel.subscribe("message_delivered", (msg) => {
+      if (!mounted) return;
+
+      const message_id = msg.data.message_id || msg.data.id;
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m.id) === String(message_id)
+            ? { ...m, status: "delivered" }
+            : m
+        )
+      );
+    });
+
+    // READ
+    channel.subscribe("message_read", (msg) => {
+      if (!mounted) return;
+
+      const ids =
+        msg.data.message_ids ||
+        [msg.data.message_id || msg.data.id];
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          ids.includes(m.id)
+            ? { ...m, status: "read" }
+            : m
+        )
+      );
+    });
+
+    // TYPING
+    channel.subscribe("typing", (msg) => {
+      if (msg.data.username !== username) {
+        setTyping(true);
+        setTimeout(() => setTyping(false), 1000);
+      }
+    });
 
     return () => {
-      channelRef.current?.unsubscribe();
-      channelRef.current?.presence.leave();
-      ablyRef.current?.close();
+      mounted = false;
+
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current.presence.leave();
+      }
+
+      if (ablyRef.current) {
+        ablyRef.current.close();
+      }
     };
   }, [conversationId]);
 
   // ---------------- SEND ----------------
   const sendMessage = async () => {
-    if (!text.trim()) return;
-    const res = await fetchWithAuth(
-      `/api/messaging/messages/send/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          conversation: conversationId,
-          text,
-        }),
-      }
-    );
-    if (!res.ok) throw new Error("Send message failed");
-    const message = await res.json();
+    if (!text.trim() || sending) return;
+
+    const tempId = Date.now();
+
+    const tempMessage = {
+      id: tempId,
+      text,
+      sender_username: username,
+      status: "sending",
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, tempMessage]);
     setText("");
-    inputRef.current?.focus();
-    channelRef.current.publish("new_message", message);
+    scrollBottom();
+    setSending(true);
+
+    try {
+      const res = await fetchWithAuth(
+        `/api/messaging/messages/send/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversation: conversationId,
+            text,
+          }),
+        }
+      );
+
+      const realMessage = await res.json();
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId
+            ? { ...realMessage, status: "sent" }
+            : m
+        )
+      );
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId
+            ? { ...m, status: "failed" }
+            : m
+        )
+      );
+    } finally {
+      setSending(false);
+    }
   };
-  
 
   const sendTyping = () => {
     if (!channelRef.current || typingTimeout.current) return;
@@ -357,121 +314,68 @@ const {
     }, 1000);
   };
 
-  const leaveChat = () => navigate(-1);
-
-  // ---------------- UI STATES ----------------
-  if (convoError || msgError) {
-    return <div style={{ color: "red", padding: 20 }}>Something went wrong</div>;
-  }
-
-  if (convoLoading || !otherUser) {
-    return <div style={{ color: "white", padding: 20 }}>Loading chat...</div>;
-  }
-
   // ---------------- UI ----------------
+  if (!otherUser) return <div>Loading...</div>;
+
   return (
-  <div className="chat-wrapper">
-
-    {/* ✅ MOVED OUT — SAME CODE */}
-    <div className="chat-header">
-      <button className="cancel-btn" onClick={leaveChat}>✕</button>
-
-      <div className="user">
-        <div className="avatar-wrapper">
-          {otherUser?.avatar ? (
-            <img
-              src={fixUrl(otherUser.avatar)}
-              className="avatar"
-              alt=""
-              onClick={() => navigate(`/public-profile/${otherUser.username}`)}
-            />
-          ) : (
-            <div className="avatar-letter">
-              {otherUser.username.charAt(0).toUpperCase()}
-            </div>
-          )}
-          {online && <div className="online-dot"></div>}
+    <div className="chat-wrapper">
+      <div className="chat-header">
+        <button onClick={() => navigate(-1)}>✕</button>
+        <div>
+          {otherUser.username}
+          {online && <span className="online-dot" />}
         </div>
-
-        <div className="username">{otherUser.username}</div>
       </div>
 
-      {paymentLoading ? (
-        <FaSpinner className="spin" />
-      ) : paymentInfo ? (
-        <button className="pay-btn" onClick={() => setShowPaymentModal(true)}>
-          Pay
-        </button>
-      ) : null}
+      <div className="chat">
+        {typing && <div>{otherUser.username} typing...</div>}
 
-      
-    </div>
+        <div className="messages">
+          {messages.map((msg) => {
+            const mine = msg.sender_username === username;
 
-    {/* ✅ SCROLL AREA */}
-    <div className="chat">
+            return (
+              <div key={msg.id} className={mine ? "mine" : ""}>
+                <div className="bubble">
+                  {msg.text}
 
-      {typing && (
-        <div className="typing-indicator">
-          {otherUser.username} typing...
-        </div>
-      )}
+                  <div className="meta">
+                    {msg.created_at &&
+                      new Date(msg.created_at).toLocaleTimeString()}
 
-      <div className="messages">
-        {messages.map(msg => {
-          const mine = msg.sender_username === username;
-
-          return (
-            <div key={msg.id} className={`message ${mine ? "mine" : ""}`}>
-              <div className="bubble">
-                <div>{msg.text}</div>
-
-                <div className="meta">
-                  {msg.created_at
-                    ? new Date(msg.created_at).toLocaleTimeString()
-                    : ""}
-
-                  {mine && (
-                    <span className="tick">
-                      {msg.status === "read"
-                        ? "✓✓"
-                        : msg.status === "delivered"
-                        ? "✓✓"
-                        : "✓"}
-                    </span>
-                  )}
+                    {mine && (
+                      <span className="ticks">
+                        {msg.status === "failed" && "❌"}
+                        {msg.status === "sending" && "⏳"}
+                        {msg.status === "sent" && "✓"}
+                        {msg.status === "delivered" && "✓✓"}
+                        {msg.status === "read" && (
+                          <span className="blue">✓✓</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef}></div>
-      </div>
+            );
+          })}
+          <div ref={bottomRef}></div>
+        </div>
 
-      <div className="input">
-        <textarea
-          ref={inputRef}
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            sendTyping();
-          }}
-          onInput={(e) => {
-            e.target.style.height = "auto";
-            e.target.style.height = e.target.scrollHeight + "px";
-          }}
-          autoComplete="off"
-          placeholder="Type message..."
-        />
-        <button onClick={sendMessage}>▲</button>
+        <div className="input">
+          <textarea
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              sendTyping();
+            }}
+            placeholder="Type message..."
+          />
+          <button onClick={sendMessage} disabled={sending}>
+            ▲
+          </button>
+        </div>
       </div>
     </div>
-
-    {showPaymentModal && (
-      <PaymentModal
-        paymentInfo={paymentInfo}
-        onClose={() => setShowPaymentModal(false)}
-      />
-    )}
-  </div>
   );
 }

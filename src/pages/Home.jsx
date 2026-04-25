@@ -15,14 +15,17 @@ export default function Home() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const username = localStorage.getItem("username");
-
   // ✅ Protect route (unchanged)
   const [checkedAuth, setCheckedAuth] = useState(false);
   useEffect(() => {
+    const username = localStorage.getItem("username");
     const timer = setTimeout(() => {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
+      navigate("/login");
+    }
+    if (!username) {
       navigate("/login");
     }
 

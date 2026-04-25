@@ -119,7 +119,9 @@
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: #000;
+  object-fit: cover;
+  flex-shrink: 0;
+  border:1px solid #eee;
 }
 
 .name {

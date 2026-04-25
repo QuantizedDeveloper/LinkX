@@ -1,13 +1,16 @@
 import { useNavigate } from "react-router-dom";
-
+import { useQueryClient } from '@tanstack/react-query';
 export default function SideMenu({ open, onClose }) {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("username");
     localStorage.removeItem("email");
-    window.location.href = "/login";
+    //window.location.href = "/login";
+    localStorage.clear()
+    queryClient.clear()
   };
   if (!open) return null;
 

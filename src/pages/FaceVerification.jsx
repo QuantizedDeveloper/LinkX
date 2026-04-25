@@ -166,38 +166,46 @@ export default function FaceVerification() {
      4️⃣ SUBMIT TO BACKEND
   ============================== */
   const submit = async (capturesData) => {
-    try {
-      setSubmitting(true);
-      setStatus("Submitting...");
+  try {
+    setSubmitting(true);
+    setStatus("Submitting...");
 
-      const embeddings = capturesData.map((c) => c.embedding);
+    const embeddings = capturesData.map((c) => c.embedding);
+    const token = localStorage.getItem("accessToken");
 
-      const res = await axios.post(
-        "/api/accounts/complete-signup/",
-        { embeddings }
-      );
+    const res = await axios.post(
+      "/api/accounts/google-face-verify/",
+      { embeddings },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-      const data = res.data;
+    const data = res.data;
 
-      if (data.access) localStorage.setItem("accessToken", data.access);
-      if (data.refresh) localStorage.setItem("refreshToken", data.refresh);
-      if (data.username) localStorage.setItem("username", data.username);
+    // ✅ unified storage
+    if (data.access) localStorage.setItem("accessToken", data.access);
+    if (data.username) localStorage.setItem("username", data.username);
+    if (data.refresh) localStorage.setItem("refreshToken", data.refresh);
+    
 
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((t) => t.stop());
 
-      navigate("/");
-    } catch (err) {
-      console.error("SUBMIT ERROR:", err);
-      showToast(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Verification failed"
-      );
+    navigate("/"); // ✅ FIXED
+  } catch (err) {
+  const status = err.response?.status;
+  const backendError = err.response?.data;
 
-      setSubmitting(false);
-      setStatus("Ready!");
-    }
-  };
+  alert(
+    "STATUS: " + status + "\n\n" +
+    "RESPONSE: " + JSON.stringify(backendError, null, 2)
+  );
+
+  console.error("FULL ERROR:", err);
+}
+};
 
   /* =============================
      UI

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+/*import { useEffect, useState } from "react";
 
 const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
@@ -59,4 +59,4 @@ export default function useAutoRefresh() {
   }, []);
 
   return authLoading;
-}
+}*/

@@ -1,23 +1,28 @@
-const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
+/*const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export const fetchWithAuth = async (url, options = {}) => {
   let token = localStorage.getItem("accessToken");
 
+  if (!token) {
+    window.location.href = "/google-login";
+    return;
+  }
+
   let res = await fetch(API_BASE + url, {
     ...options,
     headers: {
+      "Content-Type": "application/json",
       ...options.headers,
       Authorization: `Bearer ${token}`,
     },
   });
 
-  // 🔥 If token expired
   if (res.status === 401) {
     console.log("Token expired → refreshing");
 
     const refreshToken = localStorage.getItem("refreshToken");
 
-    const refreshRes = await fetch(API_BASE + "/api/auth/refresh/", {
+    const refreshRes = await fetch(API_BASE + "/api/token/refresh/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,14 +39,80 @@ export const fetchWithAuth = async (url, options = {}) => {
     const data = await refreshRes.json();
     localStorage.setItem("accessToken", data.access);
 
-    // 🔁 retry original request
     res = await fetch(API_BASE + url, {
       ...options,
       headers: {
+        "Content-Type": "application/json",
         ...options.headers,
         Authorization: `Bearer ${data.access}`,
       },
     });
+  }
+
+  return res;
+};*/
+
+const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
+
+let isRefreshing = false;
+let refreshPromise = null;
+
+export const fetchWithAuth = async (url, options = {}) => {
+  let token = localStorage.getItem("accessToken");
+
+  if (!token) {
+    window.location.href = "/google-login";
+    return;
+  }
+
+  const isFormData = options.body instanceof FormData;
+
+  const makeRequest = async (accessToken) => {
+    return fetch(API_BASE + url, {
+      ...options,
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...options.headers,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  };
+
+  let res = await makeRequest(token);
+
+  // 🔁 Handle token refresh safely
+  if (res.status === 401) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+
+      refreshPromise = (async () => {
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        const refreshRes = await fetch(API_BASE + "/api/token/refresh/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ refresh: refreshToken }),
+        });
+
+        if (!refreshRes.ok) {
+          localStorage.clear();
+          window.location.href = "/login";
+          throw new Error("Refresh failed");
+        }
+
+        const data = await refreshRes.json();
+        localStorage.setItem("accessToken", data.access);
+        localStorage.setItem("refreshToken", data.refresh)
+        localStorage.setItem("username", data.username)
+        isRefreshing = false;
+        return data.access;
+      })();
+    }
+
+    const newToken = await refreshPromise;
+    res = await makeRequest(newToken);
   }
 
   return res;

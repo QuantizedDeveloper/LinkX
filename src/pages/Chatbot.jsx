@@ -5,7 +5,11 @@ import { FiSend } from "react-icons/fi";
 import "./Chatbot.css";
 import { showToast } from "../utils/toast";
 export default function Chatbot() {
-
+  const fixCloudinaryUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return `https://res.cloudinary.com/dd04focej/${url}`;
+  };
   const endRef = useRef();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
@@ -278,19 +282,19 @@ export default function Chatbot() {
                 <div className="cardHeader">
 
                   {/* AVATAR */}
-                  <div
-                    className="avatar"
-                    onClick={() => {
-                      if (!f?.username) {
-                        showToast("Something went wrong, try again later");
-                        return;
-                      }
-                      navigate(`/public-profile/${f.username}`);
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                  </div>
-
+                  <div className="avatar"
+                  onClick={() => {
+                  if (!f?.username) {
+                  showToast("Something went wrong, try again later");
+                  return;
+                  }
+                  navigate(`/public-profile/${f.username}`);
+                  }}
+                  style={{ cursor: "pointer" }}>
+                    <img src={fixCloudinaryUrl(f.avatar)}
+                    alt="avatar"
+                    class="avatar"/>
+                    </div>
                   <div>
                     <div className="name">{f.username}</div>
                     <div className="subtitle">{f.gig.title}</div>
@@ -318,7 +322,7 @@ export default function Chatbot() {
                   <button
                     className="viewBtn"
                     onClick={() => {
-                      if (!f?.portfolio) {
+                      if (!f?.portfolio_link) {
                         showToast("Something went wrong, try again later");
                         return;
                       }

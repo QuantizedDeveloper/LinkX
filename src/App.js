@@ -1,5 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import AppLayout from "./layout/AppLayout";
+import GoogleLogin from "./pages/GoogleLogin";
+import Username from "./pages/Username"
 import "./App.css";
 import Home from "./pages/Home";
 import Upload from "./pages/Upload";
@@ -20,12 +22,12 @@ import Chatbot from "./pages/Chatbot";
 import { useEffect } from "react";
 import PublicProfile from "./pages/publicProfile"
 
-import useAutoRefresh from "./useAutoRefresh"
+/*import useAutoRefresh from "./useAutoRefresh"*/
 const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 
 export default function App() {
-  useAutoRefresh();
+  /*useAutoRefresh();*/
   return (
     <Routes>
 
@@ -42,13 +44,20 @@ export default function App() {
       </Route>
 
       {/* ✅ ROUTES WITHOUT BottomNav */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/loginBan" element={<Login />} />
+      <Route path="/login" element={<GoogleLogin />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/verify-otp" element={<VerifyOtpSignup />} />
       <Route path="/faceVerification" element={<FaceVerification />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       {/*<Route path="/chat/:username"element={<Chat />} />*/}
+       <Route
+          path="/username"
+          element={
+              <Username />}
+        />
+      
       <Route path="/chat/:username" element={<Chat />} />
       <Route path="/chatbot" element={<Chatbot />} />
       {/*}<Route path="/" element={<Home />} />*/}
