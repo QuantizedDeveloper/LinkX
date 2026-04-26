@@ -25,9 +25,9 @@ export default function Home() {
     if (!token) {
       navigate("/login");
     }
-    if (!username) {
+    /*if (!username) {
       navigate("/login");
-    }
+    }*/
 
     setCheckedAuth(true);
   }, 100); // small delay

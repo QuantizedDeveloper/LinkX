@@ -121,7 +121,7 @@ export default function Chat() {
       const data = await res.json();
 
       // mark read
-      await fetchWithAuth(`/api/messaging/message/read/`, {
+      fetchWithAuth(`/api/messaging/message/read/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversation_id: conversationId }),
@@ -145,14 +145,15 @@ export default function Chat() {
 
     ablyRef.current = new Ably.Realtime({
       authCallback: async (_, cb) => {
-        try {
-          const res = await fetchWithAuth(`/api/messaging/ably-token/`);
-          const token = await res.json();
-          cb(null, token);
-        } catch {
-          cb("error", null);
+        const res = await fetchWithAuth("/api/messaging/ably-token/");
+        
+        if (!res) {
+          console.error("fetchWithAuth returned NOTHING");
+          return cb("No response", null);
         }
-      },
+        const text = await res.text();
+        cb(null, JSON.parse(text));
+      }
     });
 
     const channel = ablyRef.current.channels.get(`chat_${conversationId}`);
@@ -174,13 +175,22 @@ export default function Chat() {
       if (!mounted) return;
 
       const incoming = msg.data;
-
-      setMessages((prev) => {
-        if (prev.some((m) => String(m.id) === String(incoming.id))) {
-          return prev;
+      setMessages(prev => {
+        // 1. match using client_id (PRIMARY)
+        if (incoming.client_id) {
+          const exists = prev.some(m => m.client_id === incoming.client_id);
+          if (exists) { return prev.map(m => m.client_id === incoming.client_id
+          ? incoming
+          : m);
+          }
+        }
+        // 2. fallback (for older messages)
+        if (prev.some(m => m.id === incoming.id)) { return prev;
         }
         return [...prev, incoming];
+        
       });
+      
 
       scrollBottom();
 
@@ -253,11 +263,12 @@ export default function Chat() {
   // ---------------- SEND ----------------
   const sendMessage = async () => {
     if (!text.trim() || sending) return;
-
+    const clientId = crypto.randomUUID();
     const tempId = Date.now();
 
     const tempMessage = {
       id: tempId,
+      client_id: clientId,
       text,
       sender_username: username,
       status: "sending",
@@ -268,40 +279,31 @@ export default function Chat() {
     setText("");
     scrollBottom();
     setSending(true);
-
-    try {
-      const res = await fetchWithAuth(
-        `/api/messaging/messages/send/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            conversation: conversationId,
-            text,
+    // mark as sent instantly
+    setMessages(prev =>
+    prev.map(m =>
+    m.id === tempId
+      ? { ...m, status: "sent" }
+      : m )
+      );
+      // fire request in background (NO await)
+      fetchWithAuth(`/api/messaging/messages/send/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation: conversationId,
+          text,
+          client_id: clientId
           }),
-        }
-      );
-
-      const realMessage = await res.json();
-
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === tempId
-            ? { ...realMessage, status: "sent" }
-            : m
-        )
-      );
-    } catch {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === tempId
-            ? { ...m, status: "failed" }
-            : m
-        )
-      );
-    } finally {
+        
+      }).catch(() => {
+        setMessages(prev => prev.map(m => m.id === tempId
+        ? { ...m, status: "failed" }
+        : m)
+        );
+        
+      });
       setSending(false);
-    }
   };
 
   const sendTyping = () => {

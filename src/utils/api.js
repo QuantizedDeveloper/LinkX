@@ -92,7 +92,7 @@ export const fetchWithAuth = async (url, options = {}) => {
             throw new Error("No refresh token");
           }
 
-          const refreshRes = await fetch(API_BASE + "/api/token/refresh/", {
+          const refreshRes = await fetch(API_BASE + "/api/auth/refresh/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
