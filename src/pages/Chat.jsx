@@ -1,221 +1,440 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Ably from "ably";
-import { useQuery } from "@tanstack/react-query";
-import { FaSpinner } from "react-icons/fa";
-import "./Chat.css";
-import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "../utils/api";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import "./Chat.css";
+import { IoSend } from "react-icons/io5";
 
-const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
-
-const fixUrl = (url) => {
-  if (!url) return null;
-  if (url.startsWith("http://")) url = url.replace("http://", "https://");
-  if (url.startsWith("http")) return url;
-  return base_url + url;
-};
-
-//////////////////// PAYMENT MODAL ////////////////////
-function PaymentModal({ paymentInfo, onClose }) {
-  const [showQR, setShowQR] = useState(null);
-
-  if (!paymentInfo) return null;
-
-  const copyUPI = (upi) => {
-    navigator.clipboard.writeText(upi);
-    showToast("UPI copied");
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Payment Methods</h3>
-
-        <button className="close-btn" onClick={onClose}>✕</button>
-
-        {paymentInfo.razorpay_link && (
-          <a href={paymentInfo.razorpay_link} target="_blank" rel="noreferrer">
-            Pay with Razorpay
-          </a>
-        )}
-
-        {paymentInfo.paypal_link && (
-          <a href={paymentInfo.paypal_link} target="_blank" rel="noreferrer">
-            Pay with PayPal
-          </a>
-        )}
-
-        {paymentInfo.upi_id && (
-          <button onClick={() => copyUPI(paymentInfo.upi_id)}>
-            Copy UPI ID
-          </button>
-        )}
-
-        {paymentInfo.upi_qr && (
-          <button onClick={() => setShowQR(paymentInfo.upi_qr)}>
-            Show QR
-          </button>
-        )}
-
-        {showQR && (
-          <div className="qr-modal">
-            <img src={fixUrl(showQR)} alt="QR" />
-            <button onClick={() => setShowQR(null)}>Close</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-//////////////////// MAIN CHAT ////////////////////
-
-
+import PaymentModal from "./PaymentModal";
 export default function Chat() {
-  const navigate = useNavigate();
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fixCloudinaryUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return `https://res.cloudinary.com/dd04focej/${url}`;
+  };
+  
   const { username: otherUsername } = useParams();
+  const navigate = useNavigate();
+
   const username = localStorage.getItem("username");
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
-  const [online, setOnline] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [conversationId, setConversationId] = useState(null);
+  const [otherUser, setOtherUser] = useState(null);
 
-  const ablyRef = useRef(null);
+  const containerRef = useRef(null);
+  const typingTimer = useRef(null);
+  const conversationIdRef = useRef(null);
   const channelRef = useRef(null);
-  const bottomRef = useRef(null);
-  const typingTimeout = useRef(null);
 
-  const scrollBottom = () => {
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  };
+  // scroll control
+  const firstLoadRef = useRef(true);
+  const isPaginatingRef = useRef(false);
+  const shouldAutoScrollRef = useRef(true);
+  const [showPayment, setShowPayment] = useState(false);
 
-  // ---------------- CONVERSATION ----------------
-  const { data: conversationData } = useQuery({
-    queryKey: ["conversation", otherUsername],
-    queryFn: async () => {
-      const res = await fetchWithAuth(`/api/messaging/conversation/create/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: otherUsername }),
-      });
-      return res.json();
-    },
-    enabled: !!otherUsername,
-  });
-
-  const conversationId = conversationData?.conversation_id;
-  const otherUser = conversationData?.other_user;
-
-  // ---------------- MESSAGES ----------------
-  const { data: messagesData = [] } = useQuery({
-    queryKey: ["messages", conversationId],
-    queryFn: async () => {
-      const res = await fetchWithAuth(
-        `/api/messaging/messages/${conversationId}/`
-      );
-      const data = await res.json();
-
-      // mark read
-      fetchWithAuth(`/api/messaging/message/read/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversation_id: conversationId }),
-      });
-
-      return data;
-    },
-    enabled: !!conversationId,
-  });
-
+  // ---------------- INIT ----------------
   useEffect(() => {
-    setMessages(messagesData);
-    scrollBottom();
-  }, [messagesData]);
+    fetchNotifications();
+  }, []);
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await fetchWithAuth(
+          `/api/messaging/conversation/create/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username: otherUsername,
+            }),
+          }
+        );
+
+        const data = await res.json();
+
+        setConversationId(data.conversation_id);
+        setOtherUser(data.other_user);
+
+        conversationIdRef.current = data.conversation_id;
+
+        // reset when switching chats
+        firstLoadRef.current = true;
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (otherUsername) {
+      init();
+    }
+  }, [otherUsername]);
+  const uploadToCloudinary = async (file) => {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  formData.append(
+    "upload_preset",
+    "YOUR_UPLOAD_PRESET"
+  );
+
+  const resourceType = file.type.startsWith("video")
+    ? "video"
+    : "image";
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/dd04focej/${resourceType}/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  return res.json();
+};
+  // ---------------- QUERY ----------------
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["messages", conversationId],
+
+    enabled: !!conversationId,
+
+    queryFn: async ({ pageParam = null }) => {
+      let url =
+    pageParam ||
+    `/api/messaging/messages/${conversationId}/`;
+    // convert full backend URL -> relative URL
+    if (url.startsWith("http")) {
+      const parsed = new URL(url);
+      url = parsed.pathname + parsed.search;
+    }
+    const res = await fetchWithAuth(url);
+    return res.json();
+    },
+
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.next) return undefined;
+      //console.log(lastPage.next);
+      //alert(JSON.stringify(lastPage.next));
+      return lastPage.next;
+    },
+
+    //staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: true,
+    
+  });
+
+  // ---------------- LOAD MESSAGES ----------------
+  const fetchNotifications = async () => {
+    try {
+
+        const res = await fetchWithAuth("api/messaging/notifications/");
+
+        if (!res.ok) {
+            throw new Error("Failed to fetch notifications");
+        }
+
+        const data = await res.json();
+
+        setNotifications(data);
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+  {/*useEffect(() => {
+    if (!data) return;
+
+    const allMessages = data.pages.flatMap(
+      (page) => page.results ?? []
+    );
+
+    setMessages((prev) => {
+      const map = new Map();
+
+      prev.forEach((m) => {
+        map.set(m.id || m.client_id, m);
+      });
+
+      allMessages.forEach((m) => {
+        map.set(m.id || m.client_id, m);
+      });
+
+      return Array.from(map.values()).sort(
+        (a, b) =>
+          new Date(a.created_at) - new Date(b.created_at)
+      );
+    });
+  }, [data]);*/}
+  {/*useEffect(() => {
+    if (!data) return;
+    const allMessages = data.pages.flatMap(
+    (page) => page.results ?? []
+  );
+
+  const unique = new Map();
+
+  allMessages.forEach((m) => {
+    unique.set(m.id, m);
+  });
+
+  const sorted = Array.from(unique.values()).sort(
+    (a, b) =>
+      new Date(a.created_at) -
+      new Date(b.created_at)
+  );
+
+  setMessages(sorted);
+}, [data]);*/}
+  useEffect(() => {
+  if (!data) return;
+
+  const fetched = data.pages.flatMap(
+    (page) => page.results ?? []
+  );
+
+  setMessages((prev) => {
+    // first load
+    if (prev.length === 0) {
+      return fetched.sort(
+        (a, b) =>
+          new Date(a.created_at) -
+          new Date(b.created_at)
+      );
+    }
+
+    const existingIds = new Set(
+      prev.map((m) => m.id)
+    );
+
+    // ONLY add older missing messages
+    const missing = fetched.filter(
+      (m) => !existingIds.has(m.id)
+    );
+
+    return [...missing, ...prev].sort(
+      (a, b) =>
+        new Date(a.created_at) -
+        new Date(b.created_at)
+    );
+  });
+}, [data]);
+
+  // ---------------- SMART AUTO SCROLL ----------------
+  useEffect(() => {
+    const el = containerRef.current;
+
+    if (!el || !messages.length) return;
+
+    // first load only
+    if (firstLoadRef.current) {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
+
+      firstLoadRef.current = false;
+      return;
+    }
+
+    // don't auto scroll during pagination
+    if (isPaginatingRef.current) {
+      isPaginatingRef.current = false;
+      return;
+    }
+
+    // only auto scroll if already near bottom
+    if (shouldAutoScrollRef.current) {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
+    }
+  }, [messages]);
+
+  // ---------------- PAGINATION + SCROLL ----------------
+  const handleScroll = async () => {
+    const el = containerRef.current;
+
+    if (!el) return;
+
+    // distance from bottom
+    const distanceFromBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight;
+
+    // user near bottom?
+    shouldAutoScrollRef.current =
+      distanceFromBottom < 120;
+
+    // fetch old messages
+    if (
+      el.scrollTop < 100 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      isPaginatingRef.current = true;
+
+      const prevHeight = el.scrollHeight;
+
+      await fetchNextPage();
+
+      requestAnimationFrame(() => {
+        const newHeight = el.scrollHeight;
+
+        // preserve scroll position
+        el.scrollTop =
+          newHeight - prevHeight + el.scrollTop;
+      });
+    }
+  };
 
   // ---------------- ABLY ----------------
   useEffect(() => {
     if (!conversationId) return;
 
-    let mounted = true;
-
-    ablyRef.current = new Ably.Realtime({
+    const ably = new Ably.Realtime({
       authCallback: async (_, cb) => {
-        const res = await fetchWithAuth("/api/messaging/ably-token/");
-        
-        if (!res) {
-          console.error("fetchWithAuth returned NOTHING");
-          return cb("No response", null);
+        try {
+          const res = await fetchWithAuth(
+            "/api/messaging/ably-token/"
+          );
+
+          const data = await res.json();
+
+          cb(null, data);
+        } catch (err) {
+          cb(err, null);
         }
-        const text = await res.text();
-        cb(null, JSON.parse(text));
-      }
+      },
     });
 
-    const channel = ablyRef.current.channels.get(`chat_${conversationId}`);
+    const channel = ably.channels.get(
+      `chat_${conversationId}`
+    );
+
     channelRef.current = channel;
 
-    // PRESENCE
-    channel.presence.enter({ username });
-
-    channel.presence.subscribe("enter", (m) => {
-      if (m.data.username === otherUsername) setOnline(true);
+    channel.presence.enter({
+      username,
     });
-
-    channel.presence.subscribe("leave", (m) => {
-      if (m.data.username === otherUsername) setOnline(false);
+    channel.subscribe("new_message", async (msg) => {
+      const incoming = msg.data;
+      if (
+        incoming.conversation !== conversationIdRef.current) {
+          return;
+        }
+        setMessages((prev) => {
+          // remove temp version if exists
+          const filtered = prev.filter((m) => m.client_id !== incoming.client_id && String(m.id) !== String(incoming.id));
+          return [...filtered, incoming].sort((a, b) =>
+        new Date(a.created_at) -
+        new Date(b.created_at)
+        );
+        });
+        try {
+          await fetchWithAuth(
+      `/api/messaging/message/delivered/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message_id: incoming.id,
+        }),
+      }
+    );
+  } catch {}
+      
     });
 
     // NEW MESSAGE
-    channel.subscribe("new_message", async (msg) => {
-      if (!mounted) return;
-
+    {/*channel.subscribe("new_message", async (msg) => {
       const incoming = msg.data;
-      setMessages(prev => {
-        // 1. match using client_id (PRIMARY)
+
+      if (
+        incoming.conversation !==
+        conversationIdRef.current
+      ) {
+        return;
+      }
+
+      setMessages((prev) => {
+        // replace optimistic temp message
         if (incoming.client_id) {
-          const exists = prev.some(m => m.client_id === incoming.client_id);
-          if (exists) { return prev.map(m => m.client_id === incoming.client_id
-          ? incoming
-          : m);
+          const idx = prev.findIndex(
+            (m) => m.client_id === incoming.client_id
+          );
+
+          if (idx !== -1) {
+            const copy = [...prev];
+
+            {/*copy[idx] = {
+              ...copy[idx],
+              ...incoming,
+              status: "sent",
+            };
+            copy[idx] = {
+              ...incoming,
+              status: incoming.status || "sent",
+            };
+
+            return copy;
           }
         }
-        // 2. fallback (for older messages)
-        if (prev.some(m => m.id === incoming.id)) { return prev;
-        }
-        return [...prev, incoming];
-        
-      });
-      
 
-      scrollBottom();
+        // prevent duplicates
+        if (
+          prev.some(
+            (m) => String(m.id) === String(incoming.id)
+          )
+        ) {
+          return prev;
+        }
+
+        return [...prev, incoming];
+      });
 
       // mark delivered
       try {
-        await fetchWithAuth(`/api/messaging/message/delivered/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message_id: incoming.id,
-          }),
-        });
+        await fetchWithAuth(
+          `/api/messaging/message/delivered/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message_id: incoming.id,
+            }),
+          }
+        );
       } catch {}
-    });
+    })*/};
 
     // DELIVERED
     channel.subscribe("message_delivered", (msg) => {
-      if (!mounted) return;
-
-      const message_id = msg.data.message_id || msg.data.id;
+      const id = msg.data.id || msg.data.message_id;
 
       setMessages((prev) =>
         prev.map((m) =>
-          String(m.id) === String(message_id)
-            ? { ...m, status: "delivered" }
+          String(m.id) === String(id)
+            ? {
+                ...m,
+                status: "delivered",
+              }
             : m
         )
       );
@@ -223,16 +442,16 @@ export default function Chat() {
 
     // READ
     channel.subscribe("message_read", (msg) => {
-      if (!mounted) return;
-
       const ids =
-        msg.data.message_ids ||
-        [msg.data.message_id || msg.data.id];
+        msg.data.message_ids || [msg.data.message_id];
 
       setMessages((prev) =>
         prev.map((m) =>
           ids.includes(m.id)
-            ? { ...m, status: "read" }
+            ? {
+                ...m,
+                status: "read",
+              }
             : m
         )
       );
@@ -242,142 +461,321 @@ export default function Chat() {
     channel.subscribe("typing", (msg) => {
       if (msg.data.username !== username) {
         setTyping(true);
-        setTimeout(() => setTyping(false), 1000);
+
+        clearTimeout(typingTimer.current);
+
+        typingTimer.current = setTimeout(() => {
+          setTyping(false);
+        }, 1000);
       }
+    });
+    channel.subscribe("notification", (msg) => {
+    setNotifications(prev => [msg.data, ...prev]);
     });
 
     return () => {
-      mounted = false;
-
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current.presence.leave();
-      }
-
-      if (ablyRef.current) {
-        ablyRef.current.close();
-      }
+      channel.unsubscribe();
+      channel.presence.leave();
+      ably.close();
     };
   }, [conversationId]);
 
   // ---------------- SEND ----------------
   const sendMessage = async () => {
-    if (!text.trim() || sending) return;
-    const clientId = crypto.randomUUID();
-    const tempId = Date.now();
+  if (!text.trim() && !selectedFile) return;
 
+  const clientId = crypto.randomUUID();
+
+  let imageUrl = null;
+  let videoUrl = null;
+  let thumbnailUrl = null;
+
+  try {
+    setUploading(true);
+
+    // Upload media first
+    if (selectedFile) {
+      const uploaded = await uploadToCloudinary(
+        selectedFile
+      );
+
+      if (
+        selectedFile.type.startsWith("image")
+      ) {
+        imageUrl = uploaded.secure_url;
+      }
+
+      if (
+        selectedFile.type.startsWith("video")
+      ) {
+        videoUrl = uploaded.secure_url;
+
+        thumbnailUrl =
+          uploaded.secure_url.replace(
+            ".mp4",
+            ".jpg"
+          );
+      }
+    }
+
+    // Optimistic message
     const tempMessage = {
-      id: tempId,
+      id: `temp-${clientId}`,
       client_id: clientId,
       text,
+      image_url: imageUrl,
+      video_url: videoUrl,
+      thumbnail_url: thumbnailUrl,
       sender_username: username,
       status: "sending",
       created_at: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, tempMessage]);
+    setMessages((prev) => [
+      ...prev,
+      tempMessage,
+    ]);
+
+    const messageText = text;
+
     setText("");
-    scrollBottom();
-    setSending(true);
-    // mark as sent instantly
-    setMessages(prev =>
-    prev.map(m =>
-    m.id === tempId
-      ? { ...m, status: "sent" }
-      : m )
-      );
-      // fire request in background (NO await)
-      fetchWithAuth(`/api/messaging/messages/send/`, {
+    setSelectedFile(null);
+
+    await fetchWithAuth(
+      `/api/messaging/messages/send/`,
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           conversation: conversationId,
-          text,
-          client_id: clientId
-          }),
-        
-      }).catch(() => {
-        setMessages(prev => prev.map(m => m.id === tempId
-        ? { ...m, status: "failed" }
-        : m)
-        );
-        
-      });
-      setSending(false);
-  };
-
-  const sendTyping = () => {
-    if (!channelRef.current || typingTimeout.current) return;
-
-    channelRef.current.publish("typing", { username });
-
-    typingTimeout.current = setTimeout(() => {
-      typingTimeout.current = null;
-    }, 1000);
-  };
+          text: messageText,
+          client_id: clientId,
+          image_url: imageUrl,
+          video_url: videoUrl,
+          thumbnail_url: thumbnailUrl,
+        }),
+      }
+    );
+  } catch {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.client_id === clientId
+          ? {
+              ...m,
+              status: "failed",
+            }
+          : m
+      )
+    );
+  } finally {
+    setUploading(false);
+  }
+};
 
   // ---------------- UI ----------------
-  if (!otherUser) return <div>Loading...</div>;
+  if (!otherUser) return null;
 
   return (
     <div className="chat-wrapper">
+      {/* HEADER */}
       <div className="chat-header">
-        <button onClick={() => navigate(-1)}>✕</button>
-        <div>
+  <div className="header-left">
+    <button
+      className="back-btn"
+      onClick={() => navigate(-1)}
+    >
+      ✕
+    </button>
+
+    <div className="header-user">
+      {otherUser.avatar ? (
+        <img
+          src={fixCloudinaryUrl(otherUser.avatar)}
+          className="avatar"
+          onClick={() => navigate(`/public-profile/${otherUser.username}`)}
+        />
+      ) : (
+        <div className="avatar-fallback"onClick={() => navigate(`/public-profile/${otherUser.username}`)}>
+          {otherUser.username[0].toUpperCase()}
+        </div>
+      )}
+
+      <div className="header-meta">
+        <span className="header-name">
           {otherUser.username}
-          {online && <span className="online-dot" />}
-        </div>
-      </div>
+        </span>
 
-      <div className="chat">
-        {typing && <div>{otherUser.username} typing...</div>}
-
-        <div className="messages">
-          {messages.map((msg) => {
-            const mine = msg.sender_username === username;
-
-            return (
-              <div key={msg.id} className={mine ? "mine" : ""}>
-                <div className="bubble">
-                  {msg.text}
-
-                  <div className="meta">
-                    {msg.created_at &&
-                      new Date(msg.created_at).toLocaleTimeString()}
-
-                    {mine && (
-                      <span className="ticks">
-                        {msg.status === "failed" && "❌"}
-                        {msg.status === "sending" && "⏳"}
-                        {msg.status === "sent" && "✓"}
-                        {msg.status === "delivered" && "✓✓"}
-                        {msg.status === "read" && (
-                          <span className="blue">✓✓</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          <div ref={bottomRef}></div>
-        </div>
-
-        <div className="input">
-          <textarea
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              sendTyping();
-            }}
-            placeholder="Type message..."
-          />
-          <button onClick={sendMessage} disabled={sending}>
-            ▲
-          </button>
-        </div>
+        {typing && (
+          <span className="typing-text">
+            typing...
+          </span>
+        )}
       </div>
     </div>
+  </div>
+
+  {otherUser.is_freelancer && (
+    <button
+      className="pay-btn"
+      onClick={() => setShowPayment(true)}
+    >
+      Pay
+    </button>
+  )}
+</div>
+ 
+
+      {/* CHAT BODY */}
+      <div
+        className="chat-body"
+        ref={containerRef}
+        onScroll={handleScroll}
+      >
+        <div className="messages">
+          {isFetchingNextPage && (
+            <div className="loading-more">
+              Loading older messages...
+            </div>
+          )}
+
+          {messages.map((msg) => {
+            const mine =
+              msg.sender_username === username;
+
+            return (
+              <div
+                key={msg.client_id || msg.id}
+                className={`message-row ${
+                  mine ? "mine" : "other"
+                }`}
+              ><div className="bubble">
+
+  {msg.text && (
+    <div className="message-text">
+      {msg.text}
+    </div>
+  )}
+
+  {msg.image_url && (
+    <>
+      <img
+        src={fixCloudinaryUrl(msg.image_url)}
+        className="chat-image"
+        alt="shared"
+      />
+
+      <a
+        href={msg.image_url}
+        download
+        target="_blank"
+        rel="noreferrer"
+        className="download-link"
+      >
+        Download Image
+      </a>
+    </>
+  )}
+
+  {msg.video_url && (
+    <>
+      <video
+        controls
+        className="chat-video"
+        //poster={msg.thumbnail_url}
+        poster={fixCloudinaryUrl(msg.thumbnail_url)}
+      >
+        <source
+          //src={msg.video_url}
+          src={fixCloudinaryUrl(msg.video_url)}
+          type="video/mp4"
+        />
+      </video>
+
+      <a
+        //href={otherUser.video_url}
+        href={fixCloudinaryUrl(msg.video_url)}
+        download
+        target="_blank"
+        rel="noreferrer"
+        className="download-link"
+      >
+        Download Video
+      </a>
+    </>
+  )}
+
+  <div className="meta">
+    {new Date(msg.created_at).toLocaleTimeString(
+      [],
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    )}
+
+    {mine && (
+      <span>
+        {msg.status === "sending" && "⏳"}
+        {msg.status === "sent" && "✓"}
+        {msg.status === "delivered" && "✓✓"}
+        {msg.status === "read" && "✓✓"}
+        {msg.status === "failed" && "❌"}
+      </span>
+    )}
+  </div>
+
+</div>
+                
+                
+                  
+                </div>
+
+            );
+          })}
+
+          {typing && (
+            <div className="typing">
+              {otherUser.username} typing...
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* INPUT */}
+      <div className="chat-input">
+        <input
+        type="file"
+        accept="image/*,video/*"
+        onChange={(e) => {
+        setSelectedFile(e.target.files[0]);}}
+        />
+        <textarea
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+
+            channelRef.current?.publish("typing", {
+              username,
+            });
+          }}
+          placeholder="Type a message..."
+        />
+
+        <button className="send-btn"
+        onClick={sendMessage}
+        >
+          <IoSend />
+        </button>
+      </div>
+     {showPayment && (
+  <PaymentModal
+    paymentInfo={otherUser.payment_info}
+    onClose={() => setShowPayment(false)}
+  />
+)}
+    </div>
+    
   );
 }

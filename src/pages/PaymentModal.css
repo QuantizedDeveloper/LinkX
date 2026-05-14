@@ -1,0 +1,131 @@
+/* ---------------- Payment Modal ---------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background-color: #1a1a1a; /* match chat dark theme */
+  padding: 20px;
+  border-radius: 12px;
+  width: 280px;
+  max-width: 90%;
+  position: relative;
+  color: white;
+  box-shadow: 0 0 15px rgba(0,0,0,0.4);
+}
+
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.modal .close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.modal ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.modal ul li.payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal ul li.payment-item:last-child {
+  border-bottom: none;
+}
+
+.modal ul li.payment-item span {
+  margin-left: 8px;
+}
+
+.modal ul li.payment-item button {
+  background: #333;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.modal ul li.payment-item a {
+  color: #4caf50;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Spinner for payment loading */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ---------------- QR Modal Nested ---------------- */
+.qr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  z-index: 1100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.qr-modal {
+  background-color: #1a1a1a;
+  padding: 20px;
+  border-radius: 12px;
+  width: 250px;
+  max-width: 90%;
+  text-align: center;
+  position: relative;
+}
+
+.qr-modal img {
+  width: 100%;
+  height: auto;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+.qr-modal button {
+  background: #333;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}

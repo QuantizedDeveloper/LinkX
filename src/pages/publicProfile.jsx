@@ -219,28 +219,35 @@ export default function PublicProfile() {
 
       <div style={styles.infoSection}>
         <div style={styles.nameRow}>
-          <h2 style={{ margin: 0 }}>{profile.display_name || profile.username}</h2>
-
-          <div
-            style={styles.messageIcon}
-            onClick={() => {
-              if (currentUser === username) {
-                showToast("You cannot message yourself");
-                return;
-              }
-              navigate(`/chat/${username}`);
-            }}
-          >
-            <FiMail size={20} color="black" />
-          </div>
+           {/* Row 1 */}
+           <div style={styles.topRow}>
+             <h2 style={{ margin: 0 }}>
+      {profile.display_name || profile.username}
+      </h2>
+      <div style={styles.messageIcon} onClick={() => {
+      if (currentUser === username) {
+          showToast("You cannot message yourself");
+          return;
+        }
+        navigate(`/chat/${username}`);
+      }} >
+         <FiMail size={18} color="black" />
+         </div>
         </div>
+        {/* Row 2 */}
+        <p style={styles.subRow}>
+           @{profile.username}{" "}
+           {ratingData?.total_reviews > 0? `⭐${ratingData.avg_rating}(${ratingData.total_reviews})`
+      : "⭐ New"}
+      </p>
+      </div>
 
-        <p>
+        {/*}<p>
           @{profile.username}{" "}
           {ratingData?.total_reviews > 0
             ? `⭐${ratingData.avg_rating}(${ratingData.total_reviews})`
             : "⭐ New"}
-        </p>
+        </p>*/}
 
         <p style={{ marginTop: 15 }}>{profile.description}</p>
       </div>
@@ -419,10 +426,9 @@ const styles = {
   },
 
   nameRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 5,
-    fontFamily: "Inter, sans-serif"
+  display: "flex",
+  flexDirection: "column",
+    
   },
 
   username: {
@@ -525,6 +531,17 @@ const styles = {
     color:"white",
     alignItems:"center"
   },
+  leftInfo: {
+  display: "flex",
+  flexDirection: "column",
+  fontFamily: "Inter, sans-serif"},
+  topRow: {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",},
+  subRow: { margin: 0,
+  color: "grey"
+  }
 };
 
 
