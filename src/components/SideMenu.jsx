@@ -4,14 +4,31 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchWithAuth } from "../utils/api";
 export default function SideMenu({ open, onClose }) {
   const fetchActiveFreelancers = async () => {
-    const res = await fetchWithAuth(
-    "/freelancers/active-count/");
+  try {
+    const res = await fetch(
+      "https://linkx-backend-api-linkx-backend.hf.space/freelancers/active-count/"
+    );
+
+    alert("REQUEST SENT");
+
     if (!res.ok) {
-      throw new Error(
-        "Failed to fetch active freelancers");
-        }
-    return res.json();
+      alert("REQUEST FAILED");
+      return null;
+    }
+
+    const data = await res.json();
+
+    alert(
+      "COUNT: " + data.active_freelancers
+    );
+
+    return data;
+
+  } catch (error) {
+    alert("FETCH ERROR");
+    return null;
   }
+};
   
   const { data } = useQuery({
   queryKey: ["active-freelancers"],

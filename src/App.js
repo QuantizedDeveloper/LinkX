@@ -21,13 +21,14 @@ import Chat from "./pages/Chat";
 import Chatbot from "./pages/Chatbot";
 import { useEffect } from "react";
 import PublicProfile from "./pages/publicProfile"
-
+import ActivityTracker from "./ActivityTracker.jsx"
 /*import useAutoRefresh from "./useAutoRefresh"*/
 const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 
 export default function App() {
   /*useAutoRefresh();*/
+  <ActivityTracker />
   return (
     <Routes>
 

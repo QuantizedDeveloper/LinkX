@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { fetchWithAuth } from "../utils/api";
+import { fetchWithAuth } from "./utils/api";
 
 const ActivityTracker = () => {
   useEffect(() => {
@@ -19,9 +19,12 @@ const ActivityTracker = () => {
       try {
         await fetchWithAuth("/freelancers/ping/");
         
+        
       } catch (error) {
         console.error("Heartbeat failed:", error);
+        alert("cannot send ping")
       }
+      alert("pimg sended")
     };
 
     const startTracking = () => {
