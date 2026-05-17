@@ -4,9 +4,18 @@ import Ably from "ably";
 import { fetchWithAuth } from "../utils/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import "./Chat.css";
-import { IoSend } from "react-icons/io5";
 
 import PaymentModal from "./PaymentModal";
+import {
+  FiPlus,
+  FiDownload,
+  FiEye,
+  FiX,
+} from "react-icons/fi";
+
+import { IoSend } from "react-icons/io5";
+
+
 export default function Chat() {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -15,6 +24,10 @@ export default function Chat() {
     if (url.startsWith("http")) return url;
     return `https://res.cloudinary.com/dd04focej/${url}`;
   };
+  // new
+  const [mediaModal, setMediaModal] =
+  useState(null);
+  const fileInputRef = useRef(null);
   
   const { username: otherUsername } = useParams();
   const navigate = useNavigate();
@@ -84,7 +97,7 @@ export default function Chat() {
 
   formData.append(
     "upload_preset",
-    "YOUR_UPLOAD_PRESET"
+    "chat_uploads"
   );
 
   const resourceType = file.type.startsWith("video")
@@ -479,7 +492,14 @@ export default function Chat() {
       ably.close();
     };
   }, [conversationId]);
+  //new
+  const handleFilePick = (e) => {
+  const file = e.target.files[0];
 
+  if (!file) return;
+
+  setSelectedFile(file);
+  };
   // ---------------- SEND ----------------
   const sendMessage = async () => {
   if (!text.trim() && !selectedFile) return;
@@ -577,205 +597,408 @@ export default function Chat() {
   // ---------------- UI ----------------
   if (!otherUser) return null;
 
-  return (
-    <div className="chat-wrapper">
-      {/* HEADER */}
-      <div className="chat-header">
-  <div className="header-left">
-    <button
-      className="back-btn"
-      onClick={() => navigate(-1)}
-    >
-      ✕
-    </button>
+  
+return (
+  <div className="chat-wrapper">
 
-    <div className="header-user">
-      {otherUser.avatar ? (
-        <img
-          src={fixCloudinaryUrl(otherUser.avatar)}
-          className="avatar"
-          onClick={() => navigate(`/public-profile/${otherUser.username}`)}
-        />
-      ) : (
-        <div className="avatar-fallback"onClick={() => navigate(`/public-profile/${otherUser.username}`)}>
-          {otherUser.username[0].toUpperCase()}
-        </div>
-      )}
+    {/* HEADER */}
+    <div className="chat-header">
 
-      <div className="header-meta">
-        <span className="header-name">
-          {otherUser.username}
-        </span>
+      <div className="header-left">
 
-        {typing && (
-          <span className="typing-text">
-            typing...
-          </span>
-        )}
-      </div>
-    </div>
-  </div>
+        <button
+          className="back-btn"
+          onClick={() => navigate(-1)}
+        >
+          <FiX />
+        </button>
 
-  {otherUser.is_freelancer && (
-    <button
-      className="pay-btn"
-      onClick={() => setShowPayment(true)}
-    >
-      Pay
-    </button>
-  )}
-</div>
- 
+        <div className="header-user">
 
-      {/* CHAT BODY */}
-      <div
-        className="chat-body"
-        ref={containerRef}
-        onScroll={handleScroll}
-      >
-        <div className="messages">
-          {isFetchingNextPage && (
-            <div className="loading-more">
-              Loading older messages...
+          {otherUser.avatar ? (
+            <img
+              src={otherUser.avatar}
+              className="avatar"
+              onClick={() =>
+                navigate(
+                  `/public-profile/${otherUser.username}`
+                )
+              }
+            />
+          ) : (
+            <div
+              className="avatar-fallback"
+              onClick={() =>
+                navigate(
+                  `/public-profile/${otherUser.username}`
+                )
+              }
+            >
+              {otherUser.username[0].toUpperCase()}
             </div>
           )}
 
-          {messages.map((msg) => {
-            const mine =
-              msg.sender_username === username;
+          <div className="header-meta">
 
-            return (
-              <div
-                key={msg.client_id || msg.id}
-                className={`message-row ${
-                  mine ? "mine" : "other"
-                }`}
-              ><div className="bubble">
+            <span className="header-name">
+              {otherUser.username}
+            </span>
 
-  {msg.text && (
-    <div className="message-text">
-      {msg.text}
+            {typing && (
+              <span className="typing-text">
+                typing...
+              </span>
+            )}
+
+          </div>
+        </div>
+      </div>
+
+      {otherUser.is_freelancer && (
+        <button
+          className="pay-btn"
+          onClick={() =>
+            setShowPayment(true)
+          }
+        >
+          Pay
+        </button>
+      )}
     </div>
-  )}
 
-  {msg.image_url && (
-    <>
-      <img
-        src={fixCloudinaryUrl(msg.image_url)}
-        className="chat-image"
-        alt="shared"
-      />
+    {/* CHAT BODY */}
+    <div
+      className="chat-body"
+      ref={containerRef}
+      onScroll={handleScroll}
+    >
 
-      <a
-        href={msg.image_url}
-        download
-        target="_blank"
-        rel="noreferrer"
-        className="download-link"
-      >
-        Download Image
-      </a>
-    </>
-  )}
+      <div className="messages">
 
-  {msg.video_url && (
-    <>
-      <video
-        controls
-        className="chat-video"
-        //poster={msg.thumbnail_url}
-        poster={fixCloudinaryUrl(msg.thumbnail_url)}
-      >
-        <source
-          //src={msg.video_url}
-          src={fixCloudinaryUrl(msg.video_url)}
-          type="video/mp4"
-        />
-      </video>
+        {isFetchingNextPage && (
+          <div className="loading-more">
+            Loading older messages...
+          </div>
+        )}
 
-      <a
-        //href={otherUser.video_url}
-        href={fixCloudinaryUrl(msg.video_url)}
-        download
-        target="_blank"
-        rel="noreferrer"
-        className="download-link"
-      >
-        Download Video
-      </a>
-    </>
-  )}
+        {messages.map((msg) => {
 
-  <div className="meta">
-    {new Date(msg.created_at).toLocaleTimeString(
-      [],
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    )}
+          const mine =
+            msg.sender_username === username;
 
-    {mine && (
-      <span>
-        {msg.status === "sending" && "⏳"}
-        {msg.status === "sent" && "✓"}
-        {msg.status === "delivered" && "✓✓"}
-        {msg.status === "read" && "✓✓"}
-        {msg.status === "failed" && "❌"}
-      </span>
-    )}
-  </div>
+          return (
+            <div
+              key={msg.client_id || msg.id}
+              className={`message-row ${
+                mine ? "mine" : "other"
+              }`}
+            >
 
-</div>
-                
-                
-                  
+              <div className="bubble">
+
+                {/* IMAGE */}
+                {msg.image_url && (
+                  <div className="media-card">
+
+                    <img
+                      src={msg.image_url}
+                      className="media-preview"
+                      alt="shared"
+                    />
+
+                    <div className="media-overlay">
+
+                      <button
+                        className="view-btn"
+                        onClick={() =>
+                          setMediaModal({
+                            type: "image",
+                            url: msg.image_url,
+                          })
+                        }
+                      >
+                        <FiEye />
+                        <span>View</span>
+                      </button>
+
+                      <a
+                        href={msg.image_url}
+                        download
+                        target="_blank"
+                        rel="noreferrer"
+                        className="download-btn"
+                      >
+                        <FiDownload />
+                      </a>
+
+                    </div>
+                  </div>
+                )}
+
+                {/* VIDEO */}
+                {msg.video_url && (
+                  <div className="media-card">
+
+                    <video
+                      className="media-preview"
+                      poster={msg.thumbnail_url}
+                    >
+                      <source
+                        src={msg.video_url}
+                        type="video/mp4"
+                      />
+                    </video>
+
+                    <div className="media-overlay">
+
+                      <button
+                        className="view-btn"
+                        onClick={() =>
+                          setMediaModal({
+                            type: "video",
+                            url: msg.video_url,
+                          })
+                        }
+                      >
+                        <FiEye />
+                        <span>View</span>
+                      </button>
+
+                      <a
+                        href={msg.video_url}
+                        download
+                        target="_blank"
+                        rel="noreferrer"
+                        className="download-btn"
+                      >
+                        <FiDownload />
+                      </a>
+
+                    </div>
+                  </div>
+                )}
+
+                {/* TEXT */}
+                {msg.text && (
+                  <div className="message-text">
+                    {msg.text}
+                  </div>
+                )}
+
+                {/* META */}
+                <div className="meta">
+
+                  {new Date(
+                    msg.created_at
+                  ).toLocaleTimeString(
+                    [],
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )}
+
+                  {mine && (
+                    <span className="status">
+
+                      {msg.status ===
+                        "sending" && "⏳"}
+
+                      {msg.status ===
+                        "sent" && "✓"}
+
+                      {msg.status ===
+                        "delivered" && "✓✓"}
+
+                      {msg.status ===
+                        "read" && "✓✓"}
+
+                      {msg.status ===
+                        "failed" && "❌"}
+
+                    </span>
+                  )}
+
                 </div>
 
-            );
-          })}
-
-          {typing && (
-            <div className="typing">
-              {otherUser.username} typing...
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })}
+
+        {typing && (
+          <div className="typing">
+            {otherUser.username} typing...
+          </div>
+        )}
+
       </div>
-
-      {/* INPUT */}
-      <div className="chat-input">
-        <input
-        type="file"
-        accept="image/*,video/*"
-        onChange={(e) => {
-        setSelectedFile(e.target.files[0]);}}
-        />
-        <textarea
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-
-            channelRef.current?.publish("typing", {
-              username,
-            });
-          }}
-          placeholder="Type a message..."
-        />
-
-        <button className="send-btn"
-        onClick={sendMessage}
-        >
-          <IoSend />
-        </button>
-      </div>
-     {showPayment && (
-  <PaymentModal
-    paymentInfo={otherUser.payment_info}
-    onClose={() => setShowPayment(false)}
-  />
-)}
     </div>
-    
-  );
+
+
+
+
+{/* INPUT */}
+<div className="chat-composer">
+
+  {/* PREVIEW */}
+  {selectedFile && (
+    <div className="composer-preview-large">
+
+      {selectedFile.type.startsWith(
+        "image"
+      ) ? (
+        <img
+          src={URL.createObjectURL(
+            selectedFile
+          )}
+          alt=""
+        />
+      ) : (
+        <video
+          src={URL.createObjectURL(
+            selectedFile
+          )}
+        />
+      )}
+
+      <button
+        className="remove-preview"
+        onClick={() =>
+          setSelectedFile(null)
+        }
+      >
+        <FiX />
+      </button>
+
+    </div>
+  )}
+
+  {/* TEXTAREA */}
+  <textarea
+    value={text}
+    rows={1}
+    className="composer-textarea"
+    placeholder="Message..."
+    onChange={(e) => {
+
+      setText(e.target.value);
+
+      channelRef.current?.publish(
+        "typing",
+        {
+          username,
+        }
+      );
+
+      // auto grow
+      e.target.style.height = "auto";
+
+      e.target.style.height =
+        Math.min(
+          e.target.scrollHeight,
+          160
+        ) + "px";
+    }}
+  />
+
+  {/* BOTTOM BAR */}
+  <div className="composer-bottom">
+
+    {/* PLUS */}
+    <button
+      className="composer-plus"
+      onClick={() =>
+        fileInputRef.current.click()
+      }
+    >
+      <FiPlus />
+    </button>
+
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*,video/*"
+      style={{ display: "none" }}
+      onChange={(e) => {
+
+        const file =
+          e.target.files[0];
+
+        if (!file) return;
+
+        setSelectedFile(file);
+      }}
+    />
+
+    {/* SEND */}
+    <button
+      className="composer-send"
+      onClick={sendMessage}
+      disabled={uploading}
+    >
+      <IoSend />
+    </button>
+
+  </div>
+
+</div>
+
+
+
+
+    {/* MEDIA MODAL */}
+    {mediaModal && (
+      <div className="media-modal">
+
+        <button
+          className="close-modal"
+          onClick={() =>
+            setMediaModal(null)
+          }
+        >
+          <FiX />
+        </button>
+
+        {mediaModal.type ===
+        "image" ? (
+
+          <img
+            src={mediaModal.url}
+            className="modal-media"
+            alt=""
+          />
+
+        ) : (
+
+          <video
+            controls
+            autoPlay
+            className="modal-media"
+          >
+            <source
+              src={mediaModal.url}
+              type="video/mp4"
+            />
+          </video>
+
+        )}
+
+      </div>
+    )}
+
+    {/* PAYMENT */}
+    {showPayment && (
+      <PaymentModal
+        paymentInfo={otherUser.payment_info}
+        onClose={() =>
+          setShowPayment(false)
+        }
+      />
+    )}
+
+  </div>
+);
+
+
 }

@@ -1,10 +1,28 @@
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
+import { fetchWithAuth } from "../utils/api";
 export default function SideMenu({ open, onClose }) {
+  const fetchActiveFreelancers = async () => {
+    const res = await fetchWithAuth(
+    "/freelancers/active-count/");
+    if (!res.ok) {
+      throw new Error(
+        "Failed to fetch active freelancers");
+        }
+    return res.json();
+  }
+  
+  const { data } = useQuery({
+  queryKey: ["active-freelancers"],
+  queryFn: fetchActiveFreelancers,
+  refetchInterval: 30000
+  });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
+  
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("username");
     localStorage.removeItem("email");
@@ -23,7 +41,9 @@ export default function SideMenu({ open, onClose }) {
           <div>
             <div style={styles.logo}>LinkX</div>
             <div style={styles.active}>
-              <span style={{ color: "green" }}>active</span> freelancers 0
+              <span style={{ color: "green" }}>active</span>
+              {" "} freelancers{" "}
+              {data?.active_freelancers ?? 0}
             </div>
           </div>
 
