@@ -17,9 +17,8 @@ const ActivityTracker = () => {
 
     const sendHeartbeat = async () => {
       try {
-        await fetchWithAuth("/api/freelancer/ping/", {
-          method: "POST",
-        });
+        await fetchWithAuth("/freelancers/ping/");
+        
       } catch (error) {
         console.error("Heartbeat failed:", error);
       }
