@@ -11,7 +11,7 @@ import ScrollToTop from "./ScrollToTop";
 import App from "./App";
 import "./utils/toast.css";
 import "./index.css";
-
+import ActivityTracker from "./ActivityTracker"
 // 🔥 keep your client
 const queryClient = new QueryClient();
 
@@ -30,6 +30,7 @@ persistQueryClient({
 ReactDOM.createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
     <HashRouter>
+      <ActivityTracker />
       <ScrollToTop />
       <App />
     </HashRouter>

@@ -17,15 +17,20 @@ const ActivityTracker = () => {
 
     const sendHeartbeat = async () => {
       try {
-        await fetchWithAuth("/freelancers/ping/");
-        
-        
-      } catch (error) {
-        console.error("Heartbeat failed:", error);
-        alert("cannot send ping")
+        const res = await fetchWithAuth(     "/freelancers/ping/",
+        {
+        method: "POST",
       }
-      alert("pimg sended")
-    };
+    );
+
+    //alert("PING STATUS: " + res.status);
+
+  } catch (error) {
+
+    ;
+
+  }
+};
 
     const startTracking = () => {
       // Send immediately

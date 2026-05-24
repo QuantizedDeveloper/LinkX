@@ -4,12 +4,18 @@ import { fetchWithAuth } from "../utils/api";
 import { FiSend } from "react-icons/fi";
 import "./Chatbot.css";
 import { showToast } from "../utils/toast";
+
+import { IoSend } from "react-icons/io5";
+import { FiEye } from "react-icons/fi";
 export default function Chatbot() {
   const fixCloudinaryUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
     return `https://res.cloudinary.com/dd04focej/${url}`;
   };
+  const [uploading, setUploading] = useState(false);
+  const [selectedImages, setSelectedImages] =
+  useState(null);
   const endRef = useRef();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
@@ -299,22 +305,52 @@ export default function Chatbot() {
                     <div className="name">{f.username}</div>
                     <div className="subtitle">{f.gig.title}</div>
                   </div>
+                {(f.gig?.image1 || f.gig?.image2) && (
+  <div
+    className="gigPreviewBox"
+    onClick={() =>
+      setSelectedImages(
+        [f.gig?.image1, f.gig?.image2]
+        .filter(Boolean)
+      )
+    }
+  >
+    <img
+      src={fixCloudinaryUrl(
+        f.gig?.image1 || f.gig?.image2
+      )}
+      alt="gig preview"
+      className="gigPreviewImage"
+    />
 
+    <div className="gigPreviewOverlay">
+      <FiEye size={20} color="white" />
+    </div>
+  </div>
+)}
                 </div>
 
                 <div className="meta">
                   ⭐ {f.avg_rating} | {f.gig.price} | {f.gig.delivery_days}
                 </div>
-
                 <div className="match">
                   🔥 {f.match_percentage}% Match
-                </div>
-
+                  </div>
+                {f.activity_status && (
+                <div className = "explain">
+                   ● {f.activity_status}
+                   </div>
+                   )}
+                <div className = "explain">
+                   ✔ verified human
+                   </div>
+                
                 <div className="explain">
                   {f.explanation?.map((e, idx) => (
-                    <div key={idx}>✔ {e}</div>
+                  <div key={idx}>✔ {e}</div>
                   ))}
-                </div>
+                  </div>
+                
 
                 <div className="actions">
 
@@ -335,13 +371,37 @@ export default function Chatbot() {
                   {/* CONTACT */}
                   <button
                     className="contactBtn"
-                    onClick={() => {
-                      if (!f?.username) {
-                        showToast("Something went wrong, try again later");
-                        return;
-                      }
-                      navigate(`/chat/${f.username}`);
+                    onClick={async () => {
+                    if (!f?.username || !f?.gig?.id) {
+                    showToast("Something went wrong");
+                    return;
+                    }
+                    try {
+                    // create contact
+                    await fetchWithAuth(
+                    "/api/linkbot/create-contact/",
+                    {
+                    method: "POST",      body: JSON.stringify({
+                    username: f.username, gig_id: f.gig.id })
+                      
+                    }
+                  );
+                  // generate notification
+                  await fetchWithAuth(
+                  "/api/linkbot/generate-review-notifications/",
+                  {
+                  method: "POST"
+                    
+                  }
+                );
+                      
+                    } catch (e) {
+                console.log(e);
+                alert(e)
+                }
+                navigate(`/chat/${f.username}`);
                     }}
+
                   >
                     Contact Now
                   </button>
@@ -358,21 +418,47 @@ export default function Chatbot() {
 
           </div>
         )}
-
+        {selectedImages && (
+  <div
+    className="imageModalBackdrop"
+    onClick={() => setSelectedImages(null)}
+  >
+    <div
+      className="imageModalContent"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {selectedImages.map((img, i) => (
+        <img
+          key={i}
+          src={fixCloudinaryUrl(img)}
+          alt="gig"
+          className="modalImage"
+        />
+      ))}
+    </div>
+  </div>
+)}
         <div ref={endRef}></div>
       </div>
 
       {/* INPUT */}
       {!done && (
-        <div className="footer">
-          <input
+        <div className="chat-composer">
+          <textarea
+          
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
+            className= "composer-textarea"
           />
-          <button className="send" onClick={handleSend}>
-            <FiSend size={18} />
-          </button>
+          <button
+      className="composer-send"
+      //onClick={sendMessage}
+      //disabled={uploading}
+      onClick={handleSend}
+    >
+      <IoSend />
+    </button>
         </div>
       )}
 

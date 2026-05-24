@@ -9,27 +9,21 @@ export default function SideMenu({ open, onClose }) {
       "https://linkx-backend-api-linkx-backend.hf.space/freelancers/active-count/"
     );
 
-    alert("REQUEST SENT");
+    //alert("STATUS: " + res.status);
 
-    if (!res.ok) {
-      alert("REQUEST FAILED");
-      return null;
-    }
+    const text = await res.text();
 
-    const data = await res.json();
+    //alert(text);
 
-    alert(
-      "COUNT: " + data.active_freelancers
-    );
-
-    return data;
+    return JSON.parse(text);
 
   } catch (error) {
-    alert("FETCH ERROR");
+    //alert(error.message);
+
     return null;
   }
 };
-  
+
   const { data } = useQuery({
   queryKey: ["active-freelancers"],
   queryFn: fetchActiveFreelancers,
@@ -58,7 +52,7 @@ export default function SideMenu({ open, onClose }) {
           <div>
             <div style={styles.logo}>LinkX</div>
             <div style={styles.active}>
-              <span style={{ color: "green" }}>active</span>
+              <span style={{ color: "lightgreen" }}>active</span>
               {" "} freelancers{" "}
               {data?.active_freelancers ?? 0}
             </div>
