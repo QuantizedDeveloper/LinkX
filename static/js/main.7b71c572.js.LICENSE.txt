@@ -248,7 +248,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /*@license Copyright 2015-2022 Ably Real-time Ltd (ably.com)
 
-Ably JavaScript Library v2.19.0
+Ably JavaScript Library v2.21.0
 https://github.com/ably/ably-js
 
 Released under the Apache Licence v2.0*/
