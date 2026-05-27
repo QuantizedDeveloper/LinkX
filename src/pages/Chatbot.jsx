@@ -399,7 +399,22 @@ export default function Chatbot() {
                 console.log(e);
                 alert(e)
                 }
-                navigate(`/chat/${f.username}`);
+                {/*navigate(`/chat/${f.username}`);*/}
+                navigate(`/chat/${f.username}`, {
+                state: {
+                gig: {
+                id: f.gig.id,
+                title: f.gig.title,
+                price: f.gig.price,
+                thumbnail: f.gig.image1,
+                deliverytime: f.delivery_days,
+                
+                }
+                  
+                }
+                
+              })
+                
                     }}
 
                   >

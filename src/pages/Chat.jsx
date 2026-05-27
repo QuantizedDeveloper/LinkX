@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+
+import {
+  useParams,
+  useNavigate,
+  useLocation
+} from "react-router-dom";
 import Ably from "ably";
 import { fetchWithAuth } from "../utils/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -28,19 +33,34 @@ export default function Chat() {
   const [mediaModal, setMediaModal] =
   useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedGig, setSelectedGig] =
+  useState(
+    location.state?.gig || null
+  );
   
   const { username: otherUsername } = useParams();
-  const navigate = useNavigate();
-
+  
+  
   const username = localStorage.getItem("username");
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(
+  () => {
+    return [];
+  }
+);
+  //const [loadingMessages, setLoadingMessages] =
+  useState(true);
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [otherUser, setOtherUser] = useState(null);
-
+  const displayUser = otherUser || {
+  username: otherUsername,
+  avatar: null,
+  is_freelancer: false,};
   const containerRef = useRef(null);
   const typingTimer = useRef(null);
   const conversationIdRef = useRef(null);
@@ -51,45 +71,92 @@ export default function Chat() {
   const isPaginatingRef = useRef(false);
   const shouldAutoScrollRef = useRef(true);
   const [showPayment, setShowPayment] = useState(false);
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
 
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+    
+  }, []);
   // ---------------- INIT ----------------
   useEffect(() => {
-    fetchNotifications();
+  if (!conversationId) return;
+
+  if (!messages.length) return;
+
+  const unread = messages.filter(
+    (m) =>
+      m.sender_username !== username &&
+      m.status !== "read"
+  );
+
+  if (!unread.length) return;
+
+  fetchWithAuth(
+    `/api/messaging/message/read/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+      }),
+    }
+  ).catch(console.error);
+
+}, [messages, conversationId]);
+
+  useEffect(() => {
+    //fetchNotifications();
   }, []);
   useEffect(() => {
-    const init = async () => {
-      try {
-        const res = await fetchWithAuth(
-          `/api/messaging/conversation/create/`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              username: otherUsername,
-            }),
-          }
-        );
+  let mounted = true;
 
-        const data = await res.json();
+  const init = async () => {
+    try {
+      const res = await fetchWithAuth(
+        `/api/messaging/conversation/create/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: otherUsername,
+          }),
+        }
+      );
 
-        setConversationId(data.conversation_id);
-        setOtherUser(data.other_user);
+      const data = await res.json();
 
-        conversationIdRef.current = data.conversation_id;
+      if (!mounted) return;
 
-        // reset when switching chats
-        firstLoadRef.current = true;
-      } catch (err) {
-        console.error(err);
-      }
-    };
+      setConversationId(data.conversation_id);
 
-    if (otherUsername) {
-      init();
+      setOtherUser(data.other_user);
+
+      conversationIdRef.current =
+        data.conversation_id;
+
+      firstLoadRef.current = true;
+
+    } catch (err) {
+      console.error(err);
     }
-  }, [otherUsername]);
+  };
+
+  if (otherUsername) {
+    init();
+  }
+
+  return () => {
+    mounted = false;
+  };
+
+}, [otherUsername]);
+  
   const uploadToCloudinary = async (file) => {
   const formData = new FormData();
 
@@ -120,6 +187,7 @@ export default function Chat() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isLoading,
   } = useInfiniteQuery({
     queryKey: ["messages", conversationId],
 
@@ -146,11 +214,15 @@ export default function Chat() {
     },
 
     //staleTime: 1000 * 60 * 5,
-    staleTime: 0,
-    refetchOnMount: true,
-    
+    //staleTime: 0,
+   // refetchOnMount: true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnMount: false,
   });
-
+  const cachedMessages =
+  data?.pages?.flatMap(
+    (page) => page.results ?? []
+  ) || [];
   // ---------------- LOAD MESSAGES ----------------
   const fetchNotifications = async () => {
     try {
@@ -169,53 +241,26 @@ export default function Chat() {
         console.error(err);
     }
 };
-  {/*useEffect(() => {
-    if (!data) return;
 
-    const allMessages = data.pages.flatMap(
-      (page) => page.results ?? []
-    );
+  useEffect(() => {
 
-    setMessages((prev) => {
-      const map = new Map();
-
-      prev.forEach((m) => {
-        map.set(m.id || m.client_id, m);
-      });
-
-      allMessages.forEach((m) => {
-        map.set(m.id || m.client_id, m);
-      });
-
-      return Array.from(map.values()).sort(
+  if (
+    messages.length === 0 &&
+    cachedMessages.length > 0
+  ) {
+    setMessages(
+      cachedMessages.sort(
         (a, b) =>
-          new Date(a.created_at) - new Date(b.created_at)
-      );
-    });
-  }, [data]);*/}
-  {/*useEffect(() => {
-    if (!data) return;
-    const allMessages = data.pages.flatMap(
-    (page) => page.results ?? []
-  );
+          new Date(a.created_at) -
+          new Date(b.created_at)
+      )
+    );
+  }
 
-  const unique = new Map();
-
-  allMessages.forEach((m) => {
-    unique.set(m.id, m);
-  });
-
-  const sorted = Array.from(unique.values()).sort(
-    (a, b) =>
-      new Date(a.created_at) -
-      new Date(b.created_at)
-  );
-
-  setMessages(sorted);
-}, [data]);*/}
+}, [cachedMessages]);
   useEffect(() => {
   if (!data) return;
-
+ // setLoadingMessages(false)
   const fetched = data.pages.flatMap(
     (page) => page.results ?? []
   );
@@ -455,20 +500,22 @@ export default function Chat() {
 
     // READ
     channel.subscribe("message_read", (msg) => {
-      const ids =
-        msg.data.message_ids || [msg.data.message_id];
 
-      setMessages((prev) =>
-        prev.map((m) =>
-          ids.includes(m.id)
-            ? {
-                ...m,
-                status: "read",
-              }
-            : m
-        )
-      );
-    });
+  const ids =
+    (msg.data.message_ids || [])
+      .map(String);
+
+  setMessages((prev) =>
+    prev.map((m) =>
+      ids.includes(String(m.id))
+        ? {
+            ...m,
+            status: "read",
+          }
+        : m
+    )
+  );
+});
 
     // TYPING
     channel.subscribe("typing", (msg) => {
@@ -542,6 +589,7 @@ export default function Chat() {
     const tempMessage = {
       id: `temp-${clientId}`,
       client_id: clientId,
+      attached_gig: selectedGig,
       text,
       image_url: imageUrl,
       video_url: videoUrl,
@@ -560,7 +608,7 @@ export default function Chat() {
 
     setText("");
     setSelectedFile(null);
-
+    setSelectedGig(null);
     await fetchWithAuth(
       `/api/messaging/messages/send/`,
       {
@@ -575,6 +623,7 @@ export default function Chat() {
           image_url: imageUrl,
           video_url: videoUrl,
           thumbnail_url: thumbnailUrl,
+          attached_gig: selectedGig,
         }),
       }
     );
@@ -595,14 +644,15 @@ export default function Chat() {
 };
 
   // ---------------- UI ----------------
-  if (!otherUser) return null;
+  
 
   
 return (
+ 
   <div className="chat-wrapper">
 
     {/* HEADER */}
-    <div className="chat-header">
+     <div className="chat-header">
 
       <div className="header-left">
 
@@ -615,13 +665,13 @@ return (
 
         <div className="header-user">
 
-          {otherUser.avatar ? (
+          {displayUser.avatar ? (
             <img
-              src={otherUser.avatar}
+              src={displayUser.avatar}
               className="avatar"
               onClick={() =>
                 navigate(
-                  `/public-profile/${otherUser.username}`
+                  `/public-profile/${displayUser.username}`
                 )
               }
             />
@@ -630,18 +680,18 @@ return (
               className="avatar-fallback"
               onClick={() =>
                 navigate(
-                  `/public-profile/${otherUser.username}`
+                  `/public-profile/${displayUser.username}`
                 )
               }
             >
-              {otherUser.username[0].toUpperCase()}
+              {displayUser.username[0].toUpperCase()}
             </div>
           )}
 
           <div className="header-meta">
 
             <span className="header-name">
-              {otherUser.username}
+              {displayUser.username}
             </span>
 
             {typing && (
@@ -652,9 +702,9 @@ return (
 
           </div>
         </div>
-      </div>
+  </div>
 
-      {otherUser.is_freelancer && (
+      {displayUser.is_freelancer && (
         <button
           className="pay-btn"
           onClick={() =>
@@ -680,6 +730,27 @@ return (
             Loading older messages...
           </div>
         )}
+       {isLoading && !data && (
+  <>
+    <div className="message-row other">
+      <div className="bubble skeleton-bubble" />
+    </div>
+
+    <div className="message-row mine">
+      <div className="bubble skeleton-bubble" />
+    </div>
+
+    <div className="message-row other">
+      <div className="bubble skeleton-bubble" />
+    </div>
+  </>
+)}
+{/*{!isLoading &&
+  messages.length === 0 && (
+    <div className="empty-chat">
+      Initializing conversation ~
+    </div>
+)}*/}
 
         {messages.map((msg) => {
 
@@ -777,7 +848,32 @@ return (
                     </div>
                   </div>
                 )}
+                {msg.attached_gig && (
+  <div className="chat-gig-card">
 
+    <img
+      src={msg.attached_gig.thumbnail}
+      alt=""
+      className="chat-gig-image"
+    />
+
+    <div className="chat-gig-info">
+
+      <div className="chat-gig-title">
+        {msg.attached_gig.title}
+      </div>
+
+      <div className="chat-gig-price">
+        {msg.attached_gig.price}
+      </div>
+      <div className="chat-gig-time">
+        {msg.attached_gig.deliverytime}
+      </div>
+
+    </div>
+
+  </div>
+)}
                 {/* TEXT */}
                 {msg.text && (
                   <div className="message-text">
@@ -840,6 +936,31 @@ return (
 
 {/* INPUT */}
 <div className="chat-composer">
+  {selectedGig && (
+  <div className="gig-preview">
+
+    <img
+      src={selectedGig.thumbnail}
+      alt=""
+      className="gig-preview-image"
+    />
+
+    <div className="gig-preview-info">
+      <div>{selectedGig.title}</div>
+      <div>{selectedGig.price}</div>
+      <div>{selectedGig.deliverytime}</div>
+    </div>
+
+    <button
+      onClick={() =>
+        setSelectedGig(null)
+      }
+    >
+      <FiX />
+    </button>
+
+  </div>
+)}
 
   {/* PREVIEW */}
   {selectedFile && (
