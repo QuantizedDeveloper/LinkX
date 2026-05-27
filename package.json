@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "homepage": "https://quantizeddeveloper.github.io/LinkX",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@tanstack/query-sync-storage-persister": "^5.97.0",
     "@tanstack/react-query": "^5.90.21",
