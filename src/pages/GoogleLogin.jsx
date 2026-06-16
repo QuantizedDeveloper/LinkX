@@ -7,7 +7,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
-
+import { Link } from "react-router-dom";
 import "../firebase";
 import "./GoogleLogin.css";
 
@@ -17,10 +17,11 @@ import { FaXTwitter } from "react-icons/fa6";
 import { showToast } from "../utils/toast";
 export default function GoogleLogin() {
   const [checked, setChecked] = useState(false);
+  
   const navigate = useNavigate();
-
+  const [agreed, setAgreed] = useState(false);
   const handleGoogleLogin = async () => {
-    if (!checked) {
+    if (!agreed) {
       showToast("Please accept LinkX terms first");
       return;
     }
@@ -104,14 +105,15 @@ export default function GoogleLogin() {
         </button>
 
         <div className="terms-container">
-          <label className="checkbox-wrapper">
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={() => setChecked(!checked)}
-            />
-            <span>I agree to LinkX terms</span>
-          </label>
+          <label>
+  <input
+    type="checkbox"
+    checked={agreed}
+    onChange={(e) => setAgreed(e.target.checked)}
+  />
+  I have read and agree to the{" "}
+  <Link to="/terms">Terms & Conditions</Link>.
+</label>
         </div>
 
         

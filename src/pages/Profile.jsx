@@ -5,7 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-
+import { Link } from "react-router-dom";
 import { showToast } from "../utils/toast";
 import Gigs from "../components/Gigs";
 import { fetchWithAuth } from "../utils/api";
@@ -29,6 +29,7 @@ const fixCloudinaryUrl = (url) => {
 };
 
 export default function Profile() {
+  const [agreed, setAgreed] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -179,15 +180,25 @@ export default function Profile() {
         </button>
 
         <label style={styles.agreeRow}>
-          <input
-            type="checkbox"
-            checked={agree}
-            onChange={() => setAgree(!agree)}
-          />
-          <span style={{ marginLeft: 8, color: "#b200ff" }}>
-            linkX freelancer agreement
-          </span>
-        </label>
+  <input
+    type="checkbox"
+    checked={agree}
+    onChange={() => setAgree(!agree)}
+  />
+  <span style={{ marginLeft: 8 }}>
+    I have read and agree to the{" "}
+    <Link
+      to="/freelancer-agreement"
+      style={{
+        color: "#b200ff",
+        textDecoration: "underline",
+      }}
+    >
+      LinkX Freelancer Agreement
+    </Link>
+    .
+  </span>
+</label>
       </div>
     );
   }
@@ -299,6 +310,7 @@ export default function Profile() {
     </div>
   );
 }*/
+
 
 
 const styles = {
@@ -419,7 +431,8 @@ const styles = {
 
   about: {
     padding: 16,
-    lineHeight: 1.5
+    lineHeight: 1.5,
+    display:"hidden"
   },
   startContainer: {
     height: "100vh",

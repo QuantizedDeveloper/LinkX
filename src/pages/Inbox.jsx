@@ -33,11 +33,15 @@ export default function Inbox({ username }) {
       return res.json();
     },
 
-    staleTime: 10 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    //staleTime: 10 * 60 * 1000,
+    //cacheTime: 30 * 60 * 1000,
+    //refetchOnWindowFocus: false,
+    //refetchOnMount: false,
     keepPreviousData: true,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    
   });
 
   // =========================

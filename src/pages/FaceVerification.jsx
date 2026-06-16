@@ -3,6 +3,7 @@ import * as faceapi from "face-api.js";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../utils/toast";
+import { Link } from "react-router-dom";
 //axios.defaults.baseURL = "https://Linkx1.pythonanywhere.com";
 axios.defaults.baseURL = "https://linkx-backend-api-linkx-backend.hf.space";
 
@@ -238,6 +239,8 @@ export default function FaceVerification() {
       >
         {submitting ? "Please wait..." : "Capture"}
       </button>
+      Why LinkX requires face verification {" "}
+      <Link to="/face-verificationAgreement">reasons</Link>.
     </div>
   );
 }

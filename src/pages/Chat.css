@@ -157,6 +157,7 @@ overflow: hidden;
   overflow-y: auto;
   padding: 10px;
   min-height: 0;
+  padding-bottom: 80px;
 }
 
 /* messages container */
@@ -812,4 +813,52 @@ button {
   100% {
     opacity: 0.45;
   }
+}
+
+.view-gig-btn {
+  margin-top: 8px;
+
+  border: none;
+  background: #000;
+  color: #fff;
+
+  padding: 7px 12px;
+  border-radius: 10px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.gig-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.gig-modal {
+  background: #111;
+  width: 95%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
 }

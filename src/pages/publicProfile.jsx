@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 
 // ================= PAYMENT MODAL =================
+import Gigs from "../components/Gigs";
 function PaymentModal({ paymentInfo, onClose }) {
   const [showQR, setShowQR] = useState(null);
 
@@ -265,14 +266,33 @@ export default function PublicProfile() {
         >
           about
         </span>
+        <span style={{
+        marginLeft: "auto",
+        fontSize: "14px",
+        fontWeight: 500,
+        color: profile.View_by_linkx ? "#4CAF50" : "#E53935",
+        paddingBottom: 6,
+        }} >
+          {profile.View_by_linkx
+          ? (
+          <>
+          <span style={{ color: "#4CAF50" }}>verified</span> by linkx
+          </>
+          )
+          : (
+          <>
+             <span style={{ color: "#E53935" }}>not verified</span> by linkx
+          </>
+          )}
+          </span>
       </div>
 
       <div style={styles.feed}>
         {activeTab === "gigs" ? (
           profile.gigs?.length === 0 ? (
-            <p style={{ opacity: 0.6 }}>No gigs found</p>
+          <p style={{ opacity: 0.6 }}>No gigs found</p>
           ) : (
-            profile.gigs.map((gig) => <Gig key={gig.id} gig={gig} />)
+          <Gigs gigs={profile.gigs} />
           )
         ) : (
           <div style={styles.aboutSection}>
@@ -505,18 +525,18 @@ const styles = {
     fontWeight: 500,
   },
   feed: {
-    display: "flex",
-    justifyContent: "center",
-    width: "80%",
-    position: "relative",
-    left: 18,
-    flexDirection: "column",
-    fontFamily: "Inter, sans-serif"
-  },
+  width: "100%",
+  maxWidth: "100%",
+  padding: "0 16px",
+  boxSizing: "border-box",
+  display: "flex",
+  flexDirection: "column",
+},
   row: {
   display: "flex",
   alignItems: "center",
   gap: "10px",
+  rowGap: "20px",
   marginBottom: "12px",
   fontSize: "14px"
     

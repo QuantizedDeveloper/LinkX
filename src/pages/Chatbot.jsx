@@ -4,10 +4,15 @@ import { fetchWithAuth } from "../utils/api";
 import { FiSend } from "react-icons/fi";
 import "./Chatbot.css";
 import { showToast } from "../utils/toast";
+import Gig from "../components/Gig";
+import { useQuery } from "@tanstack/react-query";
 
 import { IoSend } from "react-icons/io5";
 import { FiEye } from "react-icons/fi";
+const isDesktop = window.innerWidth >= 975;
 export default function Chatbot() {
+  const [selectedGigId, setSelectedGigId] = useState(null);
+  const [showGigModal, setShowGigModal] = useState(false);
   const fixCloudinaryUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
@@ -124,7 +129,26 @@ export default function Chatbot() {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [questions, answers, showTransition]);
+  const { data: selectedGig } = useQuery({
+  queryKey: ["gig", selectedGigId],
 
+  queryFn: async () => {
+
+    if (!selectedGigId) return null;
+
+    const res = await fetchWithAuth(
+      `/api/gigs/gigs/${selectedGigId}/`
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch gig");
+    }
+
+    return res.json();
+  },
+
+  enabled: !!selectedGigId,
+});
   // FETCH NEXT QUESTION
   const fetchNext = async (answersData) => {
     try {
@@ -239,7 +263,9 @@ export default function Chatbot() {
       {/* HEADER */}
       <div className="header">
         <div className="left">
+          {!isDesktop && (
           <span onClick={() => navigate("/")}>✕</span>
+          )}
           <span className="title">LinkBot</span>
         </div>
       </div>
@@ -283,148 +309,184 @@ export default function Chatbot() {
             </div>
 
             {results.map((f, i) => (
-              <div key={i} className="card">
+  <div key={i}>
 
-                <div className="cardHeader">
+    <div className="card">
 
-                  {/* AVATAR */}
-                  <div className="avatar"
-                  onClick={() => {
-                  if (!f?.username) {
-                  showToast("Something went wrong, try again later");
-                  return;
-                  }
-                  navigate(`/public-profile/${f.username}`);
-                  }}
-                  style={{ cursor: "pointer" }}>
-                    <img src={fixCloudinaryUrl(f.avatar)}
-                    alt="avatar"
-                    class="avatar"/>
-                    </div>
-                  <div>
-                    <div className="name">{f.username}</div>
-                    <div className="subtitle">{f.gig.title}</div>
-                  </div>
-                {(f.gig?.image1 || f.gig?.image2) && (
-  <div
-    className="gigPreviewBox"
-    onClick={() =>
-      setSelectedImages(
-        [f.gig?.image1, f.gig?.image2]
-        .filter(Boolean)
-      )
-    }
-  >
-    <img
-      src={fixCloudinaryUrl(
-        f.gig?.image1 || f.gig?.image2
-      )}
-      alt="gig preview"
-      className="gigPreviewImage"
-    />
+      <div className="cardHeader">
 
-    <div className="gigPreviewOverlay">
-      <FiEye size={20} color="white" />
-    </div>
-  </div>
-)}
-                </div>
+        <div
+          className="avatar"
+          onClick={() => {
+            if (!f?.username) {
+              showToast("Something went wrong, try again later");
+              return;
+            }
+            navigate(`/public-profile/${f.username}`);
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          <img
+            src={fixCloudinaryUrl(f.avatar)}
+            alt="avatar"
+            className="avatar"
+          />
+        </div>
 
-                <div className="meta">
-                  ⭐ {f.avg_rating} | {f.gig.price} | {f.gig.delivery_days}
-                </div>
-                <div className="match">
-                  🔥 {f.match_percentage}% Match
-                  </div>
-                {f.activity_status && (
-                <div className = "explain">
-                   ● {f.activity_status}
-                   </div>
-                   )}
-                <div className = "explain">
-                   ✔ verified human
-                   </div>
-                
-                <div className="explain">
-                  {f.explanation?.map((e, idx) => (
-                  <div key={idx}>✔ {e}</div>
-                  ))}
-                  </div>
-                
+        <div>
+          <div className="name">{f.username}</div>
+          <div className="subtitle">{f.gig.title}</div>
+        </div>
 
-                <div className="actions">
-
-                  {/* VIEW PORTFOLIO */}
-                  <button
-                    className="viewBtn"
-                    onClick={() => {
-                      if (!f?.portfolio_link) {
-                        showToast("Something went wrong, try again later");
-                        return;
-                      }
-                      window.open(f.portfolio_link, "_blank");
-                    }}
-                  >
-                    View Portfolio
-                  </button>
-
-                  {/* CONTACT */}
-                  <button
-                    className="contactBtn"
-                    onClick={async () => {
-                    if (!f?.username || !f?.gig?.id) {
-                    showToast("Something went wrong");
-                    return;
-                    }
-                    try {
-                    // create contact
-                    await fetchWithAuth(
-                    "/api/linkbot/create-contact/",
-                    {
-                    method: "POST",      body: JSON.stringify({
-                    username: f.username, gig_id: f.gig.id })
-                      
-                    }
-                  );
-                  // generate notification
-                  await fetchWithAuth(
-                  "/api/linkbot/generate-review-notifications/",
-                  {
-                  method: "POST"
+        {(f.gig?.image1 || f.gig?.image2) && (
+          <div
+            className="gigPreviewBox"
+            onClick={() =>{
+              /*setSelectedImages(
+                [f.gig?.image1, f.gig?.image2].filter(Boolean)
+              )*/
+              setSelectedGigId(f.gig.id);
+              setShowGigModal(true);
+              
+            }}
+          >
+            <img
+              src={fixCloudinaryUrl(
+                f.gig?.image1 || f.gig?.image2
+              )}
+              alt="gig preview"
+              className="gigPreviewImage"
+              
                     
-                  }
-                );
-                      
-                    } catch (e) {
-                console.log(e);
-                alert(e)
+            />
+
+            <div className="gigPreviewOverlay">
+              <FiEye size={20} color="white" />
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      <div className="meta">
+        ⭐ {f.avg_rating} | {f.gig.price} | {f.gig.delivery_days}
+      </div>
+
+      <div className="match">
+        🔥 {f.match_percentage}% Match
+      </div>
+
+      <div className="match">
+        🧠 {f.confidence_score}% Confidence
+      </div>
+
+      {f.activity_status && (
+        <div className="explain">
+          ● {f.activity_status}
+        </div>
+      )}
+
+      <div className="explain">
+        ✔ Verified Human
+      </div>
+
+      <div className="actions">
+
+        <button
+          className="viewBtn"
+          onClick={() => {
+            if (!f?.portfolio_link) {
+              showToast("Something went wrong, try again later");
+              return;
+            }
+            window.open(f.portfolio_link, "_blank");
+          }}
+        >
+          View Portfolio
+        </button>
+
+        <button
+          className="contactBtn"
+          onClick={async () => {
+
+            if (!f?.username || !f?.gig?.id) {
+              showToast("Something went wrong");
+              return;
+            }
+
+            try {
+
+              await fetchWithAuth(
+                "/api/linkbot/create-contact/",
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    username: f.username,
+                    gig_id: f.gig.id
+                  })
                 }
-                {/*navigate(`/chat/${f.username}`);*/}
-                navigate(`/chat/${f.username}`, {
-                state: {
+              );
+
+              await fetchWithAuth(
+                "/api/linkbot/generate-review-notifications/",
+                {
+                  method: "POST"
+                }
+              );
+
+            } catch (e) {
+              console.log(e);
+            }
+
+            navigate(`/chat/${f.username}`, {
+              state: {
                 gig: {
-                id: f.gig.id,
-                title: f.gig.title,
-                price: f.gig.price,
-                thumbnail: f.gig.image1,
-                deliverytime: f.delivery_days,
-                
+                  id: f.gig.id,
+                  title: f.gig.title,
+                  price: f.gig.price,
+                  thumbnail: f.gig.image1,
+                  deliverytime: f.gig.delivery_days,
                 }
-                  
-                }
-                
-              })
-                
-                    }}
+              }
+            });
 
-                  >
-                    Contact Now
-                  </button>
+          }}
+        >
+          Contact Now
+        </button>
 
-                </div>
+      </div>
 
-              </div>
-            ))}
+    </div>
+
+    <div className="explanationCard">
+
+      <div className="explanationTitle">
+        🧠 Why LinkBot picked this freelancer
+      </div>
+
+      <div className="explanationSummary">
+        {f.explanation}
+      </div>
+
+      {f.explanation_points?.map((e, idx) => (
+        <div
+          key={idx}
+          className="explanationPoint"
+        >
+          ✔ {e}
+        </div>
+      ))}
+
+    </div>
+    
+
+    </div>
+
+
+
+))}
+            
 
             {/* RESET */}
             <button className="resetBtn" onClick={resetChat}>
@@ -432,27 +494,8 @@ export default function Chatbot() {
             </button>
 
           </div>
+        
         )}
-        {selectedImages && (
-  <div
-    className="imageModalBackdrop"
-    onClick={() => setSelectedImages(null)}
-  >
-    <div
-      className="imageModalContent"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {selectedImages.map((img, i) => (
-        <img
-          key={i}
-          src={fixCloudinaryUrl(img)}
-          alt="gig"
-          className="modalImage"
-        />
-      ))}
-    </div>
-  </div>
-)}
         <div ref={endRef}></div>
       </div>
 
@@ -476,6 +519,30 @@ export default function Chatbot() {
     </button>
         </div>
       )}
+      {showGigModal && (
+  <div
+    className="gig-modal-overlay"
+    onClick={() => setShowGigModal(false)}
+  >
+    <div
+      className="gig-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="close-modal-btn"
+        onClick={() => setShowGigModal(false)}
+      >
+        ✕
+      </button>
+
+      {selectedGig ? (
+        <Gig gig={selectedGig} />
+      ) : (
+        <div>Loading...</div>
+      )}
+    </div>
+  </div>
+)}
 
     </div>
   </div>

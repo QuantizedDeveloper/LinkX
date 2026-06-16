@@ -21,14 +21,38 @@ import Chat from "./pages/Chat";
 import Chatbot from "./pages/Chatbot";
 import { useEffect } from "react";
 import PublicProfile from "./pages/publicProfile"
+import TermsAndConditions from "./pages/TermsAndConditions"
+import FreelancerAgreement from "./pages/FreelancerAgreement"
+import FaceVerificationInfo from "./pages/FaceVerificationAgreement"
 import ActivityTracker from "./ActivityTracker"
 /*import useAutoRefresh from "./useAutoRefresh"*/
+//import { useEffect } from "react";
+import { enablePushNotifications } from "./utils/push";
 const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 
 export default function App() {
   /*useAutoRefresh();*/
   /*<ActivityTracker />*/
+  useEffect(() => {
+  //("useEffect started");
+
+  if (!("serviceWorker" in navigator)) {
+    //alert("No service worker support");
+    return;
+  }
+  
+  navigator.serviceWorker.register(
+  process.env.PUBLIC_URL + "/service-worker.js")
+  .then(async () => {
+      //alert("Service Worker Registered");
+      await enablePushNotifications();
+    })
+    .catch((err) => {
+     // alert("SW Error: " + err);
+      console.error(err);
+    });
+}, []);
   return (
     <Routes>
 
@@ -46,6 +70,9 @@ export default function App() {
 
       {/* ✅ ROUTES WITHOUT BottomNav */}
       <Route path="/loginBan" element={<Login />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/face-verificationAgreement" element={<FaceVerificationInfo />} />
+       <Route path="/freelancer-agreement" element={<FreelancerAgreement />} />
       <Route path="/login" element={<GoogleLogin />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/verify-otp" element={<VerifyOtpSignup />} />

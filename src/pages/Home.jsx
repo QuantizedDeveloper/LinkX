@@ -6,10 +6,12 @@ import SideMenu from "../components/SideMenu";
 import Gig from "../components/Gig";
 import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "../utils/api";
-
+import Chatbot from "../pages/Chatbot";
 //const base_url = "https://Linkx1.pythonanywhere.com";
-const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
+import {enablePushNotifications} from "../utils/push";
+const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
+const isDesktop = window.innerWidth >= 975;
 export default function Home() {
   const navigate = useNavigate();
 
@@ -17,6 +19,7 @@ export default function Home() {
   const username = localStorage.getItem("username");
   // ✅ Protect route (unchanged)
   const [checkedAuth, setCheckedAuth] = useState(false);
+  
   useEffect(() => {
     const username = localStorage.getItem("username");
     const timer = setTimeout(() => {
@@ -34,8 +37,54 @@ export default function Home() {
 
   return () => clearTimeout(timer);
 }, [navigate]);
-  
+useEffect(() => {
+  enablePushNotifications();
+}, []);
 
+/*const enablePushNotifications = async () => {
+  try {
+    if (!("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+
+    console.log("Permission:", permission);
+
+    if (permission !== "granted") {
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+
+    console.log("Registration:", registration);
+
+    // Check if already subscribed
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey:
+          urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+
+    console.log("Subscription:", subscription);
+
+    const res = await fetchWithAuth(
+      "/api/push-subscription/",
+      {
+        method: "POST",
+        body: JSON.stringify(subscription),
+      }
+    );
+
+    console.log("Push subscription saved:", res.status);
+  } catch (err) {
+    console.error("Push notification error:", err);
+  }
+};*/
   // =========================
   // ✅ FETCH ME (React Query)
   // =========================
@@ -88,6 +137,7 @@ export default function Home() {
     return null; // no white flash
     }
   return (
+    
     <>
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
 
@@ -98,7 +148,7 @@ export default function Home() {
             <div style={styles.line}></div>
             <div style={styles.line}></div>
           </div>
-
+          {/*}<h1>{window.innerWidth}</h1>*/}
           <div style={styles.search} onClick={() => navigate("/search")}>
             <div style={styles.searchCircle}></div>
             <div style={styles.searchHandle}></div>
@@ -106,7 +156,7 @@ export default function Home() {
         </div>
 
         {/* Upload Row */}
-        <div
+         {!isDesktop && (<div
           style={styles.uploadRow}
           onClick={() => {
             if (profile?.is_freelancer) {
@@ -128,29 +178,65 @@ export default function Home() {
             <div style={styles.name}>{username}</div>
             <div style={styles.uploadText}>upload gig</div>
           </div>
-        </div>
+        </div>)}
 
         <div style={styles.divider}></div>
 
         {/* Feed */}
-        <div style={styles.feed}>
-          <div>
-            {/* 🔥 prevents blank screen */}
-            {gigs.length === 0 && isLoading && <p>Loading...</p>}
+        {isDesktop ? (
+  <div style={styles.desktopLayout}>
+    
+   <div style={styles.linkbotSidebar}>
+     <div style={{ width: "35%", height: "100%", position:"fixed" }}>
+        <Chatbot />
+      </div>
+    </div>
 
-            {gigs.map((gig) => (
-              <Gig key={gig.id} gig={gig} />
-            ))}
+    <div style={styles.desktopFeed}>
+      {gigs.length === 0 && isLoading && <p>Loading...</p>}
 
-            {isFetchingNextPage && <p>Loading...</p>}
+      {gigs.map((gig) => (
+        <div
+  key={gig.id}
+  style={{
+    breakInside: "avoid",
+    marginBottom: "20px"
+  }}
+>
+  <Gig gig={gig} />
+</div>
+      ))}
 
-            {hasNextPage && !isFetchingNextPage && (
-              <button onClick={() => fetchNextPage()}>
-                Load More
-              </button>
-            )}
-          </div>
-        </div>
+      {isFetchingNextPage && <p>Loading...</p>}
+
+      {hasNextPage && !isFetchingNextPage && (
+        <button onClick={() => fetchNextPage()}>
+          Load More
+        </button>
+      )}
+    </div>
+
+  </div>
+) : (
+  <div style={styles.feed}>
+    <div>
+      {gigs.length === 0 && isLoading && <p>Loading...</p>}
+
+      {gigs.map((gig) => (
+        <Gig key={gig.id} gig={gig} />
+      ))}
+
+      {isFetchingNextPage && <p>Loading...</p>}
+
+      {hasNextPage && !isFetchingNextPage && (
+        <button onClick={() => fetchNextPage()}>
+          Load More
+        </button>
+      )}
+    </div>
+  </div>
+)}
+        
       </div>
     </>
   );
@@ -204,7 +290,7 @@ const styles = {
 
   search: {
     position: "relative",
-    width: 18,
+    width: 19,
     height: 18,
     cursor: "pointer"
   },
@@ -230,12 +316,13 @@ const styles = {
   },
 
   uploadRow: {
-    display: "flex",
-    alignItems: "center",
-    padding: "10px 14px",
-    cursor: "pointer",
-    fontFamily: "Inter, sans-serif"
-  },
+  display: "flex",
+  alignItems: "center",
+  padding: "10px 14px",
+  cursor: "pointer",
+  fontFamily: "Inter, sans-serif"
+  
+},
 
   avatar: {
     width: 44,
@@ -284,7 +371,30 @@ const styles = {
     flexDirection:"column",
     alignItems: "center",
     marginTop: "20px"
-  }
+  },
+  desktopLayout: {
+  display: "grid",
+  gridTemplateColumns: "320px 1fr",
+  gap: "40px"
+},
+linkbotSidebar: {
+  width: "30%",
+  minWidth: "350px",
+  position: "sticky",
+  top: "70px",
+  height: "calc(150dvh - 10px)",
+  overflow: "hidden",
+  //position: "fixed",
+  //right: "0",
+  
+
+},
+desktopFeed: {
+  columnCount: 2,
+  columnGap: "20px",
+  width: "100%",
+  marginLeft: "30%",
+}
 };
 
 

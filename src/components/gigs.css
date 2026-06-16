@@ -1,14 +1,38 @@
 /* components/gigs.css */
 
 
-.gigs-grid {
+/*.gigs-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 16px;
   align-items: stretch; /* full width, centered */
-}
+/*}
 
 .observer {
   height: 1px;
+}*/
+
+
+.gigs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  align-items: stretch;
+}
+
+@media (min-width: 975px) {
+  .gigs-grid {
+    display: block;
+    column-count: 2;
+    column-gap: 20px;
+  }
+
+  .gigs-grid > * {
+    break-inside: avoid;
+    margin-bottom: 20px;
+    display: inline-block;
+    width: 100%;
+  }
 }

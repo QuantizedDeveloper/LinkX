@@ -7,8 +7,12 @@ const ActivityTracker = () => {
 
     const fetchMe = async () => {
       const res = await fetchWithAuth("/freelancers/me/");
-
+      
       if (!res.ok) {
+        throw new Error("Not a freelancer");
+      }
+      const data = await res.json();
+      if (!data.is_freelancer) {
         throw new Error("Not a freelancer");
       }
 
@@ -23,7 +27,7 @@ const ActivityTracker = () => {
       }
     );
 
-    //alert("PING STATUS: " + res.status);
+   // alert("PING STATUS: " + res.status);
 
   } catch (error) {
 

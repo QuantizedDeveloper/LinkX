@@ -19,9 +19,13 @@ import {
 } from "react-icons/fi";
 
 import { IoSend } from "react-icons/io5";
+import Gig from "../components/Gig";
+import { useQuery } from "@tanstack/react-query";
 
 
 export default function Chat() {
+  const [selectedGigId, setSelectedGigId] = useState(null);
+  const [showGigModal, setShowGigModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const fixCloudinaryUrl = (url) => {
@@ -216,8 +220,11 @@ export default function Chat() {
     //staleTime: 1000 * 60 * 5,
     //staleTime: 0,
    // refetchOnMount: true,
-    staleTime: 1000 * 60 * 5,
-    refetchOnMount: false,
+    //staleTime: 1000 * 60 * 5,
+    //refetchOnMount: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
   const cachedMessages =
   data?.pages?.flatMap(
@@ -292,6 +299,26 @@ export default function Chat() {
   });
 }, [data]);
 
+const { data: viewedGig } = useQuery({
+  queryKey: ["gig", selectedGigId],
+
+  queryFn: async () => {
+
+    if (!selectedGigId) return null;
+
+    const res = await fetchWithAuth(
+      `/api/gigs/gigs/${selectedGigId}/`
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch gig");
+    }
+
+    return res.json();
+  },
+
+  enabled: !!selectedGigId,
+});
   // ---------------- SMART AUTO SCROLL ----------------
   useEffect(() => {
     const el = containerRef.current;
@@ -862,19 +889,24 @@ return (
       <div className="chat-gig-title">
         {msg.attached_gig.title}
       </div>
-
-      <div className="chat-gig-price">
-        {msg.attached_gig.price}
+      {msg.attached_gig?.id && (
+                  <button
+                    className="view-gig-btn"
+                    onClick={() => {
+                    setSelectedGigId(msg.attached_gig?.id);
+                    setShowGigModal(true);
+                      
+                    }}
+                  >
+                    View Gig
+                  </button>
+                )}
+                
       </div>
-      <div className="chat-gig-time">
-        {msg.attached_gig.deliverytime}
       </div>
-
-    </div>
-
-  </div>
-)}
+      )}
                 {/* TEXT */}
+              
                 {msg.text && (
                   <div className="message-text">
                     {msg.text}
@@ -1117,7 +1149,30 @@ return (
         }
       />
     )}
+    {showGigModal && (
+  <div
+    className="gig-modal-overlay"
+    onClick={() => setShowGigModal(false)}
+  >
+    <div
+      className="gig-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="close-modal-btn"
+        onClick={() => setShowGigModal(false)}
+      >
+        ✕
+      </button>
 
+      {viewedGig ? (
+        <Gig gig={viewedGig} />
+      ) : (
+        <div>Loading...</div>
+      )}
+    </div>
+  </div>
+)}
   </div>
 );
 
