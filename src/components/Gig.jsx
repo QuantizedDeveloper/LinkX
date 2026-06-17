@@ -18,7 +18,7 @@ const fixUrl = (url) => {
 function Gig({ gig }) {
   const navigate = useNavigate();
   const menuRef = useRef();
-
+  const user_name = localStorage.getItem("username");
   // ---------------- DATA ----------------
   const username = gig?.username || gig?.user || "freelancer";
   const avatar = fixUrl(gig?.user_avatar || gig?.avatar) || blackImg;
@@ -104,7 +104,14 @@ function Gig({ gig }) {
             alt="user"
             className="gig-avatar"
             loading="lazy"   // 🔥 added
-            onClick={() => navigate(`/public-profile/${username}`)}
+            onClick={() => {
+            if (user_name === username) {
+            navigate("/profile");
+            return;
+            }
+            navigate(`/public-profile/${username}`);
+              
+            }}
           />
 
           <span className="gig-username">{username}</span>

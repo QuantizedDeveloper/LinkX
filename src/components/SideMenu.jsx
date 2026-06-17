@@ -25,7 +25,7 @@ export default function SideMenu({ open, onClose }) {
   queryKey: ["sidebar-unread"],
   queryFn: async () => {
     const res = await fetchWithAuth(
-      "/messaging/sidebar-unread/"
+      "/api/messaging/sidebar-unread/"
     );
 
     if (!res.ok) {

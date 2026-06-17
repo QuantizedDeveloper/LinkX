@@ -87,7 +87,23 @@ export default function Profile() {
   });
 
   const profile = profileData || {};
+  
+  const { data: aboutData } = useQuery({
+  queryKey: ["about-profile", username],
+  queryFn: async () => {
+    const res = await fetchWithAuth(
+      `/freelancers/${username}/about/`
+    );
 
+    if (!res.ok) {
+      throw new Error("Failed to fetch about");
+    }
+
+    return res.json();
+  },
+  enabled: !!username,
+});
+  
   // =========================
   // Gigs
   // =========================
@@ -262,20 +278,32 @@ export default function Profile() {
 
       {/* Tabs */}
       <div style={styles.tabs}>
-        <div
-          style={tab === "gigs" ? styles.activeTab : styles.inactiveTab}
-          onClick={() => setTab("gigs")}
-        >
-          gigs
-        </div>
+  <div
+    style={tab === "gigs" ? styles.activeTab : styles.inactiveTab}
+    onClick={() => setTab("gigs")}
+  >
+    gigs
+  </div>
 
-        <div
-          style={tab === "about" ? styles.activeTab : styles.inactiveTab}
-          onClick={() => setTab("about")}
-        >
-          about
-        </div>
-      </div>
+  <div
+    style={tab === "about" ? styles.activeTab : styles.inactiveTab}
+    onClick={() => setTab("about")}
+  >
+    about
+  </div>
+
+  <div
+    style={{
+      marginLeft: "auto",
+      fontWeight: "600",
+      color: profile.View_by_linkx ? "#27c93f" : "#ff3b30",
+    }}
+  >
+    {profile.View_by_linkx
+      ? "verified by linkx"
+      : "not verified by linkx"}
+  </div>
+</div>
 
       {/* Gigs */}
       {tab === "gigs" && (
@@ -287,11 +315,41 @@ export default function Profile() {
 
       {/* About */}
       {tab === "about" && (
-        <div style={styles.about}>
-          {!profileData && <p>Loading...</p>}
-          <p>{profile.about || "No additional info yet"}</p>
-        </div>
-      )}
+  <div style={styles.about}>
+    
+
+    <p>
+      <strong>Experience:</strong>{" "}
+      {aboutData?.experience ?? "-"}
+    </p>
+
+    <p>
+      <strong>Region:</strong>{" "}
+      {aboutData?.location ?? "-"}
+    </p>
+
+    <p>
+      <strong>Total Gigs:</strong>{" "}
+      {aboutData?.total_gigs ?? 0}
+    </p>
+
+    <p>
+      <strong>Total Reviews:</strong>{" "}
+      {aboutData?.total_reviews ?? 0}
+    </p>
+
+    <p>
+      <strong>Avg Rating:</strong>{" "}
+      {aboutData?.avg_rating ?? 0}
+    </p>
+    <p>
+  <strong>Joined:</strong>{" "}
+  {aboutData?.created_at
+    ? new Date(aboutData.created_at).toLocaleDateString()
+    : "-"}
+</p>
+  </div>
+)}
     </div>
   );
 }

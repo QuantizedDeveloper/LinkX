@@ -91,6 +91,12 @@ export default function Chatbot() {
       "Analyzing quality expectations...",
       "Sorting trusted profiles...",
     ],
+    quality_level: [
+  "Analyzing project requirements...",
+  "Comparing relevant freelancers...",
+  "Reviewing skills, experience, and portfolios...",
+  "Shortlisting the strongest matches...",
+  "Preparing personalized recommendations..."]
   };
 
   // LOAD
@@ -241,7 +247,7 @@ export default function Chatbot() {
 
       setCurrentIndex((prev) => prev + 1);
       fetchNext(updated);
-    }, 1800);
+    }, 3500);
   };
 
   // RESET CHAT
@@ -386,9 +392,11 @@ export default function Chatbot() {
         </div>
       )}
 
-      <div className="explain">
-        ✔ Verified Human
-      </div>
+     <div className="explain">
+       {f.is_verified_by_linkx
+       ? "✔ Verified by LinkX"
+       : "○ Not verified by LinkX yet"}
+    </div>
 
       <div className="actions">
 
@@ -466,17 +474,13 @@ export default function Chatbot() {
       </div>
 
       <div className="explanationSummary">
-        {f.explanation}
+        <span className="aiBadge">
+          LinkBot Analysis
+          </span>
+          <p> {f.explanation}</p>
       </div>
 
-      {f.explanation_points?.map((e, idx) => (
-        <div
-          key={idx}
-          className="explanationPoint"
-        >
-          ✔ {e}
-        </div>
-      ))}
+      
 
     </div>
     
@@ -489,9 +493,13 @@ export default function Chatbot() {
             
 
             {/* RESET */}
-            <button className="resetBtn" onClick={resetChat}>
+            {results.length > 0 && (
+            <button
+            className="resetBtn"
+            onClick={resetChat}>
               Find Again
-            </button>
+              </button>
+              )}
 
           </div>
         

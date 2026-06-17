@@ -456,11 +456,26 @@
   
 }
 
-.explanationSummary {
+/*.explanationSummary {
   margin-bottom: 10px;
   color: #222;
   line-height: 1.5;
   font-size: 14px;
+  font-family: Inter, sans-serif;
+}*/
+.aiBadge{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+  margin-bottom:10px;
+  background:rgba(255,255,255,.08);
+}
+
+.explanationSummary p{
+  line-height:1.6;
+  margin:0;
   font-family: Inter, sans-serif;
 }
 
