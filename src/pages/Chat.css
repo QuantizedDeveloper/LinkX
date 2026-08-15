@@ -862,3 +862,19 @@ button {
   font-size: 22px;
   cursor: pointer;
 }
+
+.status.sent {
+  color: inherit;
+}
+
+.status.delivered {
+  color: #9ca3af; /* gray */
+}
+
+.status.read {
+  color: #3b82f6; /* blue */
+}
+
+.status.failed {
+  color: red;
+}

@@ -139,14 +139,17 @@ export default function SideMenu({ open, onClose }) {
           )}
 
           <div
-            style={styles.bigButton}
-            onClick={() => {
-              // placeholder
-              onClose();
-            }}
-          >
-            Support
-          </div>
+  style={styles.bigButton}
+  onClick={() => {
+    window.open(
+      "https://mail.google.com/mail/?view=cm&fs=1&to=linkx.llm@gmail.com",
+      "_blank"
+    );
+    onClose();
+  }}
+>
+  Support
+</div>
 
         </div>
         {unreadChats.length > 0 && (

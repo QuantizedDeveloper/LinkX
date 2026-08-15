@@ -11,6 +11,7 @@ import { IoSend } from "react-icons/io5";
 import { FiEye } from "react-icons/fi";
 const isDesktop = window.innerWidth >= 975;
 export default function Chatbot() {
+  
   const [selectedGigId, setSelectedGigId] = useState(null);
   const [showGigModal, setShowGigModal] = useState(false);
   const fixCloudinaryUrl = (url) => {
@@ -25,6 +26,7 @@ export default function Chatbot() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
+  const [pendingQuestion, setPendingQuestion] = useState(null);
   const [answerMap, setAnswerMap] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [input, setInput] = useState("");
@@ -91,31 +93,44 @@ export default function Chatbot() {
       "Analyzing quality expectations...",
       "Sorting trusted profiles...",
     ],
-    quality_level: [
-  "Analyzing project requirements...",
-  "Comparing relevant freelancers...",
-  "Reviewing skills, experience, and portfolios...",
-  "Shortlisting the strongest matches...",
-  "Preparing personalized recommendations..."]
+    final: [
+  "Analyzing your project requirements...",
+  "Searching the best matching freelancers...",
+  "Comparing skills, experience, and portfolios...",
+  "Shortlisting the strongest candidates...",
+  "Preparing your personalized matches..."
+],
+quality_level: [
+  "Analyzing your project requirements...",
+  "Searching matching freelancers...",
+  "Comparing skills, experience, and portfolios...",
+  "Shortlisting the best candidates...",
+  "Preparing your personalized recommendations..."
+],
   };
 
   // LOAD
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = localStorage.getItem(STORAGE_KEY);
 
-    if (saved) {
-      const data = JSON.parse(saved);
-      setQuestions(data.questions || []);
-      setAnswers(data.answers || []);
-      setAnswerMap(data.answerMap || {});
-      setCurrentIndex(data.currentIndex || 0);
-      setDone(data.done || false);
-      setResults(data.results || []);
-    } else {
-      fetchNext([]);
-    }
-  }, []);
+  if (saved) {
+    const data = JSON.parse(saved);
+    setQuestions(data.questions || []);
+    setAnswers(data.answers || []);
+    setAnswerMap(data.answerMap || {});
+    setCurrentIndex(data.currentIndex || 0);
+    setDone(data.done || false);
+    setResults(data.results || []);
+  } else {
+    (async () => {
+      const result = await fetchNext([]);
 
+      if (result?.question) {
+        setQuestions([result.question]);
+      }
+    })();
+  }
+}, []);
   // SAVE
   useEffect(() => {
     localStorage.setItem(
@@ -157,34 +172,41 @@ export default function Chatbot() {
 });
   // FETCH NEXT QUESTION
   const fetchNext = async (answersData) => {
-    try {
-      const res = await fetchWithAuth("/api/linkbot/next-question/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: answersData }),
-      });
+  try {
 
-      const data = await res.json();
+    const res = await fetchWithAuth("/api/linkbot/next-question/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: answersData }),
+    });
 
-      if (data.done) {
-        setDone(true);
-        fetchResults(answersData);
-        return;
-      }
+    const data = await res.json();
 
-      if (data.next_question) {
-        setQuestions((prev) => [
-          ...prev,
-          {
-            id: data.question_id,
-            text: data.next_question,
-          },
-        ]);
-      }
-    } catch (e) {
-      console.log(e);
+
+    if (data.done) {
+
+  await fetchResults(answersData);
+
+  return {
+    done: true
+  };
+}
+
+
+    if (data.next_question) {
+  return {
+    question: {
+      id: data.question_id,
+      text: data.next_question,
     }
   };
+}
+
+
+  } catch (e) {
+    console.log(e);
+  }
+};
 
   // RESULTS
   const fetchResults = async (answersData) => {
@@ -203,64 +225,106 @@ export default function Chatbot() {
       setResults(dummyFreelancers);
     }
   };
-
+  
   // SEND ANSWER
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
 
-    const q = questions[currentIndex];
+  if (!input.trim()) return;
 
-    const newAnswer = {
-      id: q.id,
-      question: q.text,
-      answer: input,
-    };
+  const q = questions[currentIndex];
 
-    const updated = [...answers, newAnswer];
-    const updatedMap = { ...answerMap, [q.id]: input };
-
-    setAnswers(updated);
-    setAnswerMap(updatedMap);
-    setInput("");
-
-    // ✅ transition animation logic
-    const phrases = transitionMap[q.id] || [
-      "Processing your response...",
-      "Understanding input...",
-      "Updating recommendations...",
-    ];
-
-    let i = 0;
-    setShowTransition(true);
-    setTransitionText(phrases[0]);
-
-    const interval = setInterval(() => {
-      i++;
-      if (i < phrases.length) {
-        setTransitionText(phrases[i]);
-      }
-    }, 650);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      setShowTransition(false);
-
-      setCurrentIndex((prev) => prev + 1);
-      fetchNext(updated);
-    }, 3500);
+  const newAnswer = {
+    id: q.id,
+    question: q.text,
+    answer: input,
   };
+
+  const updated = [...answers, newAnswer];
+
+  setAnswers(updated);
+
+  setAnswerMap({
+    ...answerMap,
+    [q.id]: input
+  });
+
+  setInput("");
+
+  const phrases = transitionMap[q.id] || transitionMap.final;
+
+  setShowTransition(true);
+
+  let index = 0;
+  let backendResult = null;
+
+const backendPromise = fetchNext(updated);
+
+backendPromise.then(result => {
+  backendResult = result;
+});
+
+
+  while (true) {
+
+    setTransitionText(phrases[index]);
+
+    await new Promise(resolve =>
+      setTimeout(resolve, 1200)
+    );
+    
+
+    index++;
+
+    // loop transition
+    if (index >= phrases.length) {
+
+  if (backendResult) {
+    break;
+  }
+
+  index = 0;
+}
+  }
+
+
+  // make sure backend really finished
+  const result = await backendPromise;
+
+if (result?.question) {
+  setQuestions(prev => [
+    ...prev,
+    result.question
+  ]);
+
+  setCurrentIndex(prev => prev + 1);
+}
+
+setShowTransition(false);
+
+if (result?.done) {
+  setDone(true);
+  return;
+}
+
+};
 
   // RESET CHAT
-  const resetChat = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setQuestions([]);
-    setAnswers([]);
-    setAnswerMap({});
-    setCurrentIndex(0);
-    setDone(false);
-    setResults([]);
-    fetchNext([]);
-  };
+  const resetChat = async () => {
+  localStorage.removeItem(STORAGE_KEY);
+
+  setQuestions([]);
+  setAnswers([]);
+  setAnswerMap({});
+  setCurrentIndex(0);
+  setDone(false);
+  setResults([]);
+
+  const result = await fetchNext([]);
+
+  if (result?.question) {
+    setQuestions([result.question]);
+  }
+};
 
   return (
   <div className="page">

@@ -59,8 +59,22 @@ export default function Chat() {
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [conversationId, setConversationId] = useState(null);
-  const [otherUser, setOtherUser] = useState(null);
+  //const [conversationId, setConversationId] = useState(null);
+  
+  const [conversationId, setConversationId] =
+  useState(() =>
+    localStorage.getItem(
+      `chat_${otherUsername}`
+    )
+  );
+  //const [otherUser, setOtherUser] = useState(null);
+  const [otherUser, setOtherUser] = useState(() => {
+  const cached = localStorage.getItem(
+    `chat_header_${otherUsername}`
+  );
+
+  return cached ? JSON.parse(cached) : null;
+});
   const displayUser = otherUser || {
   username: otherUsername,
   avatar: null,
@@ -134,7 +148,21 @@ export default function Chat() {
       );
 
       const data = await res.json();
+      localStorage.setItem(
+  `chat_header_${otherUsername}`,
+  JSON.stringify(data.other_user)
+);
+      const cachedId = localStorage.getItem(
+  `chat_${otherUsername}`
+);
 
+if (cachedId) {
+  setConversationId(cachedId);
+}
+      localStorage.setItem(
+  `chat_${otherUsername}`,
+  data.conversation_id
+);
       if (!mounted) return;
 
       setConversationId(data.conversation_id);
@@ -160,6 +188,8 @@ export default function Chat() {
   };
 
 }, [otherUsername]);
+
+  
   
   const uploadToCloudinary = async (file) => {
   const formData = new FormData();
@@ -192,6 +222,7 @@ export default function Chat() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ["messages", conversationId],
 
@@ -217,15 +248,22 @@ export default function Chat() {
       return lastPage.next;
     },
 
-    //staleTime: 1000 * 60 * 5,
-    //staleTime: 0,
-   // refetchOnMount: true,
-    //staleTime: 1000 * 60 * 5,
-    //refetchOnMount: false,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+
+    //refetchOnMount: "always",
+    //refetchOnWindowFocus: true,
+    staleTime: 60 * 1000, // 1 minute
+  cacheTime: 30 * 60 * 1000,   // 30 minutes (Holds old data)
+  refetchOnWindowFocus: true,  // Fixes the offline gap background sync
+  
+  // CHANGE THIS TO TRUE:
+  refetchOnMount: true,
+    
   });
+  useEffect(() => {
+  if (conversationId) {
+    refetch();
+  }
+}, [conversationId, refetch]);
   const cachedMessages =
   data?.pages?.flatMap(
     (page) => page.results ?? []
@@ -265,33 +303,29 @@ export default function Chat() {
   }
 
 }, [cachedMessages]);
+
   useEffect(() => {
   if (!data) return;
- // setLoadingMessages(false)
+
   const fetched = data.pages.flatMap(
     (page) => page.results ?? []
   );
 
   setMessages((prev) => {
-    // first load
-    if (prev.length === 0) {
-      return fetched.sort(
-        (a, b) =>
-          new Date(a.created_at) -
-          new Date(b.created_at)
-      );
-    }
+    const map = new Map();
 
-    const existingIds = new Set(
-      prev.map((m) => m.id)
+    prev.forEach((m) =>
+      map.set(m.id, m)
     );
 
-    // ONLY add older missing messages
-    const missing = fetched.filter(
-      (m) => !existingIds.has(m.id)
+    fetched.forEach((m) =>
+      map.set(m.id, {
+        ...map.get(m.id),
+        ...m,
+      })
     );
 
-    return [...missing, ...prev].sort(
+    return [...map.values()].sort(
       (a, b) =>
         new Date(a.created_at) -
         new Date(b.created_at)
@@ -617,6 +651,7 @@ const { data: viewedGig } = useQuery({
       id: `temp-${clientId}`,
       client_id: clientId,
       attached_gig: selectedGig,
+      
       text,
       image_url: imageUrl,
       video_url: videoUrl,
@@ -654,6 +689,7 @@ const { data: viewedGig } = useQuery({
         }),
       }
     );
+    await refetch();
   } catch {
     setMessages((prev) =>
       prev.map((m) =>
@@ -669,7 +705,6 @@ const { data: viewedGig } = useQuery({
     setUploading(false);
   }
 };
-
   // ---------------- UI ----------------
   
 
@@ -927,24 +962,16 @@ return (
                   )}
 
                   {mine && (
-                    <span className="status">
+                    <span className={`status ${msg.status}`}>
+  {msg.status === "sending" && "⏳"}
+  {msg.status === "sent" && "✓"}
 
-                      {msg.status ===
-                        "sending" && "⏳"}
+  {(msg.status === "delivered" ||
+    msg.status === "read") &&
+    "✓✓"}
 
-                      {msg.status ===
-                        "sent" && "✓"}
-
-                      {msg.status ===
-                        "delivered" && "✓✓"}
-
-                      {msg.status ===
-                        "read" && "✓✓"}
-
-                      {msg.status ===
-                        "failed" && "❌"}
-
-                    </span>
+  {msg.status === "failed" && "❌"}
+</span>
                   )}
 
                 </div>
