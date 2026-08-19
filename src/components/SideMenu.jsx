@@ -38,6 +38,21 @@ export default function SideMenu({ open, onClose }) {
     
   });
 
+  const { data: userStatus } = useQuery({
+  queryKey: ["current-user-status", username],
+  queryFn: async () => {
+    const res = await fetchWithAuth(
+      `/api/accounts/users/${encodeURIComponent(username)}/`
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch user status");
+    }
+
+    return await res.json();
+  },
+});
+
   useEffect(() => {
     const ping = async () => {
       try {
@@ -85,14 +100,34 @@ export default function SideMenu({ open, onClose }) {
         <div style={styles.header}>
           <div>
   <div style={styles.userRow}>
-    <div style={styles.avatar}>
-      {avatarLetter}
-    </div>
-
-    <div style={styles.username}>
-      {username}
-    </div>
+  <div style={styles.avatar}>
+    {avatarLetter}
   </div>
+
+  <div
+    style={{
+      ...styles.username,
+      color: userStatus?.is_linkx_partner ? "#D4AF37" : "#000000",
+    }}
+  >
+    {username}
+  </div>
+
+  {/* Verification / Partner badge */}
+  {userStatus?.is_linkx_partner ? (
+    <img
+      src="public/Linkx.jpg"
+      alt="LinkX Partner"
+      style={styles.partnerBadge}
+    />
+  ) : (
+    userStatus?.is_verified && (
+      <div style={styles.verifiedBadge}>
+        ✓
+      </div>
+    )
+  )}
+</div>
 
   <div style={styles.active}>
     <span style={{ color: "lightgreen" }}>active</span>
@@ -138,18 +173,15 @@ export default function SideMenu({ open, onClose }) {
            </div>
           )}
 
-          <div
-  style={styles.bigButton}
-  onClick={() => {
-    window.open(
-      "https://mail.google.com/mail/?view=cm&fs=1&to=linkx.llm@gmail.com",
-      "_blank"
-    );
-    onClose();
-  }}
->
-  Support
-</div>
+          <a
+    href="mailto:linkx.llm@gmail.com?subject=Need%20help!"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={styles.supportButton}
+    onClick={onClose}
+  >
+    Support
+  </a>
 
         </div>
         {unreadChats.length > 0 && (
@@ -196,6 +228,21 @@ const styles = {
   display: "flex",
   alignItems: "center",
   gap: "10px",
+},
+  supportButton: {
+  display: "block",
+  background: "#ffffff",
+  padding: "16px",
+  marginBottom: "14px",
+  fontSize: "18px",
+  textAlign: "left",
+  fontWeight: "600",
+  borderRadius: "14px",
+  cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+  textDecoration: "none",
+  color: "inherit",
+  boxSizing: "border-box",
 },
 
 avatar: {
@@ -323,5 +370,27 @@ chatSubtitle: {
 redDot: {
   color: "red",
   marginLeft: "6px",
+},
+partnerBadge: {
+  width: "20px",
+  height: "20px",
+  borderRadius: "50%",
+  objectFit: "contain",
+  marginLeft: "6px",
+},
+
+verifiedBadge: {
+  width: "18px",
+  height: "18px",
+  borderRadius: "50%",
+  background: "#65e65c",
+  color: "#ffffff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px",
+  fontWeight: "700",
+  marginLeft: "6px",
+  flexShrink: 0,
 },
 };
