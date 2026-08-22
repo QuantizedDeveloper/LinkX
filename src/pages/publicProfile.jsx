@@ -258,7 +258,7 @@ export default function PublicProfile() {
           style={activeTab === "gigs" ? styles.activeTab : styles.inactiveTab}
           onClick={() => setActiveTab("gigs")}
         >
-          gigs
+          services
         </span>
         <span
           style={activeTab === "about" ? styles.activeTab : styles.inactiveTab}

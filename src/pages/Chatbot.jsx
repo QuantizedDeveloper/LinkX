@@ -375,7 +375,7 @@ if (result?.done) {
           <div className="results">
 
             <div className="summaryTitle">
-              🎯 Top 3 freelancers matched for you
+              🎯 Top 3 freelancers services i've found for your work
             </div>
 
             {results.map((f, i) => (

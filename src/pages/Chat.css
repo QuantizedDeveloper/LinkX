@@ -125,6 +125,74 @@ overflow: hidden;
   
 }
 
+.chat-avatar-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.chat-avatar-wrapper .avatar,
+.chat-avatar-wrapper .avatar-fallback {
+  width: 40px;
+  height: 40px;
+}
+
+.chat-partner-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+
+  width: 19px;
+  height: 19px;
+
+  border-radius: 50%;
+  background: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #ff3b30;
+
+  box-sizing: border-box;
+  overflow: hidden;
+
+  z-index: 10;
+}
+
+.chat-partner-badge-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.chat-verified-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+  background: #35d04f;
+
+  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+
 /* pay button */
 .pay-btn {
   position: absolute;

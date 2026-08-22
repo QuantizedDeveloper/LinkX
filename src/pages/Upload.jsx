@@ -146,7 +146,7 @@ const handlePublish = async () => {
 
       {/* Title */}
       <textarea
-        placeholder="What's new gig"
+        placeholder="What's new service"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         style={styles.textarea}

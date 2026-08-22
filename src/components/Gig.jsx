@@ -5,6 +5,9 @@ import blackImg from "../assets/black.jpg";
 import "./gig.css";
 import { showToast } from "../utils/toast";
 import ReviewSection from "./ReviewSection";
+
+import { useQuery, useQueryClient, useQueries } from "@tanstack/react-query";
+
 import { fetchWithAuth } from "../utils/api";
 const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
@@ -63,11 +66,28 @@ function Gig({ gig }) {
         setMenuOpen(false);
       }
     };
+
+    
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   // ---------------- DELETE FUNCTION ----------------
+  const { data: userStatus } = useQuery({
+  queryKey: ["current-user-status", username],
+  queryFn: async () => {
+    const res = await fetchWithAuth(
+      `/api/accounts/users/${encodeURIComponent(username)}/`
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch user status");
+    }
+
+    return await res.json();
+  },
+  enabled: !!username,
+});
   const deleteGig = async () => {
     if (!window.confirm("Delete this gig?")) return;
 
@@ -93,28 +113,56 @@ function Gig({ gig }) {
   };
 
   if (deleted) return null;
+  
 
   return (
     <div className="gig-post">
       {/* HEADER */}
       <div className="gig-post-header">
         <div className="gig-user">
-          <img
-            src={avatar}
-            alt="user"
-            className="gig-avatar"
-            loading="lazy"   // 🔥 added
-            onClick={() => {
-            if (user_name === username) {
-            navigate("/profile");
-            return;
-            }
-            navigate(`/public-profile/${username}`);
-              
-            }}
-          />
+          <div className="gig-avatar-wrapper">
 
-          <span className="gig-username">{username}</span>
+  <img
+    src={avatar}
+    alt="user"
+    className="gig-avatar"
+    loading="lazy"
+    onClick={() => {
+      if (user_name === username) {
+        navigate("/profile");
+        return;
+      }
+
+      navigate(`/public-profile/${username}`);
+    }}
+  />
+
+  {userStatus?.is_linkx_partner ? (
+    <div className="gig-partner-badge">
+      <img
+        src={`${process.env.PUBLIC_URL}/Linkx.jpg`}
+        alt="LinkX Partner"
+        className="gig-partner-badge-image"
+      />
+    </div>
+  ) : userStatus?.is_verified ? (
+    <div className="gig-verified-badge">
+      ✓
+    </div>
+  ) : null}
+
+</div>
+
+          <span
+  className="gig-username"
+  style={{
+    color: userStatus?.is_linkx_partner
+      ? "#FFD700"
+      : "#000000",
+  }}
+>
+  {username}
+</span>
 
           <FiMail
             className="gig-dm-icon"

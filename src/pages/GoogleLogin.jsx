@@ -1,37 +1,34 @@
 // GoogleLogin.jsx
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   getAuth,
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
-import { Link } from "react-router-dom";
+
 import "../firebase";
 import "./GoogleLogin.css";
 
 import { FcGoogle } from "react-icons/fc";
-import { FaLinkedinIn } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
 import { showToast } from "../utils/toast";
+
 export default function GoogleLogin() {
-  const [checked, setChecked] = useState(false);
-  
   const navigate = useNavigate();
   const [agreed, setAgreed] = useState(false);
+
   const handleGoogleLogin = async () => {
-    if (!agreed) {
+    /*if (!agreed) {
       showToast("Please accept LinkX terms first");
       return;
-    }
+    }*/
 
     try {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
 
       const result = await signInWithPopup(auth, provider);
-
       const idToken = await result.user.getIdToken();
 
       const res = await fetch(
@@ -65,58 +62,45 @@ export default function GoogleLogin() {
       }
     } catch (err) {
       console.error("FULL ERROR:", err);
-
       showToast(err.message || err.code || "Google login failed");
     }
-  };
-
-  const handleUnavailable = () => {
-    showToast("This login method is not available right now");
   };
 
   return (
     <div className="login-container">
       <div className="login-content">
 
-        <h1 className="signup-title">signup with</h1>
+        {/* TITLE */}
+        <h1 className="welcome-title">
+          Welcome to linkX
+        </h1>
+
+        {/* SUBTITLE */}
+        <p className="welcome-subtitle">
+          <span>Find</span>{" "}
+          <span>right</span>{" "}
+          freelancers{" "}
+          <span>in</span>{" "}
+          <span>less</span>{" "}
+          than minute.
+        </p>
 
         {/* GOOGLE */}
         <button
           onClick={handleGoogleLogin}
-          className="social-btn google-circle"
+          className="google-circle"
+          aria-label="Continue with Google"
         >
-          <FcGoogle className="social-icon google-icon" />
+          <FcGoogle className="google-icon" />
         </button>
 
-        {/* LINKEDIN */}
-        <button
-          onClick={handleUnavailable}
-          className="social-btn linkedin-circle"
-        >
-          <FaLinkedinIn className="social-icon linkedin-icon" />
-        </button>
-
-        {/* X */}
-        <button
-          onClick={handleUnavailable}
-          className="social-btn x-circle"
-        >
-          <FaXTwitter className="social-icon x-icon" />
-        </button>
-
+        {/* TERMS */}
         <div className="terms-container">
-          <label>
-  <input
-    type="checkbox"
-    checked={agreed}
-    onChange={(e) => setAgreed(e.target.checked)}
-  />
-  I have read and agree to the{" "}
-  <Link to="/terms">Terms & Conditions</Link>.
-</label>
+          <span>linkx </span>
+          <Link to="/terms">
+            terms and conditions
+          </Link>
         </div>
-
-        
 
       </div>
     </div>

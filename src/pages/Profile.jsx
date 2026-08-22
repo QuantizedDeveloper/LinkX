@@ -282,7 +282,7 @@ export default function Profile() {
     style={tab === "gigs" ? styles.activeTab : styles.inactiveTab}
     onClick={() => setTab("gigs")}
   >
-    gigs
+    services
   </div>
 
   <div
@@ -329,7 +329,7 @@ export default function Profile() {
     </p>
 
     <p>
-      <strong>Total Gigs:</strong>{" "}
+      <strong>Total services:</strong>{" "}
       {aboutData?.total_gigs ?? 0}
     </p>
 

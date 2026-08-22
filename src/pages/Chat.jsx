@@ -49,11 +49,9 @@ export default function Chat() {
   
   const username = localStorage.getItem("username");
 
-  const [messages, setMessages] = useState(
-  () => {
-    return [];
-  }
-);
+  const [messages, setMessages] = useState([]);
+
+
   //const [loadingMessages, setLoadingMessages] =
   useState(true);
   const [text, setText] = useState("");
@@ -98,6 +96,31 @@ export default function Chat() {
     
   }, []);
   // ---------------- INIT ----------------
+  useEffect(() => {
+  if (!conversationId) return;
+
+  const cached = localStorage.getItem(
+    `messages_${conversationId}`
+  );
+
+  if (cached) {
+    try {
+      setMessages(JSON.parse(cached));
+    } catch (error) {
+      console.error("Failed to load cached messages", error);
+    }
+  }
+}, [conversationId]);
+
+useEffect(() => {
+  if (!conversationId || messages.length === 0) return;
+
+  localStorage.setItem(
+    `messages_${conversationId}`,
+    JSON.stringify(messages)
+  );
+}, [messages, conversationId]);
+  
   useEffect(() => {
   if (!conversationId) return;
 
@@ -268,6 +291,16 @@ if (cachedId) {
   data?.pages?.flatMap(
     (page) => page.results ?? []
   ) || [];
+
+useEffect(() => {
+  if (!data?.pages) return;
+
+  const allMessages = data.pages.flatMap(
+    (page) => page.results || []
+  );
+
+  setMessages(allMessages);
+}, [data]);
   // ---------------- LOAD MESSAGES ----------------
   const fetchNotifications = async () => {
     try {
@@ -287,7 +320,7 @@ if (cachedId) {
     }
 };
 
-  useEffect(() => {
+  /*useEffect(() => {
 
   if (
     messages.length === 0 &&
@@ -302,10 +335,10 @@ if (cachedId) {
     );
   }
 
-}, [cachedMessages]);
+}, [cachedMessages]);*/
 
   useEffect(() => {
-  if (!data) return;
+  if (!data?.pages) return;
 
   const fetched = data.pages.flatMap(
     (page) => page.results ?? []
@@ -314,16 +347,16 @@ if (cachedId) {
   setMessages((prev) => {
     const map = new Map();
 
-    prev.forEach((m) =>
-      map.set(m.id, m)
-    );
+    prev.forEach((m) => {
+      map.set(String(m.id), m);
+    });
 
-    fetched.forEach((m) =>
-      map.set(m.id, {
-        ...map.get(m.id),
+    fetched.forEach((m) => {
+      map.set(String(m.id), {
+        ...map.get(String(m.id)),
         ...m,
-      })
-    );
+      });
+    });
 
     return [...map.values()].sort(
       (a, b) =>
@@ -661,10 +694,17 @@ const { data: viewedGig } = useQuery({
       created_at: new Date().toISOString(),
     };
 
-    setMessages((prev) => [
-      ...prev,
-      tempMessage,
-    ]);
+    setMessages((prev) => {
+  const updated = [...prev, tempMessage];
+
+  localStorage.setItem(
+    `messages_${conversationId}`,
+    JSON.stringify(updated)
+  );
+
+  return updated;
+});
+    
 
     const messageText = text;
 
@@ -689,7 +729,7 @@ const { data: viewedGig } = useQuery({
         }),
       }
     );
-    await refetch();
+    //await refetch();
   } catch {
     setMessages((prev) =>
       prev.map((m) =>
@@ -705,6 +745,21 @@ const { data: viewedGig } = useQuery({
     setUploading(false);
   }
 };
+const { data: userStatus } = useQuery({
+  queryKey: ["current-user-status", displayUser.username],
+  queryFn: async () => {
+    const res = await fetchWithAuth(
+      `/api/accounts/users/${encodeURIComponent(displayUser.username)}/`
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch user status");
+    }
+
+    return await res.json();
+  },
+  enabled: !!displayUser.username,
+});
   // ---------------- UI ----------------
   
 
@@ -727,34 +782,59 @@ return (
 
         <div className="header-user">
 
-          {displayUser.avatar ? (
-            <img
-              src={displayUser.avatar}
-              className="avatar"
-              onClick={() =>
-                navigate(
-                  `/public-profile/${displayUser.username}`
-                )
-              }
-            />
-          ) : (
-            <div
-              className="avatar-fallback"
-              onClick={() =>
-                navigate(
-                  `/public-profile/${displayUser.username}`
-                )
-              }
-            >
-              {displayUser.username[0].toUpperCase()}
-            </div>
-          )}
+          <div className="chat-avatar-wrapper">
+
+  {displayUser.avatar ? (
+    <img
+      src={displayUser.avatar}
+      className="avatar"
+      onClick={() =>
+        navigate(
+          `/public-profile/${displayUser.username}`
+        )
+      }
+    />
+  ) : (
+    <div
+      className="avatar-fallback"
+      onClick={() =>
+        navigate(
+          `/public-profile/${displayUser.username}`
+        )
+      }
+    >
+      {displayUser.username[0].toUpperCase()}
+    </div>
+  )}
+
+  {userStatus?.is_linkx_partner ? (
+    <div className="chat-partner-badge">
+      <img
+        src={`${process.env.PUBLIC_URL}/Linkx.jpg`}
+        alt="LinkX Partner"
+        className="chat-partner-badge-image"
+      />
+    </div>
+  ) : userStatus?.is_verified ? (
+    <div className="chat-verified-badge">
+      ✓
+    </div>
+  ) : null}
+
+</div>
 
           <div className="header-meta">
 
-            <span className="header-name">
-              {displayUser.username}
-            </span>
+            <span
+  className="header-name"
+  style={{
+    color: userStatus?.is_linkx_partner
+      ? "#FFD700"
+      : "#000000",
+  }}
+>
+  {displayUser.username}
+</span>
 
             {typing && (
               <span className="typing-text">
@@ -933,7 +1013,7 @@ return (
                       
                     }}
                   >
-                    View Gig
+                    View service
                   </button>
                 )}
                 

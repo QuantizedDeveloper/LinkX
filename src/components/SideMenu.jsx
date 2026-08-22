@@ -99,34 +99,37 @@ export default function SideMenu({ open, onClose }) {
         {/* HEADER */}
         <div style={styles.header}>
           <div>
-  <div style={styles.userRow}>
+ <div style={styles.userRow}>
+
+  <div style={styles.avatarWrapper}>
   <div style={styles.avatar}>
     {avatarLetter}
   </div>
 
+  {userStatus?.is_linkx_partner ? (
+    <div style={styles.partnerBadge}>
+      <img
+      src={`${process.env.PUBLIC_URL}/Linkx.jpg`}
+      alt="LinkX Partner"
+      style={styles.partnerBadgeImage}
+    />
+    </div>
+  ) : userStatus?.is_verified ? (
+    <div style={styles.verifiedBadge}>
+      ✓
+    </div>
+  ) : null}
+</div>
+
   <div
     style={{
       ...styles.username,
-      color: userStatus?.is_linkx_partner ? "#D4AF37" : "#000000",
+      color: userStatus?.is_linkx_partner ? "#FFD700" : "#000000",
     }}
   >
     {username}
   </div>
 
-  {/* Verification / Partner badge */}
-  {userStatus?.is_linkx_partner ? (
-    <img
-      src="public/Linkx.jpg"
-      alt="LinkX Partner"
-      style={styles.partnerBadge}
-    />
-  ) : (
-    userStatus?.is_verified && (
-      <div style={styles.verifiedBadge}>
-        ✓
-      </div>
-    )
-  )}
 </div>
 
   <div style={styles.active}>
@@ -341,6 +344,7 @@ unreadCard: {
   cursor: "pointer",
   borderTop: "1px solid #ddd",
   borderBottom: "1px solid #ddd",
+  fontFamily: "Inter, sans-serif"
 },
 
 chatAvatar: {
@@ -355,42 +359,112 @@ chatAvatar: {
   fontSize: "26px",
   fontWeight: "500",
   color: "#000",
+  fontFamily: "Inter, sans-serif"
 },
 
 chatUsername: {
   fontSize: "18px",
   fontWeight: "500",
+  fontFamily: "Inter, sans-serif"
 },
 
 chatSubtitle: {
   fontSize: "15px",
   marginTop: "4px",
+  fontFamily: "Inter, sans-serif"
 },
 
 redDot: {
   color: "red",
   marginLeft: "6px",
 },
-partnerBadge: {
-  width: "20px",
-  height: "20px",
-  borderRadius: "50%",
-  objectFit: "contain",
-  marginLeft: "6px",
+avatarWrapper: {
+  position: "relative",
+  width: "40px",
+  height: "40px",
+  flexShrink: 0,
 },
 
-verifiedBadge: {
-  width: "18px",
-  height: "18px",
+avatar: {
+  width: "40px",
+  height: "40px",
   borderRadius: "50%",
-  background: "#65e65c",
-  color: "#ffffff",
+  background: "#e0e0e0",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "12px",
-  fontWeight: "700",
-  marginLeft: "6px",
-  flexShrink: 0,
+  fontSize: "20px",
+  fontWeight: "600",
+  textTransform: "uppercase",
+  color: "#333",
+  fontFamily: "Inter, sans-serif",
 },
+
+verifiedBadge: {
+  position: "absolute",
+  right: "-4px",
+  bottom: "-4px",
+
+  width: "18px",
+  height: "18px",
+
+  borderRadius: "50%",
+  background: "#35d04f",
+
+  color: "#fff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  fontSize: "11px",
+  fontWeight: "800",
+
+  
+
+  boxSizing: "border-box",
+  zIndex: 10,
+},
+
+partnerBadge: {
+  position: "absolute",
+  right: "-4px",
+  bottom: "-4px",
+
+  width: "19px",
+  height: "19px",
+
+  borderRadius: "50%",
+  background: "#fff",
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  border: "1px solid #ff3b30",
+
+  boxSizing: "border-box",
+  overflow: "hidden",
+
+  zIndex: 10,
+},
+
+partnerBadgeImage: {
+  width: "100%",
+  height: "100%",
+  objectFit: "contain",
+  display: "block",
+},
+
+
+
+
+
+
+
+
+
+
+
+
+
 };

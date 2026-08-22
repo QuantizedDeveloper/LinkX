@@ -162,7 +162,7 @@ useEffect(() => {
             if (profile?.is_freelancer) {
               navigate("/upload");
             } else {
-              showToast("Only freelancers can upload gigs");
+              showToast("Only freelancers can create services");
             }
           }}
         >
@@ -176,7 +176,7 @@ useEffect(() => {
 
           <div>
             <div style={styles.name}>{username}</div>
-            <div style={styles.uploadText}>upload gig</div>
+            <div style={styles.uploadText}>create service </div>
           </div>
         </div>)}
 

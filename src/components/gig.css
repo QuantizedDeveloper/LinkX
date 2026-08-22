@@ -32,6 +32,76 @@
   object-fit: cover;
 }
 
+
+.gig-avatar-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+/*.gig-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}*/
+
+.gig-partner-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+
+  width: 19px;
+  height: 19px;
+
+  border-radius: 50%;
+  background: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #ff3b30;
+
+  box-sizing: border-box;
+  overflow: hidden;
+
+  z-index: 10;
+}
+
+.gig-partner-badge-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.gig-verified-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+  background: #35d04f;
+
+  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+
 .gig-username {
   font-weight: 600;
   font-size: 15px;

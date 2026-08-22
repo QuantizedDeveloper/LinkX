@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Ably from "ably";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useQueries } from "@tanstack/react-query";
 import { FiBell, FiMessageSquare } from "react-icons/fi";
 import "./Inbox.css";
 import { fetchWithAuth } from "../utils/api";
@@ -232,6 +232,23 @@ const { data: selectedGig } = useQuery({
     if (status === "delivered") return "✓✓";
     return "✓";
   };
+  const userStatusQueries = useQueries({
+  queries: filtered.map((c) => ({
+    queryKey: ["current-user-status", c.username],
+    queryFn: async () => {
+      const res = await fetchWithAuth(
+        `/api/accounts/users/${encodeURIComponent(c.username)}/`
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch user status");
+      }
+
+      return await res.json();
+    },
+    enabled: !!c.username,
+  })),
+});
 
   // =========================
   // UI
@@ -336,7 +353,7 @@ const { data: selectedGig } = useQuery({
                       
                     }}
                   >
-                    View Gig
+                    View service
                   </button>
                 )}
 
@@ -370,25 +387,55 @@ const { data: selectedGig } = useQuery({
 
                 <div className="avatar-wrapper">
 
-                  <div className="avatar">
-                    {c.username
-                      ?.charAt(0)
-                      .toUpperCase()}
-                  </div>
+  <div className="avatar">
+    {c.username
+      ?.charAt(0)
+      .toUpperCase()}
+  </div>
 
-                  {isOnline && (
-                    <div className="online-dot"></div>
-                  )}
+  {userStatusQueries[
+    filtered.findIndex((user) => user.username === c.username)
+  ]?.data?.is_linkx_partner ? (
+    <div className="partner-badge">
+      <img
+        src={`${process.env.PUBLIC_URL}/Linkx.jpg`}
+        alt="LinkX Partner"
+        className="partner-badge-image"
+      />
+    </div>
+  ) : userStatusQueries[
+      filtered.findIndex((user) => user.username === c.username)
+    ]?.data?.is_verified ? (
+    <div className="verified-badge">
+      ✓
+    </div>
+  ) : null}
 
-                </div>
+  {isOnline && (
+    <div className="online-dot"></div>
+  )}
+
+</div>
 
                 <div className="info">
 
                   <div className="top-row">
 
-                    <span className="username">
-                      {c.username}
-                    </span>
+                    <span
+  className="username"
+  style={{
+    color:
+      userStatusQueries[
+        filtered.findIndex(
+          (user) => user.username === c.username
+        )
+      ]?.data?.is_linkx_partner
+        ? "#FFD700"
+        : "#000000",
+  }}
+>
+  {c.username}
+</span>
 
                     <span className="time">
                       {formatTime(c.updated)}

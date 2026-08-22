@@ -6,148 +6,224 @@
   box-sizing: border-box;
 }*/
 
+/* =========================================
+   LINKX SIGNUP / WELCOME PAGE
+   ========================================= */
+
 .login-container {
+  min-height: 100dvh;
   width: 100%;
-  min-height: 100vh;
-  background: #efefef;
+
+  background: #ffffff;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
+  box-sizing: border-box;
+
   font-family: Arial, Helvetica, sans-serif;
-  overflow: hidden;
 }
 
+
+/* Main phone/page area */
+
 .login-content {
-  width: 100%;
-  max-width: 420px;
+  width: calc(100% - 64px);
+  max-width: 680px;
+
+  height: calc(100dvh - 64px);
+
+  border: 1px solid white;
+
+  position: relative;
+
+  box-sizing: border-box;
 
   display: flex;
   flex-direction: column;
   align-items: center;
 
-  padding: 40px 20px;
+  padding-top: 135px;
 }
 
-.signup-title {
+
+/* =========================================
+   TITLE
+   ========================================= */
+
+.welcome-title {
+  margin: 0;
+
   font-size: 48px;
-  font-weight: 700;
-  color: black;
-  margin-bottom: 60px;
-  text-transform: lowercase;
+  font-weight: 500;
+
+  color: #111;
+
+  text-align: center;
+
+  letter-spacing: -1.5px;
 }
 
-.social-btn {
-  width: 135px;
-  height: 135px;
-  border-radius: 50%;
-  border: 1px solid black;
 
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* =========================================
+   SUBTITLE
+   ========================================= */
 
-  cursor: pointer;
-  margin-bottom: 38px;
+.welcome-subtitle {
+  margin-top: 55px;
 
-  transition: 0.2s ease;
+  font-size: 25px;
+  font-weight: 500;
+
+  color: #111;
+
+  text-align: center;
+
+  line-height: 1.4;
 }
 
-.social-btn:hover {
-  transform: scale(1.05);
+
+/*
+   Small color accents like your screenshot.
+*/
+
+.welcome-subtitle span:nth-child(1) {
+  color: #ff6b6b;
 }
 
-.social-btn:active {
-  transform: scale(0.96);
+.welcome-subtitle span:nth-child(2) {
+  color: #4da3ff;
 }
 
-/* GOOGLE */
+.welcome-subtitle span:nth-child(3) {
+  color: #ff6b6b;
+}
+
+.welcome-subtitle span:nth-child(4) {
+  color: #4da3ff;
+}
+
+
+/* =========================================
+   GOOGLE BUTTON
+   ========================================= */
 
 .google-circle {
-  background: white;
-}
+  position: absolute;
 
-.google-icon {
-  font-size: 72px;
-}
+  bottom: 115px;
 
-/* LINKEDIN */
+  width: 96px;
+  height: 96px;
 
-.linkedin-circle {
-  background: #0a66c2;
-}
+  border-radius: 50%;
 
-.linkedin-icon {
-  font-size: 78px;
-  color: white;
-}
+  background: #ffffff;
 
-/* X */
+  border: 1px solid #777;
 
-.x-circle {
-  background: black;
-}
-
-.x-icon {
-  font-size: 72px;
-  color: white;
-}
-
-/* TERMS */
-
-.terms-container {
-  margin-top: 20px;
-  margin-bottom: 60px;
-}
-
-.checkbox-wrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
 
-  font-size: 18px;
-  color: black;
-}
-
-.checkbox-wrapper input {
-  width: 18px;
-  height: 18px;
   cursor: pointer;
+
+  padding: 0;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-/* PRIVACY */
+.google-circle:hover {
+  transform: scale(1.03);
 
-.privacy-text {
-  align-self: flex-start;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+}
+
+.google-circle:active {
+  transform: scale(0.97);
+}
+
+
+.google-icon {
+  width: 43px;
+  height: 43px;
+}
+
+
+/* =========================================
+   TERMS
+   ========================================= */
+
+.terms-container {
+  position: absolute;
+
+  bottom: 25px;
+
+  left: 0;
+  right: 0;
+
+  text-align: center;
 
   font-size: 20px;
-  font-weight: 700;
-  color: black;
 
-  margin-top: 30px;
-  text-transform: lowercase;
+  color: #111;
 }
 
-/* MOBILE */
+.terms-container span {
+  color: #111;
+}
+
+.terms-container a {
+  color: #c77cff;
+
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+.terms-container a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
 
 @media (max-width: 600px) {
-  .signup-title {
-    font-size: 34px;
-    margin-bottom: 45px;
+
+  .login-content {
+    width: calc(100% - 64px);
+    height: calc(100dvh - 64px);
+
+    padding-top: 135px;
   }
 
-  .social-btn {
-    width: 110px;
-    height: 110px;
-    margin-bottom: 30px;
+  .welcome-title {
+    font-size: 37px;
   }
 
-  .google-icon,
-  .linkedin-icon,
-  .x-icon {
-    font-size: 60px;
+  .welcome-subtitle {
+    margin-top: 55px;
+
+    font-size: 20px;
+
+    padding: 0 20px;
   }
 
-  .privacy-text {
-    font-size: 16px;
+  .google-circle {
+    width: 96px;
+    height: 96px;
+
+    bottom: 115px;
+  }
+
+  .terms-container {
+    bottom: 25px;
+
+    font-size: 17px;
   }
 }
