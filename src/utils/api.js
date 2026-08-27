@@ -15,15 +15,25 @@ export const fetchWithAuth = async (url, options = {}) => {
   const isFormData = options.body instanceof FormData;
 
   const makeRequest = async (accessToken) => {
-    return fetch(API_BASE + url, {
-      ...options,
-      headers: {
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...options.headers,
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-  };
+  const start = performance.now();
+
+  const response = await fetch(API_BASE + url, {
+    ...options,
+    headers: {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...options.headers,
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const elapsed = performance.now() - start;
+
+  console.log(
+    `[API] ${url} → ${response.status} → ${elapsed.toFixed(0)}ms`
+  );
+
+  return response;
+};
 
   let res = await makeRequest(token);
 

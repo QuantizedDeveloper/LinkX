@@ -27,6 +27,8 @@ import FaceVerificationInfo from "./pages/FaceVerificationAgreement"
 import ActivityTracker from "./ActivityTracker"
 /*import useAutoRefresh from "./useAutoRefresh"*/
 //import { useEffect } from "react";
+import HiredGuide from "./pages/HiredGuide";
+import HiringGuide from "./pages/HiringGuide";
 import { enablePushNotifications } from "./utils/push";
 const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
@@ -79,6 +81,8 @@ export default function App() {
       <Route path="/faceVerification" element={<FaceVerification />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/hiring-guide" element={<HiringGuide />} />
+      <Route path="/hired-guide" element={<HiredGuide />} />
       {/*<Route path="/chat/:username"element={<Chat />} />*/}
        <Route
           path="/username"

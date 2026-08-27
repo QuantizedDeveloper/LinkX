@@ -192,7 +192,7 @@ function Gig({ gig }) {
                 setMenuOpen(false);
               }}
             >
-              Description
+              about service
             </div>
 
             <div>Report</div>
@@ -255,7 +255,7 @@ function Gig({ gig }) {
             >
               ×
             </span>
-            <h4>Description</h4>
+            <h4>About service </h4>
             <p>{description}</p>
           </div>
         </div>

@@ -8,13 +8,13 @@
 
 
 
-{/*.container {
+/*.container {
   width: 100%;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   background: #f9f9f9;
-}*/}
+}*/
 /*.container {
   width: 100%;
   height: 83%;
@@ -58,11 +58,11 @@
   font-family: Inter, sans-serif;
 }
 
-{/*.content {
+/*.content {
   flex: 1;
   overflow-y: auto;
   padding: 20px 16px 10px;
-}*/}
+}*/
 .content {
   flex: 1;
   overflow-y: auto;
@@ -258,6 +258,15 @@
   border: none;
   font-family: Inter, sans-serif;
 }
+
+.resetBtn2 {
+  border-radius : 50%;
+  background:white;
+  color:black;
+  font-weight: bold;
+  font-family: Inter, sans-serif;
+}
+
 
 .send {
   width: 40px;
@@ -506,4 +515,26 @@
   border-radius: 16px;
   padding: 16px;
   position: relative;
+}
+
+
+.explanationText {
+  line-height: 1.6;
+  font-family: Inter, sans-serif;
+}
+
+.explanationHeading {
+  font-weight: 700;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  font-family: Inter, sans-serif;
+}
+
+.explanationHeading:first-child {
+  margin-top: 0;
+}
+
+.explanationParagraph {
+  margin-bottom: 12px;
+  font-family: Inter, sans-serif;
 }

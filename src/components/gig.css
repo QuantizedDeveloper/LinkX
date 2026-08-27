@@ -9,7 +9,9 @@
   padding: 14px;
   margin: 16px auto;
   box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-  position: relative; /* IMPORTANT FIX */
+  position: relative; 
+  /* IMPORTANT FIX */
+  font-family: Inter, sans-serif;
 }
 
 /* header */
@@ -106,6 +108,7 @@
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
+  font-family: Inter, sans-serif
 }
 
 .gig-dm-icon {
@@ -236,6 +239,7 @@
   align-items: center;
   justify-content: center;
   z-index: 3000;
+  font-family: Inter, sans-serif;
 }
 
 .gig-desc-box {

@@ -189,7 +189,7 @@ const handlePublish = async () => {
         )}
       </div>
       {/* Description */}
-      <textarea placeholder="Describe your gig..."
+      <textarea placeholder="About your services..."
       value={description} onChange={(e) => setDescription(e.target.value)}
       style={{
     ...styles.textarea,

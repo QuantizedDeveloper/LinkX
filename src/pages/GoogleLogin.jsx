@@ -81,8 +81,8 @@ export default function GoogleLogin() {
           <span>right</span>{" "}
           freelancers{" "}
           <span>in</span>{" "}
-          <span>less</span>{" "}
-          than minute.
+          <span>less </span>{" "}
+          than 2 minutes.
         </p>
 
         {/* GOOGLE */}

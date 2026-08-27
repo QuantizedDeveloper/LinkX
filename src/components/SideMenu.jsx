@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { fetchWithAuth } from "../utils/api";
-
+import { FiLogOut } from "react-icons/fi";
 const isDesktop = window.innerWidth >= 975;
 
 export default function SideMenu({ open, onClose }) {
@@ -185,6 +185,27 @@ export default function SideMenu({ open, onClose }) {
   >
     Support
   </a>
+    <div style={styles.guideButtons}>
+  <div
+    style={styles.guideButton}
+    onClick={() => {
+      navigate("/hiring-guide");
+      onClose();
+    }}
+  >
+    Hiring Guide
+  </div>
+
+  <div
+    style={styles.guideButton}
+    onClick={() => {
+      navigate("/hired-guide");
+      onClose();
+    }}
+  >
+    Hired Guide
+  </div>
+</div>
 
         </div>
         {unreadChats.length > 0 && (
@@ -217,10 +238,15 @@ export default function SideMenu({ open, onClose }) {
   </div>
 )}
         {/* FOOTER */}
-        <div style={styles.footer}>
-          <button onClick={handleLogout}>Logout</button>
-          
-        </div>
+        <div style={styles.footer2}>
+  <button
+    style={styles.logoutButton}
+    onClick={handleLogout}
+  >
+    <FiLogOut size={18} />
+    <span>Log out</span>
+  </button>
+</div>
       </div>
     </div>
   );
@@ -231,6 +257,29 @@ const styles = {
   display: "flex",
   alignItems: "center",
   gap: "10px",
+},
+  footer2: {
+  marginTop: "auto",
+  padding: "20px 14px",
+  borderTop: "1px solid #eeeeee",
+},
+
+logoutButton: {
+  width: "100%",
+  height: "48px",
+  border: "1px solid #f0dede",
+  background: "#fff7f7",
+  color: "#d64545",
+  borderRadius: "13px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "9px",
+  fontSize: "15px",
+  fontWeight: "600",
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+  
 },
   supportButton: {
   display: "block",
@@ -246,6 +295,7 @@ const styles = {
   textDecoration: "none",
   color: "inherit",
   boxSizing: "border-box",
+  fontFamily: "Inter, sans-serif",
 },
 
 avatar: {
@@ -320,7 +370,7 @@ username: {
   fontWeight: "600",
   borderRadius: "14px",
   cursor: "pointer",
-
+  fontFamily: "Inter, sans-serif",
   boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
   },
 
@@ -454,14 +504,25 @@ partnerBadgeImage: {
   objectFit: "contain",
   display: "block",
 },
+guideButtons: {
+  display: "flex",
+  gap: "12px",
+  marginTop: "4px",
+  fontFamily: "Inter, sans-serif",
+},
 
-
-
-
-
-
-
-
+guideButton: {
+  background: "#ffffff",
+  padding: "14px 12px",
+  flex: 1,
+  fontSize: "16px",
+  textAlign: "center",
+  fontWeight: "600",
+  borderRadius: "12px",
+  cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+  fontFamily: "Inter, sans-serif",
+},
 
 
 

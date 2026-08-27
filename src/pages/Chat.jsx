@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useParams,
   useNavigate,
@@ -24,6 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 
 
 export default function Chat() {
+  const queryClient = useQueryClient();
   const [selectedGigId, setSelectedGigId] = useState(null);
   const [showGigModal, setShowGigModal] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -453,131 +454,414 @@ const { data: viewedGig } = useQuery({
   };
 
   // ---------------- ABLY ----------------
-  useEffect(() => {
-    if (!conversationId) return;
+  {/*useEffect(() => {
+  if (!conversationId) return;
 
-    const ably = new Ably.Realtime({
-      authCallback: async (_, cb) => {
-        try {
-          const res = await fetchWithAuth(
-            "/api/messaging/ably-token/"
-          );
-
-          const data = await res.json();
-
-          cb(null, data);
-        } catch (err) {
-          cb(err, null);
-        }
-      },
-    });
-
-    const channel = ably.channels.get(
-      `chat_${conversationId}`
-    );
-
-    channelRef.current = channel;
-
-    channel.presence.enter({
-      username,
-    });
-    channel.subscribe("new_message", async (msg) => {
-      const incoming = msg.data;
-      if (
-        incoming.conversation !== conversationIdRef.current) {
-          return;
-        }
-        setMessages((prev) => {
-          // remove temp version if exists
-          const filtered = prev.filter((m) => m.client_id !== incoming.client_id && String(m.id) !== String(incoming.id));
-          return [...filtered, incoming].sort((a, b) =>
-        new Date(a.created_at) -
-        new Date(b.created_at)
-        );
-        });
-        try {
-          await fetchWithAuth(
-      `/api/messaging/message/delivered/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message_id: incoming.id,
-        }),
-      }
-    );
-  } catch {}
-      
-    });
-
-    // NEW MESSAGE
-    {/*channel.subscribe("new_message", async (msg) => {
-      const incoming = msg.data;
-
-      if (
-        incoming.conversation !==
-        conversationIdRef.current
-      ) {
-        return;
-      }
-
-      setMessages((prev) => {
-        // replace optimistic temp message
-        if (incoming.client_id) {
-          const idx = prev.findIndex(
-            (m) => m.client_id === incoming.client_id
-          );
-
-          if (idx !== -1) {
-            const copy = [...prev];
-
-            {/*copy[idx] = {
-              ...copy[idx],
-              ...incoming,
-              status: "sent",
-            };
-            copy[idx] = {
-              ...incoming,
-              status: incoming.status || "sent",
-            };
-
-            return copy;
-          }
-        }
-
-        // prevent duplicates
-        if (
-          prev.some(
-            (m) => String(m.id) === String(incoming.id)
-          )
-        ) {
-          return prev;
-        }
-
-        return [...prev, incoming];
-      });
-
-      // mark delivered
+  const ably = new Ably.Realtime({
+    authCallback: async (_, cb) => {
       try {
-        await fetchWithAuth(
-          `/api/messaging/message/delivered/`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message_id: incoming.id,
-            }),
-          }
+        const res = await fetchWithAuth(
+          "/api/messaging/ably-token/"
         );
-      } catch {}
-    })*/};
 
-    // DELIVERED
-    channel.subscribe("message_delivered", (msg) => {
+        const data = await res.json();
+        cb(null, data);
+      } catch (err) {
+        cb(err, null);
+      }
+    },
+  });
+
+  const channel = ably.channels.get(
+    `chat_${conversationId}`
+  );
+
+  channelRef.current = channel;
+
+  // Enter presence
+  channel.presence.enter({
+    username,
+  });
+
+  // NEW MESSAGE
+  const handleNewMessage = async (msg) => {
+    const incoming = msg.data;
+
+    if (
+      String(incoming.conversation) !==
+      String(conversationIdRef.current)
+    ) {
+      return;
+    }
+
+    // Update local/cache state
+    updateMessagesCache(incoming);
+
+    setMessages((prev) => {
+      // If this is the server version of an optimistic message,
+      // replace the optimistic message.
+      if (incoming.client_id) {
+        const index = prev.findIndex(
+          (m) => m.client_id === incoming.client_id
+        );
+
+        if (index !== -1) {
+          const copy = [...prev];
+
+          copy[index] = {
+            ...copy[index],
+            ...incoming,
+            status: incoming.status || "sent",
+          };
+
+          return copy.sort(
+            (a, b) =>
+              new Date(a.created_at) -
+              new Date(b.created_at)
+          );
+        }
+      }
+
+      // Prevent duplicate messages
+      if (
+        prev.some(
+          (m) =>
+            String(m.id) === String(incoming.id)
+        )
+      ) {
+        return prev;
+      }
+
+      return [...prev, incoming].sort(
+        (a, b) =>
+          new Date(a.created_at) -
+          new Date(b.created_at)
+      );
+    });
+
+    // Mark message as delivered
+    try {
+      await fetchWithAuth(
+        "/api/messaging/message/delivered/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message_id: incoming.id,
+          }),
+        }
+      );
+    } catch (err) {
+      console.error(
+        "Failed to mark message as delivered:",
+        err
+      );
+    }
+  };
+
+  channel.subscribe(
+    "new_message",
+    handleNewMessage
+  );
+
+  return () => {
+    channel.unsubscribe(
+      "new_message",
+      handleNewMessage
+    );
+
+    try {
+      channel.presence.leave();
+    } catch (err) {
+      console.log(
+        "Presence leave error:",
+        err
+      );
+    }
+
+    channelRef.current = null;
+
+    ably.close();
+  };
+}, [conversationId, username]) */}
+
+useEffect(() => {
+  if (!conversationId) return;
+
+  const ably = new Ably.Realtime({
+    authCallback: async (_, cb) => {
+      try {
+        const res = await fetchWithAuth(
+          "/api/messaging/ably-token/"
+        );
+
+        const data = await res.json();
+        cb(null, data);
+      } catch (err) {
+        cb(err, null);
+      }
+    },
+  });
+
+  const channel = ably.channels.get(
+    `chat_${conversationId}`
+  );
+
+  channelRef.current = channel;
+
+  // PRESENCE
+  channel.presence.enter({
+    username,
+  });
+
+  // NEW MESSAGE
+  const handleNewMessage = async (msg) => {
+    const incoming = msg.data;
+
+    if (
+      String(incoming.conversation) !==
+      String(conversationIdRef.current)
+    ) {
+      return;
+    }
+
+    updateMessagesCache(incoming);
+
+    setMessages((prev) => {
+      // Replace optimistic message
+      if (incoming.client_id) {
+        const index = prev.findIndex(
+          (m) => m.client_id === incoming.client_id
+        );
+
+        if (index !== -1) {
+          const copy = [...prev];
+
+          copy[index] = {
+            ...copy[index],
+            ...incoming,
+            status: incoming.status || "sent",
+          };
+
+          return copy.sort(
+            (a, b) =>
+              new Date(a.created_at) -
+              new Date(b.created_at)
+          );
+        }
+      }
+
+      // Prevent duplicates
+      if (
+        prev.some(
+          (m) =>
+            String(m.id) === String(incoming.id)
+        )
+      ) {
+        return prev;
+      }
+
+      return [...prev, incoming].sort(
+        (a, b) =>
+          new Date(a.created_at) -
+          new Date(b.created_at)
+      );
+    });
+
+    // Mark delivered
+    try {
+      await fetchWithAuth(
+        "/api/messaging/message/delivered/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message_id: incoming.id,
+          }),
+        }
+      );
+    } catch (err) {
+      console.error(
+        "Failed to mark message as delivered:",
+        err
+      );
+    }
+  };
+
+  channel.subscribe(
+    "new_message",
+    handleNewMessage
+  );
+
+  // MESSAGE DELIVERED
+  // MESSAGE DELIVERED
+const handleMessageDelivered = (msg) => {
+  const id =
+    msg.data.id || msg.data.message_id;
+
+  setMessages((prev) =>
+    prev.map((m) =>
+      String(m.id) === String(id)
+        ? {
+            ...m,
+            status: "delivered",
+          }
+        : m
+    )
+  );
+
+  queryClient.setQueryData(
+    ["messages", conversationId],
+    (oldData) => {
+      if (!oldData?.pages) return oldData;
+
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page) => ({
+          ...page,
+          results: (page.results || []).map((m) =>
+            String(m.id) === String(id)
+              ? {
+                  ...m,
+                  status: "delivered",
+                }
+              : m
+          ),
+        })),
+      };
+    }
+  );
+};
+
+channel.subscribe(
+  "message_delivered",
+  handleMessageDelivered
+);
+
+// MESSAGE READ
+const handleMessageRead = (msg) => {
+  const ids = (
+    msg.data.message_ids || []
+  ).map(String);
+
+  setMessages((prev) =>
+    prev.map((m) =>
+      ids.includes(String(m.id))
+        ? {
+            ...m,
+            status: "read",
+          }
+        : m
+    )
+  );
+
+  queryClient.setQueryData(
+    ["messages", conversationId],
+    (oldData) => {
+      if (!oldData?.pages) return oldData;
+
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page) => ({
+          ...page,
+          results: (page.results || []).map((m) =>
+            ids.includes(String(m.id))
+              ? {
+                  ...m,
+                  status: "read",
+                }
+              : m
+          ),
+        })),
+      };
+    }
+  );
+};
+
+channel.subscribe(
+  "message_read",
+  handleMessageRead
+);
+
+// TYPING
+const handleTyping = (msg) => {
+  if (msg.data.username !== username) {
+    setTyping(true);
+
+    clearTimeout(typingTimer.current);
+
+    typingTimer.current = setTimeout(() => {
+      setTyping(false);
+    }, 1000);
+  }
+};
+
+channel.subscribe(
+  "typing",
+  handleTyping
+);
+
+  // NOTIFICATION
+  const handleNotification = (msg) => {
+    setNotifications((prev) => [
+      msg.data,
+      ...prev,
+    ]);
+  };
+
+  channel.subscribe(
+    "notification",
+    handleNotification
+  );
+
+  // CLEANUP
+  return () => {
+    channel.unsubscribe(
+      "new_message",
+      handleNewMessage
+    );
+
+    channel.unsubscribe(
+      "message_delivered",
+      handleMessageDelivered
+    );
+
+    channel.unsubscribe(
+      "message_read",
+      handleMessageRead
+    );
+
+    channel.unsubscribe(
+      "typing",
+      handleTyping
+    );
+
+    channel.unsubscribe(
+      "notification",
+      handleNotification
+    );
+
+    clearTimeout(typingTimer.current);
+
+    try {
+      channel.presence.leave();
+    } catch (err) {
+      console.log(
+        "Presence leave error:",
+        err
+      );
+    }
+
+    channelRef.current = null;
+
+    ably.close();
+  };
+}, [conversationId, username]);
+    /*channel.subscribe("message_delivered", (msg) => {
       const id = msg.data.id || msg.data.message_id;
 
       setMessages((prev) =>
@@ -632,7 +916,7 @@ const { data: viewedGig } = useQuery({
       channel.presence.leave();
       ably.close();
     };
-  }, [conversationId]);
+  }, [conversationId]);*/
   //new
   const handleFilePick = (e) => {
   const file = e.target.files[0];
@@ -640,7 +924,128 @@ const { data: viewedGig } = useQuery({
   if (!file) return;
 
   setSelectedFile(file);
+    
   };
+  const messageStatusRank = {
+  sending: 0,
+  sent: 1,
+  delivered: 2,
+  read: 3,
+};
+
+const mergeMessageStatus = (oldStatus, newStatus) => {
+  const oldRank =
+    messageStatusRank[oldStatus] ?? 0;
+
+  const newRank =
+    messageStatusRank[newStatus] ?? 0;
+
+  return newRank >= oldRank
+    ? newStatus
+    : oldStatus;
+};
+  const updateMessageStatusInCache = (
+  messageId,
+  newStatus
+) => {
+  queryClient.setQueryData(
+    ["messages", conversationId],
+    (oldData) => {
+      if (!oldData?.pages) {
+        return oldData;
+      }
+
+      return {
+        ...oldData,
+
+        pages: oldData.pages.map(
+          (page) => ({
+            ...page,
+
+            results: (
+              page.results || []
+            ).map((message) =>
+              String(message.id) ===
+              String(messageId)
+                ? {
+                    ...message,
+                    status:
+                      mergeMessageStatus(
+                        message.status,
+                        newStatus
+                      ),
+                  }
+                : message
+            ),
+          })
+        ),
+      };
+    }
+  );
+};
+  const updateMessagesCache = (newMessage) => {
+  queryClient.setQueryData(
+    ["messages", conversationId],
+    (oldData) => {
+      if (!oldData?.pages?.length) {
+        return oldData;
+      }
+
+      const pages = [...oldData.pages];
+      const firstPage = pages[0];
+
+      const existing = firstPage.results || [];
+
+      const existingMessage = existing.find(
+        (m) =>
+          String(m.id) === String(newMessage.id) ||
+          (
+            newMessage.client_id &&
+            m.client_id &&
+            String(m.client_id) ===
+              String(newMessage.client_id)
+          )
+      );
+
+      const mergedMessage = existingMessage
+        ? {
+            ...existingMessage,
+            ...newMessage,
+            status: mergeMessageStatus(
+              existingMessage.status,
+              newMessage.status
+            ),
+          }
+        : newMessage;
+
+      const filtered = existing.filter(
+        (m) =>
+          String(m.id) !==
+            String(newMessage.id) &&
+          !(
+            newMessage.client_id &&
+            m.client_id &&
+            String(m.client_id) ===
+              String(newMessage.client_id)
+          )
+      );
+
+      pages[0] = {
+        ...firstPage,
+        results: [
+          ...filtered,
+          mergedMessage,
+        ],
+      };
+
+      return {
+        ...oldData,
+        pages,
+      };
+    }
+  );
+};
+  
   // ---------------- SEND ----------------
   const sendMessage = async () => {
   if (!text.trim() && !selectedFile) return;
@@ -681,20 +1086,24 @@ const { data: viewedGig } = useQuery({
 
     // Optimistic message
     const tempMessage = {
-      id: `temp-${clientId}`,
-      client_id: clientId,
-      attached_gig: selectedGig,
-      
-      text,
-      image_url: imageUrl,
-      video_url: videoUrl,
-      thumbnail_url: thumbnailUrl,
-      sender_username: username,
-      status: "sending",
-      created_at: new Date().toISOString(),
-    };
+  id: `temp-${clientId}`,
+  client_id: clientId,
+  attached_gig: selectedGig,
 
-    setMessages((prev) => {
+  text,
+  image_url: imageUrl,
+  video_url: videoUrl,
+  thumbnail_url: thumbnailUrl,
+  sender_username: username,
+  status: "sending",
+  created_at: new Date().toISOString(),
+};
+
+// Put it in React Query immediately
+updateMessagesCache(tempMessage);
+
+// Put it in local UI immediately
+setMessages((prev) => {
   const updated = [...prev, tempMessage];
 
   localStorage.setItem(
@@ -1282,6 +1691,5 @@ return (
 )}
   </div>
 );
-
 
 }

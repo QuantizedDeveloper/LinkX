@@ -312,7 +312,7 @@ export default function PublicProfile() {
 
                 <div style={styles.row}>
                   <FaLayerGroup style={styles.icon} />
-                  <span><strong>Total Gigs:</strong> {aboutData?.total_gigs ?? 0}</span>
+                  <span><strong>Total services:</strong> {aboutData?.total_gigs ?? 0}</span>
                 </div>
 
                 <div style={styles.row}>

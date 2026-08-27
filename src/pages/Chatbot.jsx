@@ -325,6 +325,61 @@ if (result?.done) {
     setQuestions([result.question]);
   }
 };
+const formatExplanation = (text) => {
+  if (!text) return null;
+
+  const sections = [
+    "Client Need:",
+    "Freelancer Skills & Experience:",
+    "Supporting Evidence:",
+    "Match Explanation:",
+  ];
+
+  let formattedText = text;
+
+  // Remove markdown bold markers
+  formattedText = formattedText.replace(/\*\*/g, "");
+
+  // Put every known section on a new line
+  sections.forEach((section) => {
+    formattedText = formattedText.replace(
+      new RegExp(`\\s*${section.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`, "g"),
+      `\n\n${section}\n`
+    );
+  });
+
+  // Clean excessive blank lines
+  formattedText = formattedText.replace(/\n{3,}/g, "\n\n");
+
+  const lines = formattedText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return lines.map((line, index) => {
+    const isHeading = sections.includes(line);
+
+    if (isHeading) {
+      return (
+        <div
+          key={index}
+          className="explanationHeading"
+        >
+          {line}
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={index}
+        className="explanationParagraph"
+      >
+        {line}
+      </div>
+    );
+  });
+};
 
   return (
   <div className="page">
@@ -337,7 +392,15 @@ if (result?.done) {
           <span onClick={() => navigate("/")}>✕</span>
           )}
           <span className="title">LinkBot</span>
+          
+            <button
+            className="resetBtn2"
+            onClick={resetChat}>
+              ⟳
+              </button>
+              
         </div>
+        
       </div>
 
       <div className="content">
@@ -541,7 +604,9 @@ if (result?.done) {
         <span className="aiBadge">
           LinkBot Analysis
           </span>
-          <p> {f.explanation}</p>
+          <div className="explanationText">
+  {formatExplanation(f.explanation)}
+</div>
       </div>
 
       
