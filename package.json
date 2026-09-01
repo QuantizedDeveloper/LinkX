@@ -2,7 +2,7 @@
   "name": "linkx-ui",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://quantizeddeveloper.github.io/LinkX",
+  "homepage": "https://linkxllm.run.place",
   "engines": {
     "node": "18.x"
   },
