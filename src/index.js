@@ -29,10 +29,10 @@ persistQueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
-    <HashRouter>
+    {/*<HashRouter>*/}
       <ActivityTracker />
       <ScrollToTop />
       <App />
-    </HashRouter>
+    {/*</HashRouter>*/}
   </QueryClientProvider>
 );
