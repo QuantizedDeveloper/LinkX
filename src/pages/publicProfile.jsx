@@ -17,18 +17,14 @@ import {
   FaCalendarAlt
 } from "react-icons/fa";
 
-// ================= PAYMENT MODAL =================
 import Gigs from "../components/Gigs";
 function PaymentModal({ paymentInfo, onClose }) {
   const [showQR, setShowQR] = useState(null);
-
   if (!paymentInfo) return null;
-
   const copyUPI = (upi) => {
     navigator.clipboard.writeText(upi);
     showToast("UPI ID copied");
   };
-
   const items = [
     paymentInfo.razorpay_link && {
       name: "Razorpay",
@@ -47,7 +43,6 @@ function PaymentModal({ paymentInfo, onClose }) {
       qr: paymentInfo.upi_qr,
     },
   ].filter(Boolean);
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -98,23 +93,17 @@ function PaymentModal({ paymentInfo, onClose }) {
   );
 }
 
-// ================= MAIN =================
 export default function PublicProfile() {
   const navigate = useNavigate();
   const { username } = useParams();
-
   const [activeTab, setActiveTab] = useState("gigs");
   const [showPayment, setShowPayment] = useState(false);
-
   const currentUser = localStorage.getItem("username");
-
   const fixCloudinaryUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
     return `https://res.cloudinary.com/dd04focej/${url}`;
   };
-
-  // ================= PROFILE =================
   const { data: profile } = useQuery({
     queryKey: ["publicProfile", username],
     queryFn: async () => {
@@ -128,8 +117,6 @@ export default function PublicProfile() {
     refetchOnWindowFocus: false,
     keepPreviousData: true,
   });
-
-  // ================= ABOUT =================
   const { data: aboutData, isLoading: aboutLoading } = useQuery({
     queryKey: ["aboutProfile", username],
     queryFn: async () => {
@@ -243,13 +230,6 @@ export default function PublicProfile() {
       </p>
       </div>
 
-        {/*}<p>
-          @{profile.username}{" "}
-          {ratingData?.total_reviews > 0
-            ? `⭐${ratingData.avg_rating}(${ratingData.total_reviews})`
-            : "⭐ New"}
-        </p>*/}
-
         <p style={{ marginTop: 15 }}>{profile.description}</p>
       </div>
 
@@ -353,8 +333,6 @@ export default function PublicProfile() {
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = {
   page: {
     background: "white",
@@ -427,7 +405,6 @@ const styles = {
     border: "1px solid black",
   },
 
-  /* PAY BUTTON aligned with avatar */
   payBtn: {
     position: "absolute",
     right: 20,
@@ -462,7 +439,6 @@ const styles = {
     cursor: "pointer",
   },
 
-  /* RED OUTLINE BOTH SIDES */
   redCornerTop: {
     position: "absolute",
     top: -2,
@@ -563,6 +539,3 @@ const styles = {
   color: "grey"
   }
 };
-
-
-{/*<p style={styles.username}>@{profile.username}</p>*/}

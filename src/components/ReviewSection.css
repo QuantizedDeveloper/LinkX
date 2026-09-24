@@ -9,7 +9,6 @@
   font-size: 20px;
 }
 
-/* MODAL */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -43,7 +42,6 @@
   cursor: pointer;
 }
 
-/* HEADER */
 .review-summary {
   margin-bottom: 10px;
 }
@@ -65,7 +63,6 @@
   color: gray;
 }
 
-/* REVIEW LIST */
 .review-card {
   border: 1px solid #eee;
   border-radius: 10px;
@@ -101,7 +98,6 @@
   color: #fbbf24;
 }
 
-/* GIVE REVIEW */
 .give-review {
   margin-top: 15px;
   border-top: 1px solid #eee;
@@ -119,7 +115,6 @@
   opacity: 1;
 }
 
-/* INPUT */
 .review-input-area textarea {
   width: 100%;
   margin-top: 10px;
@@ -128,7 +123,6 @@
   border: 1px solid #ddd;
 }
 
-/* BUTTON */
 .submit-btn {
   margin-top: 10px;
   width: 100%;

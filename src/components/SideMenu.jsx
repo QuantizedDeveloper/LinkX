@@ -60,28 +60,20 @@ export default function SideMenu({ open, onClose }) {
           method: "POST",
         });
       } catch (error) {
-        // Ignore errors (e.g. user is not a freelancer)
+  
       }
     };
-
-    // Ping immediately
     ping();
-
-    // Ping every 30 seconds
     const interval = setInterval(ping, 30000);
-
     return () => clearInterval(interval);
   }, []);
-
   const { data } = useQuery({
     queryKey: ["active-freelancers"],
     queryFn: fetchActiveFreelancers,
     refetchInterval: 30000,
   });
-
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -96,7 +88,6 @@ export default function SideMenu({ open, onClose }) {
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.menu} onClick={(e) => e.stopPropagation()}>
 
-        {/* HEADER */}
         <div style={styles.header}>
           <div>
  <div style={styles.userRow}>
@@ -143,7 +134,6 @@ export default function SideMenu({ open, onClose }) {
           </div>
         </div>
 
-        {/* BUTTONS */}
         <div style={styles.buttonsContainer}>
 
           <div
@@ -237,7 +227,6 @@ export default function SideMenu({ open, onClose }) {
     ))}
   </div>
 )}
-        {/* FOOTER */}
         <div style={styles.footer2}>
   <button
     style={styles.logoutButton}
@@ -454,23 +443,16 @@ verifiedBadge: {
   position: "absolute",
   right: "-4px",
   bottom: "-4px",
-
   width: "18px",
   height: "18px",
-
   borderRadius: "50%",
   background: "#35d04f",
-
   color: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-
   fontSize: "11px",
   fontWeight: "800",
-
-  
-
   boxSizing: "border-box",
   zIndex: 10,
 },
@@ -479,22 +461,16 @@ partnerBadge: {
   position: "absolute",
   right: "-4px",
   bottom: "-4px",
-
   width: "19px",
   height: "19px",
-
   borderRadius: "50%",
   background: "#fff",
-
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-
   border: "1px solid #ff3b30",
-
   boxSizing: "border-box",
   overflow: "hidden",
-
   zIndex: 10,
 },
 
@@ -523,9 +499,5 @@ guideButton: {
   boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
   fontFamily: "Inter, sans-serif",
 },
-
-
-
-
 
 };

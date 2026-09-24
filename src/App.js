@@ -10,7 +10,6 @@ import Inbox from "./pages/Inbox";
 import Notifications from "./pages/Notifications";
 import EditProfile from "./pages/EditProfile";
 import Search from "./pages/Search";
-
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import VerifyOtpSignup from "./pages/verify-otp";
@@ -25,39 +24,27 @@ import TermsAndConditions from "./pages/TermsAndConditions"
 import FreelancerAgreement from "./pages/FreelancerAgreement"
 import FaceVerificationInfo from "./pages/FaceVerificationAgreement"
 import ActivityTracker from "./ActivityTracker"
-/*import useAutoRefresh from "./useAutoRefresh"*/
-//import { useEffect } from "react";
 import HiredGuide from "./pages/HiredGuide";
 import HiringGuide from "./pages/HiringGuide";
 import { enablePushNotifications } from "./utils/push";
 const URL_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
-
 export default function App() {
-  /*useAutoRefresh();*/
-  /*<ActivityTracker />*/
   useEffect(() => {
-  //("useEffect started");
-
   if (!("serviceWorker" in navigator)) {
-    //alert("No service worker support");
     return;
   }
-  
   navigator.serviceWorker.register(
   process.env.PUBLIC_URL + "/service-worker.js")
   .then(async () => {
-      //alert("Service Worker Registered");
       await enablePushNotifications();
     })
     .catch((err) => {
-     // alert("SW Error: " + err);
       console.error(err);
     });
 }, []);
   return (
     <Routes>
-
       {/* ✅ ROUTES WITH BottomNav */}
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />}/>
@@ -69,7 +56,6 @@ export default function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/public-profile/:username" element={<PublicProfile />} />
       </Route>
-
       {/* ✅ ROUTES WITHOUT BottomNav */}
       <Route path="/loginBan" element={<Login />} />
       <Route path="/terms" element={<TermsAndConditions />} />
@@ -83,17 +69,13 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/hiring-guide" element={<HiringGuide />} />
       <Route path="/hired-guide" element={<HiredGuide />} />
-      {/*<Route path="/chat/:username"element={<Chat />} />*/}
+      <Route path="/chat/:username" element={<Chat />} />
+      <Route path="/chatbot" element={<Chatbot />} />
        <Route
           path="/username"
           element={
               <Username />}
         />
-      
-      <Route path="/chat/:username" element={<Chat />} />
-      <Route path="/chatbot" element={<Chatbot />} />
-      {/*}<Route path="/" element={<Home />} />*/}
-      {/*<Route path="/upload" element={<Upload />} />*/}
     </Routes>
   );
 }

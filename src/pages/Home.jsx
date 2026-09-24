@@ -1,93 +1,35 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-
 import SideMenu from "../components/SideMenu";
 import Gig from "../components/Gig";
 import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "../utils/api";
 import Chatbot from "../pages/Chatbot";
-//const base_url = "https://Linkx1.pythonanywhere.com";
-
 import {enablePushNotifications} from "../utils/push";
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 const isDesktop = window.innerWidth >= 975;
 export default function Home() {
   const navigate = useNavigate();
-
   const [menuOpen, setMenuOpen] = useState(false);
   const username = localStorage.getItem("username");
-  // ✅ Protect route (unchanged)
   const [checkedAuth, setCheckedAuth] = useState(false);
-  
   useEffect(() => {
     const username = localStorage.getItem("username");
     const timer = setTimeout(() => {
     const token = localStorage.getItem("accessToken");
-
     if (!token) {
       navigate("/login");
     }
-    /*if (!username) {
-      navigate("/login");
-    }*/
-
     setCheckedAuth(true);
-  }, 100); // small delay
+  }, 100);
 
   return () => clearTimeout(timer);
 }, [navigate]);
 useEffect(() => {
   enablePushNotifications();
 }, []);
-
-/*const enablePushNotifications = async () => {
-  try {
-    if (!("serviceWorker" in navigator)) {
-      return;
-    }
-
-    const permission = await Notification.requestPermission();
-
-    console.log("Permission:", permission);
-
-    if (permission !== "granted") {
-      return;
-    }
-
-    const registration = await navigator.serviceWorker.ready;
-
-    console.log("Registration:", registration);
-
-    // Check if already subscribed
-    let subscription = await registration.pushManager.getSubscription();
-
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey:
-          urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-    }
-
-    console.log("Subscription:", subscription);
-
-    const res = await fetchWithAuth(
-      "/api/push-subscription/",
-      {
-        method: "POST",
-        body: JSON.stringify(subscription),
-      }
-    );
-
-    console.log("Push subscription saved:", res.status);
-  } catch (err) {
-    console.error("Push notification error:", err);
-  }
-};*/
-  // =========================
-  // ✅ FETCH ME (React Query)
-  // =========================
+  
   const fetchMe = async () => {
     const res = await fetchWithAuth("/freelancers/me/");
     if (!res.ok) throw new Error("Failed to fetch user");
@@ -98,13 +40,9 @@ useEffect(() => {
     queryKey: ["profile"],
     queryFn: fetchMe,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,     // 🔥 keep cache longer
-    refetchOnMount: "always",         // 🔥 avoid flicker
+    cacheTime: 30 * 60 * 1000,
+    refetchOnMount: "always",
   });
-
-  // =========================
-  // ✅ FETCH GIGS (Infinite)
-  // =========================
   const fetchGigs = async ({ pageParam = 1 }) => {
     const res = await fetchWithAuth(`/api/gigs/?page=${pageParam}`);
     const data = await res.json();
@@ -113,7 +51,6 @@ useEffect(() => {
       nextPage: data.next ? pageParam + 1: undefined,
     };
   };
-
   const {
     data,
     fetchNextPage,
@@ -125,22 +62,20 @@ useEffect(() => {
     queryFn: fetchGigs,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,   // 🔥 keeps data in memory
+    cacheTime: 30 * 60 * 1000,
     refetchOnMount: "always",
-    refetchOnWindowFocus: false,       // 🔥 prevents blank reload
-    keepPreviousData: true,      // 🔥 keeps old data visible
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
   });
 
-  // flatten pages safely
   const gigs = data?.pages?.flatMap((page) => page.gigs) ?? [];
   if (!checkedAuth) {
-    return null; // no white flash
+    return null;
     }
   return (
     
     <>
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-
       <div style={styles.container}>
         <div style={styles.topBar}>
           <div style={styles.menu} onClick={() => setMenuOpen(true)}>
@@ -148,14 +83,12 @@ useEffect(() => {
             <div style={styles.line}></div>
             <div style={styles.line}></div>
           </div>
-          {/*}<h1>{window.innerWidth}</h1>*/}
           <div style={styles.search} onClick={() => navigate("/search")}>
             <div style={styles.searchCircle}></div>
             <div style={styles.searchHandle}></div>
           </div>
         </div>
 
-        {/* Upload Row */}
          {!isDesktop && (<div
           style={styles.uploadRow}
           onClick={() => {
@@ -181,8 +114,6 @@ useEffect(() => {
         </div>)}
 
         <div style={styles.divider}></div>
-
-        {/* Feed */}
         {isDesktop ? (
   <div style={styles.desktopLayout}>
     
@@ -208,14 +139,12 @@ useEffect(() => {
       ))}
 
       {isFetchingNextPage && <p>Loading...</p>}
-
       {hasNextPage && !isFetchingNextPage && (
         <button onClick={() => fetchNextPage()}>
           Load More
         </button>
       )}
     </div>
-
   </div>
 ) : (
   <div style={styles.feed}>
@@ -225,9 +154,7 @@ useEffect(() => {
       {gigs.map((gig) => (
         <Gig key={gig.id} gig={gig} />
       ))}
-
       {isFetchingNextPage && <p>Loading...</p>}
-
       {hasNextPage && !isFetchingNextPage && (
         <button onClick={() => fetchNextPage()}>
           Load More
@@ -249,21 +176,15 @@ const styles = {
     borderRadius: "50%",
     marginRight: 10,
     background: "#f4f4f4",
-    // ✅ center text
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    // ✅ text style
     fontWeight: "bold",
     fontSize: 18,
     color: "#000",
-    // ✅ black outline
     boxShadow: "0 0 0 2px black",
     fontFamily: "Inter, sans-serif"
   },
-  
-  
-  
   container: {
     paddingBottom: 90
   },
@@ -280,7 +201,6 @@ const styles = {
   },
 
   menu: { cursor: "pointer" },
-
   line: {
     width: 22,
     height: 2,
@@ -348,16 +268,6 @@ const styles = {
     background: "#eee",
     marginTop: 6
   },
-
-  /*feed: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "20px",
-    maxWidth: "490px",   // 👈 controls gig size
-    margin: "0 auto"
-  }*/
   feed: {
     display: "flex",
     justifyContent: "center",
@@ -383,11 +293,7 @@ linkbotSidebar: {
   position: "sticky",
   top: "70px",
   height: "calc(150dvh - 10px)",
-  overflow: "hidden",
-  //position: "fixed",
-  //right: "0",
-  
-
+  overflow: "hidden",  
 },
 desktopFeed: {
   columnCount: 2,

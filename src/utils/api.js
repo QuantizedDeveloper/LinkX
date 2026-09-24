@@ -37,7 +37,6 @@ export const fetchWithAuth = async (url, options = {}) => {
 
   let res = await makeRequest(token);
 
-  // 🔁 HANDLE 401 (TOKEN EXPIRED)
   if (res.status === 401) {
     if (!isRefreshing) {
       isRefreshing = true;
@@ -69,11 +68,9 @@ export const fetchWithAuth = async (url, options = {}) => {
 
           localStorage.setItem("accessToken", data.access);
           
-          // optional (only if backend returns it)
           if (data.refresh) {
             localStorage.setItem("refreshToken", data.refresh);
           }
-          
 
           return data.access;
         } catch (err) {
@@ -87,10 +84,8 @@ export const fetchWithAuth = async (url, options = {}) => {
         }
       })();
     }
-
     const newToken = await refreshPromise;
-    res = await makeRequest(newToken);
-    
+    res = await makeRequest(newToken);    
   }
 
   return res;

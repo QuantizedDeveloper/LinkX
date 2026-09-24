@@ -3,14 +3,11 @@ import "./PaymentModal.css";
 import { showToast } from "../utils/toast";
 export default function PaymentModal({ paymentInfo, onClose }) {
   const [showQR, setShowQR] = useState(null);
-
   if (!paymentInfo) return null;
-
   const copyUPI = (upi) => {
     navigator.clipboard.writeText(upi);
     showToast("UPI ID copied");
   };
-
   const items = [
     paymentInfo.razorpay_link && {
       name: "Razorpay",

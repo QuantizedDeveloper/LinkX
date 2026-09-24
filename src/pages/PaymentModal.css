@@ -1,4 +1,3 @@
-/* ---------------- Payment Modal ---------------- */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -13,7 +12,7 @@
 }
 
 .modal {
-  background-color: #1a1a1a; /* match chat dark theme */
+  background-color: #1a1a1a;
   padding: 20px;
   border-radius: 12px;
   width: 280px;
@@ -22,14 +21,12 @@
   color: white;
   box-shadow: 0 0 15px rgba(0,0,0,0.4);
 }
-
 .modal h3 {
   margin-top: 0;
   margin-bottom: 15px;
   font-size: 18px;
   text-align: center;
 }
-
 .modal .close-btn {
   position: absolute;
   top: 8px;
@@ -40,13 +37,11 @@
   font-size: 18px;
   cursor: pointer;
 }
-
 .modal ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-
 .modal ul li.payment-item {
   display: flex;
   justify-content: space-between;
@@ -54,11 +49,9 @@
   padding: 8px 0;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-
 .modal ul li.payment-item:last-child {
   border-bottom: none;
 }
-
 .modal ul li.payment-item span {
   margin-left: 8px;
 }
@@ -79,7 +72,6 @@
   font-weight: 500;
 }
 
-/* Spinner for payment loading */
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -89,7 +81,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* ---------------- QR Modal Nested ---------------- */
 .qr-modal-overlay {
   position: fixed;
   top: 0;

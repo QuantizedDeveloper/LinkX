@@ -4,7 +4,6 @@ import { fetchWithAuth } from "./utils/api";
 const ActivityTracker = () => {
   useEffect(() => {
     let interval;
-
     const fetchMe = async () => {
       const res = await fetchWithAuth("/freelancers/me/");
       
@@ -18,7 +17,6 @@ const ActivityTracker = () => {
 
       return res.json();
     };
-
     const sendHeartbeat = async () => {
       try {
         const res = await fetchWithAuth(     "/freelancers/ping/",
@@ -26,33 +24,26 @@ const ActivityTracker = () => {
         method: "POST",
       }
     );
-
-   // alert("PING STATUS: " + res.status);
-
   } catch (error) {
 
     ;
 
   }
 };
-
     const startTracking = () => {
       // Send immediately
       sendHeartbeat();
-
       interval = setInterval(() => {
         if (!document.hidden) {
           sendHeartbeat();
         }
       }, 30000);
     };
-
     const stopTracking = () => {
       if (interval) {
         clearInterval(interval);
       }
     };
-
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopTracking();
@@ -65,10 +56,7 @@ const ActivityTracker = () => {
       try {
         // Check if user is freelancer
         await fetchMe();
-
-        // Start heartbeat only for freelancers
         startTracking();
-
         document.addEventListener(
           "visibilitychange",
           handleVisibilityChange

@@ -3,21 +3,16 @@ import { useState } from "react";
 import Gig from "../components/Gig";
 import { fetchWithAuth } from "../utils/api";
 
-
 const base_url = "https://linkx-backend-api-linkx-backend.hf.space"
 export default function Search() {
   const navigate = useNavigate();
-
   const [query, setQuery] = useState("");
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const handleSearch = async (e) => {
     if (e.key === "Enter") {
       if (!query.trim()) return;
-
       setLoading(true);
-
       try {
         const res = await fetchWithAuth(
           `/api/gigs/search/?q=${encodeURIComponent(query)}`
@@ -27,22 +22,19 @@ export default function Search() {
       } catch (err) {
         console.error("Search error:", err);
       }
-
       setLoading(false);
     }
   };
 
   return (
     <div style={styles.page}>
-      {/* HEADER */}
       <div style={styles.header}>
         <span style={styles.back} onClick={() => navigate(-1)}>
           ✕
         </span>
         <h2 style={styles.title}>Search</h2>
       </div>
-
-      {/* SEARCH INPUT */}
+      
       <div style={styles.searchBox}>
         <span style={styles.icon}>🔍</span>
         <input
@@ -54,7 +46,6 @@ export default function Search() {
         />
       </div>
 
-      {/* RESULTS */}
       <div style={{ marginTop: 20 }}>
         {loading && <p>Searching...</p>}
 

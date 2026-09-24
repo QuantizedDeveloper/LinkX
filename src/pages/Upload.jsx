@@ -8,16 +8,13 @@ const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 export default function Upload() {
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
-  
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [delivery, setDelivery] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState([]);
   const [images, setImages] = useState([]);
-
- /* ---------- TAG LOGIC ---------- */
- const tryAddTag = (value) => {
+  const tryAddTag = (value) => {
    const tag = value.trim().toLowerCase();
    if (!tag || tags.includes(tag) || tags.length >= 10) return;
    setTags((prev) => [...prev, tag]);
@@ -36,27 +33,22 @@ export default function Upload() {
  const removeTag = (index) => {
   setTags(tags.filter((_, i) => i !== index));
  };
-
-/* ---------- IMAGE LOGIC ---------- */
  const handleImage = (file) => {
    if (!file) return;
    if (images.length >= 2) {
     showToast("You can only upload up to 2 images");
     return;
   }
-
   setImages((prev) => [
     ...prev,
     { file, preview: URL.createObjectURL(file) },
     ]);
  };
  const removeImage = (index) => {
-  // Revoke object URL to free memory
   URL.revokeObjectURL(images[index].preview);
   setImages(images.filter((_, i) => i !== index));
  };
 
-/* ---------- BASE64 CONVERTER ---------- */
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -65,29 +57,22 @@ const fileToBase64 = (file) => {
     reader.onerror = reject;
   });
 };
-
-/* ---------- VALIDATION ---------- */
 const canPublish =
   title.trim() &&
   price.trim() &&
   delivery.trim() &&
   tags.length >= 2 &&
   description.trim();
-
-/* ---------- UPLOAD FUNCTION ---------- */
 const handlePublish = async () => {
   if (description.length < 30) {
     showToast("Description must be at least 30 characters");
     return;
   }
-
   try {
     const token = localStorage.getItem("accessToken");
-
     const imageBase64 = await Promise.all(
       images.map((img) => fileToBase64(img.file))
     );
-
     const res = await fetchWithAuth(`/api/gigs/upload/`, {
       method: "POST",
       headers: {
@@ -103,10 +88,8 @@ const handlePublish = async () => {
         images: imageBase64,
       }),
     });
-
     const data = await res.json();
     console.log("Gig upload response:", data);
-
     if (res.ok) {
       showToast("Gig submitted for approval");
       navigate("/profile");
@@ -119,11 +102,8 @@ const handlePublish = async () => {
   }
 };
 
-  /* ---------- UI ---------- */
-
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <button style={styles.close} onClick={() => navigate(-1)}>
           ✕
@@ -144,25 +124,13 @@ const handlePublish = async () => {
         </button>
       </div>
 
-      {/* Title */}
       <textarea
         placeholder="What's new service"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         style={styles.textarea}
       />
-      {/* Description */}
-      {/*<textarea
-      placeholder="Describe your gig..."
-      value={description} onChange={(e) => setDescription(e.target.value)}
-      style={{
-    ...styles.textarea,
-    minHeight: 100, // slightly bigger than title
-  }}
-/>*/}
 
-
-      {/* Images */}
       <div style={styles.imageRow}>
         {images.map((img, index) => (
           <div key={index} style={styles.imagePreview}>
@@ -188,15 +156,13 @@ const handlePublish = async () => {
           </label>
         )}
       </div>
-      {/* Description */}
       <textarea placeholder="About your services..."
       value={description} onChange={(e) => setDescription(e.target.value)}
       style={{
     ...styles.textarea,
-    minHeight: 100, // slightly bigger than title
+    minHeight: 100,
     }}
 />
-      {/* Inputs */}
       <div style={styles.row}>
         <input
           placeholder="Price (₹, $, €)"
@@ -204,14 +170,12 @@ const handlePublish = async () => {
           onChange={(e) => setPrice(e.target.value)}
           style={styles.input}
         />
-
         <input
           placeholder="delivery time (days)"
           value={delivery}
           onChange={(e) => setDelivery(e.target.value)}
           style={styles.input}
         />
-
         <input
           placeholder="add tags"
           value={tagInput}
@@ -222,7 +186,6 @@ const handlePublish = async () => {
         />
       </div>
 
-      {/* Tags */}
       <div style={styles.tagsContainer}>
         {tags.map((tag, index) => (
           <div key={index} style={styles.tag}>
@@ -234,7 +197,6 @@ const handlePublish = async () => {
         ))}
       </div>
       
-      {/* Errors */}
       {tags.length > 0 && tags.length < 2 && (
         <p style={styles.error}>Minimum 2 tags required</p>
       )}
@@ -244,8 +206,6 @@ const handlePublish = async () => {
     </div>
   );
 }
-
-/* ---------------- STYLES ---------------- */
 
 const styles = {
   container: {
@@ -350,18 +310,17 @@ const styles = {
   },
 
   input: {
-    width: 88,                 // 👈 real small
+    width: 88,
     height: 32,
-    padding: "0 6px",          // 👈 less padding
+    padding: "0 6px",
     borderRadius: 999,
     border: "1px solid #9e9e9e",
     outline: "none",
-    fontSize: 12,              // 👈 smaller text
+    fontSize: 12,
     textAlign: "center",
     background: "white",
-    boxSizing: "border-box",   // 👈 VERY IMPORTANT
+    boxSizing: "border-box",
   },
-
 
   tagsContainer: {
     display: "flex",

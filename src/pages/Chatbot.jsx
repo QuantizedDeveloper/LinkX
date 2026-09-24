@@ -6,12 +6,10 @@ import "./Chatbot.css";
 import { showToast } from "../utils/toast";
 import Gig from "../components/Gig";
 import { useQuery } from "@tanstack/react-query";
-
 import { IoSend } from "react-icons/io5";
 import { FiEye } from "react-icons/fi";
 const isDesktop = window.innerWidth >= 975;
 export default function Chatbot() {
-  
   const [selectedGigId, setSelectedGigId] = useState(null);
   const [showGigModal, setShowGigModal] = useState(false);
   const fixCloudinaryUrl = (url) => {
@@ -32,13 +30,9 @@ export default function Chatbot() {
   const [input, setInput] = useState("");
   const [done, setDone] = useState(false);
   const [results, setResults] = useState([]);
-
-  // ✅ transition state (replaces hint system)
   const [transitionText, setTransitionText] = useState("");
   const [showTransition, setShowTransition] = useState(false);
-
   const STORAGE_KEY = "linkbot_chat";
-
   const dummyFreelancers = [
     {
       username: "QuantizedDeveloper",
@@ -65,8 +59,6 @@ export default function Chatbot() {
       gig: { title: "Basic Landing Page", price: 70, delivery_days: 2 },
     },
   ];
-
-  // ✅ per-question transition messages
   const transitionMap = {
     skills: [
       "Understanding your requirements...",
@@ -108,11 +100,8 @@ quality_level: [
   "Preparing your personalized recommendations..."
 ],
   };
-
-  // LOAD
   useEffect(() => {
   const saved = localStorage.getItem(STORAGE_KEY);
-
   if (saved) {
     const data = JSON.parse(saved);
     setQuestions(data.questions || []);
@@ -131,7 +120,6 @@ quality_level: [
     })();
   }
 }, []);
-  // SAVE
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
@@ -145,54 +133,39 @@ quality_level: [
       })
     );
   }, [questions, answers, answerMap, currentIndex, done, results]);
-
-  // AUTO SCROLL
+  
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [questions, answers, showTransition]);
   const { data: selectedGig } = useQuery({
   queryKey: ["gig", selectedGigId],
-
   queryFn: async () => {
-
     if (!selectedGigId) return null;
-
     const res = await fetchWithAuth(
       `/api/gigs/gigs/${selectedGigId}/`
     );
-
     if (!res.ok) {
       throw new Error("Failed to fetch gig");
     }
-
     return res.json();
   },
-
   enabled: !!selectedGigId,
 });
-  // FETCH NEXT QUESTION
+
   const fetchNext = async (answersData) => {
   try {
-
     const res = await fetchWithAuth("/api/linkbot/next-question/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ answers: answersData }),
     });
-
     const data = await res.json();
-
-
     if (data.done) {
-
   await fetchResults(answersData);
-
   return {
     done: true
   };
 }
-
-
     if (data.next_question) {
   return {
     question: {
@@ -202,13 +175,11 @@ quality_level: [
   };
 }
 
-
   } catch (e) {
     console.log(e);
   }
 };
 
-  // RESULTS
   const fetchResults = async (answersData) => {
     try {
       const res = await fetchWithAuth("/api/linkbot/match/", {
@@ -216,23 +187,17 @@ quality_level: [
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ client_id: null, answers: answersData }),
       });
-
       const data = await res.json();
-
       const backend = data.top_freelancers || [];
       setResults(backend.length ? backend : dummyFreelancers);
     } catch {
       setResults(dummyFreelancers);
     }
   };
-  
-  // SEND ANSWER
+
   const handleSend = async () => {
-
   if (!input.trim()) return;
-
   const q = questions[currentIndex];
-
   const newAnswer = {
     id: q.id,
     question: q.text,
@@ -240,67 +205,45 @@ quality_level: [
   };
 
   const updated = [...answers, newAnswer];
-
   setAnswers(updated);
-
   setAnswerMap({
     ...answerMap,
     [q.id]: input
   });
-
   setInput("");
-
   const phrases = transitionMap[q.id] || transitionMap.final;
-
   setShowTransition(true);
-
   let index = 0;
   let backendResult = null;
-
 const backendPromise = fetchNext(updated);
-
 backendPromise.then(result => {
   backendResult = result;
 });
 
-
   while (true) {
-
     setTransitionText(phrases[index]);
-
     await new Promise(resolve =>
       setTimeout(resolve, 1200)
     );
     
-
     index++;
 
-    // loop transition
     if (index >= phrases.length) {
-
   if (backendResult) {
     break;
   }
-
   index = 0;
 }
   }
-
-
-  // make sure backend really finished
   const result = await backendPromise;
-
 if (result?.question) {
   setQuestions(prev => [
     ...prev,
     result.question
   ]);
-
   setCurrentIndex(prev => prev + 1);
 }
-
 setShowTransition(false);
-
 if (result?.done) {
   setDone(true);
   return;
@@ -308,54 +251,41 @@ if (result?.done) {
 
 };
 
-  // RESET CHAT
   const resetChat = async () => {
   localStorage.removeItem(STORAGE_KEY);
-
   setQuestions([]);
   setAnswers([]);
   setAnswerMap({});
   setCurrentIndex(0);
   setDone(false);
   setResults([]);
-
   const result = await fetchNext([]);
-
   if (result?.question) {
     setQuestions([result.question]);
   }
 };
 const formatExplanation = (text) => {
   if (!text) return null;
-
   const sections = [
     "Client Need:",
     "Freelancer Skills & Experience:",
     "Supporting Evidence:",
     "Match Explanation:",
   ];
-
   let formattedText = text;
 
-  // Remove markdown bold markers
   formattedText = formattedText.replace(/\*\*/g, "");
-
-  // Put every known section on a new line
   sections.forEach((section) => {
     formattedText = formattedText.replace(
       new RegExp(`\\s*${section.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`, "g"),
       `\n\n${section}\n`
     );
   });
-
-  // Clean excessive blank lines
   formattedText = formattedText.replace(/\n{3,}/g, "\n\n");
-
   const lines = formattedText
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
-
   return lines.map((line, index) => {
     const isHeading = sections.includes(line);
 
@@ -369,7 +299,6 @@ const formatExplanation = (text) => {
         </div>
       );
     }
-
     return (
       <div
         key={index}
@@ -384,8 +313,6 @@ const formatExplanation = (text) => {
   return (
   <div className="page">
     <div className="container">
-
-      {/* HEADER */}
       <div className="header">
         <div className="left">
           {!isDesktop && (
@@ -398,21 +325,14 @@ const formatExplanation = (text) => {
             onClick={resetChat}>
               ⟳
               </button>
-              
         </div>
-        
       </div>
-
       <div className="content">
-
-        {/* CHAT */}
         {questions.map((q, i) => (
           <div key={q.id || i} className="block">
-
             <div className="botRow">
               <div className="botBubble">{q.text}</div>
             </div>
-
             {answerMap[q.id] && (
               <div className="userRow">
                 <div className="userBubble">
@@ -420,11 +340,9 @@ const formatExplanation = (text) => {
                 </div>
               </div>
             )}
-
           </div>
         ))}
 
-        {/* TRANSITION ANIMATION */}
         {showTransition && (
           <div className="botRow">
             <div className="aiHint animate-pulse">
@@ -433,21 +351,16 @@ const formatExplanation = (text) => {
           </div>
         )}
 
-        {/* RESULTS */}
         {done && (
           <div className="results">
 
             <div className="summaryTitle">
               🎯 Top 3 freelancers services i've found for your work
             </div>
-
             {results.map((f, i) => (
   <div key={i}>
-
     <div className="card">
-
       <div className="cardHeader">
-
         <div
           className="avatar"
           onClick={() => {
@@ -465,22 +378,16 @@ const formatExplanation = (text) => {
             className="avatar"
           />
         </div>
-
         <div>
           <div className="name">{f.username}</div>
           <div className="subtitle">{f.gig.title}</div>
         </div>
-
         {(f.gig?.image1 || f.gig?.image2) && (
           <div
             className="gigPreviewBox"
             onClick={() =>{
-              /*setSelectedImages(
-                [f.gig?.image1, f.gig?.image2].filter(Boolean)
-              )*/
               setSelectedGigId(f.gig.id);
               setShowGigModal(true);
-              
             }}
           >
             <img
@@ -489,44 +396,34 @@ const formatExplanation = (text) => {
               )}
               alt="gig preview"
               className="gigPreviewImage"
-              
                     
             />
-
             <div className="gigPreviewOverlay">
               <FiEye size={20} color="white" />
             </div>
           </div>
         )}
-
       </div>
-
       <div className="meta">
         ⭐ {f.avg_rating} | {f.gig.price} | {f.gig.delivery_days}
       </div>
-
       <div className="match">
         🔥 {f.match_percentage}% Match
       </div>
-
       <div className="match">
         🧠 {f.confidence_score}% Confidence
       </div>
-
       {f.activity_status && (
         <div className="explain">
           ● {f.activity_status}
         </div>
       )}
-
      <div className="explain">
        {f.is_verified_by_linkx
        ? "✔ Verified by LinkX"
        : "○ Not verified by LinkX yet"}
     </div>
-
       <div className="actions">
-
         <button
           className="viewBtn"
           onClick={() => {
@@ -539,7 +436,6 @@ const formatExplanation = (text) => {
         >
           View Portfolio
         </button>
-
         <button
           className="contactBtn"
           onClick={async () => {
@@ -548,7 +444,6 @@ const formatExplanation = (text) => {
               showToast("Something went wrong");
               return;
             }
-
             try {
 
               await fetchWithAuth(
@@ -561,7 +456,6 @@ const formatExplanation = (text) => {
                   })
                 }
               );
-
               await fetchWithAuth(
                 "/api/linkbot/generate-review-notifications/",
                 {
@@ -572,7 +466,6 @@ const formatExplanation = (text) => {
             } catch (e) {
               console.log(e);
             }
-
             navigate(`/chat/${f.username}`, {
               state: {
                 gig: {
@@ -589,17 +482,12 @@ const formatExplanation = (text) => {
         >
           Contact Now
         </button>
-
       </div>
-
     </div>
-
     <div className="explanationCard">
-
       <div className="explanationTitle">
         🧠 Why LinkBot picked this freelancer
       </div>
-
       <div className="explanationSummary">
         <span className="aiBadge">
           LinkBot Analysis
@@ -608,20 +496,10 @@ const formatExplanation = (text) => {
   {formatExplanation(f.explanation)}
 </div>
       </div>
-
-      
-
     </div>
-    
-
     </div>
-
-
-
 ))}
             
-
-            {/* RESET */}
             {results.length > 0 && (
             <button
             className="resetBtn"
@@ -629,18 +507,13 @@ const formatExplanation = (text) => {
               Find Again
               </button>
               )}
-
           </div>
-        
         )}
         <div ref={endRef}></div>
       </div>
-
-      {/* INPUT */}
       {!done && (
         <div className="chat-composer">
           <textarea
-          
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
@@ -648,8 +521,6 @@ const formatExplanation = (text) => {
           />
           <button
       className="composer-send"
-      //onClick={sendMessage}
-      //disabled={uploading}
       onClick={handleSend}
     >
       <IoSend />

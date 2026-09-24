@@ -17,8 +17,8 @@ const styles = {
     padding: "10px 16px",
     borderBottom: "1px solid #ddd",
     position: "sticky",
-    top: 0,              // 🔑 REQUIRED
-    zIndex: 1000,        // 🔑 stay above feed
-    background: "#fff", // 🔑 prevent overlap
+    top: 0,
+    zIndex: 1000,
+    background: "#fff",
   }
 

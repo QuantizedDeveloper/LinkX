@@ -42,13 +42,6 @@
   flex-shrink: 0;
 }
 
-/*.gig-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}*/
-
 .gig-partner-badge {
   position: absolute;
   right: -4px;
@@ -83,26 +76,19 @@
   position: absolute;
   right: -4px;
   bottom: -4px;
-
   width: 18px;
   height: 18px;
-
   border-radius: 50%;
   background: #35d04f;
-
   color: #fff;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-size: 11px;
   font-weight: 800;
-
   box-sizing: border-box;
   z-index: 10;
 }
-
 
 .gig-username {
   font-weight: 600;
@@ -122,14 +108,12 @@
   cursor: pointer;
 }
 
-/* title */
 .gig-title {
   font-size: 15px;
   font-weight: 600;
   margin: 10px 0;
 }
 
-/* swipe images */
 .gig-media {
   display: flex;
   overflow-x: auto;
@@ -137,10 +121,6 @@
   height: 180px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  
-  
-  
-  
 }
 
 .gig-media::-webkit-scrollbar {
@@ -149,13 +129,11 @@
 
 .gig-media-item {
   flex: 0 0 85%;
-  height: 180px;   /* 🔥 FIX: fixed height */
+  height: 180px;
   scroll-snap-align: start;
   overflow: hidden;
   border-radius: 14px;
-  
   height: 100%;
-  
   display: flex;
   width: 100%;
   object-fit: cover;
@@ -167,14 +145,11 @@
   object-fit: cover;
 }
 
-/* footer */
 .gig-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 12px;
-
-  
 }
 
 .label {
@@ -190,7 +165,6 @@
   left:5px;
 }
 
-/* MENU DROPDOWN */
 .gig-menu-dropdown {
   position: absolute;
   right: 10px;
@@ -213,21 +187,17 @@
 .gig-menu-dropdown div:hover {
   background: #f5f5f5;
 }
-
-/* Close button */
 .gig-menu-close {
   font-size: 13px;
   color: #666;
   border-bottom: 1px solid #eee;
 }
 
-/* Delete */
 .gig-delete {
   color: red;
   font-weight: bold;
 }
 
-/* DESCRIPTION POPUP */
 .gig-desc-popup {
   position: fixed;
   top: 0;
@@ -263,8 +233,6 @@
   font-size:12px;
 }
 
-
-
 .left-section {
   display: flex;
   align-items: center;
@@ -272,7 +240,7 @@
 
 .right-section {
   display: flex;
-  gap: 20px;   /* 🔥 controls spacing between price & delivery */
+  gap: 20px;
   align-items: center;
 }
 

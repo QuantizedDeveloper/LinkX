@@ -11,44 +11,30 @@ import Gigs from "../components/Gigs";
 import { fetchWithAuth } from "../utils/api";
 
 const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
-
-// =========================
-// Helpers
-// =========================
 const fixUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http://")) url = url.replace("http://", "https://");
   if (url.startsWith("http")) return url;
   return API_BASE + url;
 };
-
 const fixCloudinaryUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
   return `https://res.cloudinary.com/dd04focej/${url}`;
 };
-
 export default function Profile() {
   const [agreed, setAgreed] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
   const [tab, setTab] = useState("gigs");
   const [agree, setAgree] = useState(false);
-
   const username = localStorage.getItem("username") || "user";
   const token = localStorage.getItem("accessToken");
-
-  // =========================
-  // Protect route
-  // =========================
+  
   useEffect(() => {
     if (!token) navigate("/login");
   }, [navigate, token]);
 
-  // =========================
-  // Freelancer status
-  // =========================
   const { data: statusData } = useQuery({
     queryKey: ["freelancerStatus"],
     queryFn: async () => {
@@ -64,12 +50,7 @@ export default function Profile() {
     onError: (err) =>
       showToast("Error fetching freelancer status: " + err.message),
   });
-
   const isFreelancer = statusData?.is_freelancer ?? false;
-
-  // =========================
-  // Profile
-  // =========================
   const { data: profileData } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
@@ -85,35 +66,27 @@ export default function Profile() {
     onError: (err) =>
       showToast("Error fetching profile: " + err.message),
   });
-
   const profile = profileData || {};
-  
   const { data: aboutData } = useQuery({
   queryKey: ["about-profile", username],
   queryFn: async () => {
     const res = await fetchWithAuth(
       `/freelancers/${username}/about/`
     );
-
     if (!res.ok) {
       throw new Error("Failed to fetch about");
     }
-
     return res.json();
   },
   enabled: !!username,
 });
   
-  // =========================
-  // Gigs
-  // =========================
   const { data: gigsData } = useQuery({
     queryKey: ["myGigs"],
     queryFn: async () => {
       const res = await fetchWithAuth(`/api/gigs/gigs/my/`);
       if (!res.ok) throw new Error("Failed to fetch gigs");
       const data = await res.json();
-
       return data.map((g) => ({
         ...g,
         username: g.username || g.user || "freelancer",
@@ -133,10 +106,6 @@ export default function Profile() {
   });
 
   const safeGigs = gigsData || [];
-
-  // =========================
-  // Rating (FIXED)
-  // =========================
   const { data: ratingData } = useQuery({
     queryKey: ["rating", username],
     queryFn: async () => {
@@ -150,20 +119,14 @@ export default function Profile() {
     cacheTime: 30 * 60 * 1000,
     keepPreviousData: true,
   });
-
-  // =========================
-  // Start freelancing
-  // =========================
   const startMutation = useMutation({
     mutationFn: async () => {
       const res = await fetchWithAuth(`/freelancers/start/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-
       return data;
     },
     onSuccess: () => {
@@ -173,7 +136,6 @@ export default function Profile() {
     onError: (err) =>
       showToast("Start freelancing failed: " + err.message),
   });
-
   const startFreelancing = () => {
     if (!agree) {
       showToast("Accept freelancer agreement");
@@ -182,9 +144,6 @@ export default function Profile() {
     startMutation.mutate();
   };
 
-  // =========================
-  // Not freelancer UI
-  // =========================
   if (!isFreelancer) {
     return (
       <div style={styles.startContainer}>
@@ -219,12 +178,8 @@ export default function Profile() {
     );
   }
 
-  // =========================
-  // MAIN UI (NO BLOCKING)
-  // =========================
   return (
     <div style={styles.container}>
-      {/* Cover */}
       <div
         style={{
           ...styles.cover,
@@ -234,7 +189,6 @@ export default function Profile() {
         }}
       />
 
-      {/* Profile */}
       <div style={styles.profileSection}>
         <div
           style={{
@@ -244,7 +198,6 @@ export default function Profile() {
               : undefined,
           }}
         />
-
         <div style={styles.buttons}>
           <button
             style={styles.editBtn}
@@ -276,7 +229,6 @@ export default function Profile() {
         {profile.description || "No description yet"}
       </p>
 
-      {/* Tabs */}
       <div style={styles.tabs}>
   <div
     style={tab === "gigs" ? styles.activeTab : styles.inactiveTab}
@@ -305,7 +257,6 @@ export default function Profile() {
   </div>
 </div>
 
-      {/* Gigs */}
       {tab === "gigs" && (
         <div style={{ display: "flex", justifyContent: "center" }}>
           {!gigsData && <p>Loading gigs...</p>}
@@ -313,10 +264,8 @@ export default function Profile() {
         </div>
       )}
 
-      {/* About */}
       {tab === "about" && (
   <div style={styles.about}>
-    
 
     <p>
       <strong>Experience:</strong>{" "}
@@ -353,22 +302,6 @@ export default function Profile() {
     </div>
   );
 }
-/*function GigCard({ title, price }) {
-  return (
-    <div style={styles.gig}>
-      <div style={styles.gigAvatar}></div>
-
-      <div style={{ flex: 1 }}>
-        <div style={styles.gigName}>{username}</div>
-        <div>{title}</div>
-        <div style={styles.price}>{price}</div>
-      </div>
-
-      <div style={styles.inbox}>✉</div>
-    </div>
-  );
-}*/
-
 
 
 const styles = {
@@ -457,31 +390,6 @@ const styles = {
     paddingBottom: 6,
     cursor: "pointer"
   },
-
-  /*gig: {
-    display: "flex",
-    padding: 16,
-    borderBottom: "1px solid #eee",
-    alignItems: "center",
-    position:"relative",
-    left:-13
-  },
-
-  /*gigAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: "50%",
-    background: "#ddd",
-    marginRight: 12
-  },
-
-  gigName: {
-    fontWeight: "bold"
-  },
-
-  price: {
-    marginTop: 4
-  },*/
 
   inbox: {
     fontSize: 22

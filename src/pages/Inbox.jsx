@@ -10,21 +10,14 @@ import Gig from "../components/Gig";
 const API = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function Inbox({ username }) {
-  
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
   const [search, setSearch] = useState("");
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("chats");
   const [selectedGigId, setSelectedGigId] = useState(null);
   const [showGigModal, setShowGigModal] = useState(false);
-
   const clientRef = useRef(null);
-
-  // =========================
-  // CHAT FETCH
-  // =========================
   const { data: conversations = [] } = useQuery({
     queryKey: ["inbox"],
     queryFn: async () => {
@@ -32,66 +25,43 @@ export default function Inbox({ username }) {
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
-
-    //staleTime: 10 * 60 * 1000,
-    //cacheTime: 30 * 60 * 1000,
-    //refetchOnWindowFocus: false,
-    //refetchOnMount: false,
     keepPreviousData: true,
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     
   });
-
-  // =========================
-  // NOTIFICATIONS FETCH
-  // =========================
   const {
   data: notifications = [],
   refetch: refetchNotifications
 } = useQuery({
   queryKey: ["notifications"],
-
   queryFn: async () => {
     const res = await fetchWithAuth(
       "/api/linkbot/notifications/"
     );
-
     if (!res.ok) throw new Error("Failed");
-
     return res.json();
   },
-
   staleTime: 0,
   refetchOnMount: true,
   refetchOnWindowFocus: true,
 });
 const { data: selectedGig } = useQuery({
   queryKey: ["gig", selectedGigId],
-
   queryFn: async () => {
-
     if (!selectedGigId) return null;
-
     const res = await fetchWithAuth(
       `/api/gigs/gigs/${selectedGigId}/`
     );
-
     if (!res.ok) {
       throw new Error("Failed to fetch gig");
     }
-
     return res.json();
   },
 
   enabled: !!selectedGigId,
 });
-
-
-  // =========================
-  // REALTIME
-  // =========================
   useEffect(() => {
     const client = new Ably.Realtime({
       authUrl: `${API}/api/messaging/ably-token/`,
@@ -99,29 +69,18 @@ const { data: selectedGig } = useQuery({
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
     });
-
     clientRef.current = client;
-
     client.connection.on("connected", async () => {
-
-      // =========================
-      // CHAT REALTIME
-      // =========================
       const notifChannel = client.channels.get(
         `notifications_${username}`
       );
-
       notifChannel.subscribe("notification", (msg) => {
         const payload = msg.data;
-
         queryClient.setQueryData(["inbox"], (old = []) => {
-
           if (payload.type === "new_message") {
-
             const existing = old.find(
               (c) => c.id === payload.conversation_id
             );
-
             const updated = {
               id: payload.conversation_id,
               username: payload.sender_username,
@@ -132,7 +91,6 @@ const { data: selectedGig } = useQuery({
               unread_count:
                 (existing?.unread_count || 0) + 1,
             };
-
             if (existing) {
               return [
                 updated,
@@ -159,10 +117,6 @@ const { data: selectedGig } = useQuery({
 
           return old;
         });
-
-        // =========================
-        // LINKBOT NOTIFICATION
-        // =========================
         if (payload.type === "linkbot_notification") {
 
           queryClient.setQueryData(
@@ -171,26 +125,17 @@ const { data: selectedGig } = useQuery({
           );
         }
       });
-
-      // =========================
-      // PRESENCE
-      // =========================
       const presenceChannel =
         client.channels.get("global_presence");
-
       await presenceChannel.presence.enter(username);
-
       presenceChannel.presence.subscribe((member) => {
-
         setOnlineUsers((prev) => {
-
           if (member.action === "enter") {
             return [...new Set([
               ...prev,
               member.clientId
             ])];
           }
-
           if (member.action === "leave") {
             return prev.filter(
               (u) => u !== member.clientId
@@ -206,21 +151,12 @@ const { data: selectedGig } = useQuery({
       client.close();
     };
   }, [username, queryClient]);
-
-  // =========================
-  // FILTER
-  // =========================
   const filtered = conversations.filter((c) =>
     c.username?.toLowerCase()
       .includes(search.toLowerCase())
   );
-
-  // =========================
-  // HELPERS
-  // =========================
   const formatTime = (time) => {
     if (!time) return "";
-
     return new Date(time).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
@@ -249,17 +185,10 @@ const { data: selectedGig } = useQuery({
     enabled: !!c.username,
   })),
 });
-
-  // =========================
-  // UI
-  // =========================
   return (
     <div className="inbox-container">
-
-      {/* HEADER */}
       <div className="inbox-header">
         <h2>Inbox</h2>
-
         <button
           className="close-btn"
           onClick={() => navigate(-1)}
@@ -267,16 +196,12 @@ const { data: selectedGig } = useQuery({
           ✕
         </button>
       </div>
-
-      {/* SEARCH */}
       <input
         className="search"
         placeholder="Search"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-
-      {/* TABS */}
       <div className="tabs">
 
         <button
@@ -308,24 +233,18 @@ const { data: selectedGig } = useQuery({
 
       </div>
 
-      {/* ========================= */}
-      {/* NOTIFICATIONS */}
-      {/* ========================= */}
       {activeTab === "notifications" && (
         <div className="notification-list">
-
           {notifications.length === 0 && (
             <div className="empty">
               No notifications yet
             </div>
           )}
-
           {notifications.map((n) => (
             <div
               key={n.id}
               className="notification-card"
             >
-
               <div className="notification-icon">
                 <ArrowUpRight color="white" size={50} />
               </div>
@@ -365,17 +284,12 @@ const { data: selectedGig } = useQuery({
         </div>
       )}
 
-      {/* ========================= */}
-      {/* CHATS */}
-      {/* ========================= */}
       {activeTab === "chats" && (
         <div className="conversation-list">
-
           {filtered.map((c) => {
 
             const isOnline =
               onlineUsers.includes(c.username);
-
             return (
               <div
                 key={c.id}
@@ -392,7 +306,6 @@ const { data: selectedGig } = useQuery({
       ?.charAt(0)
       .toUpperCase()}
   </div>
-
   {userStatusQueries[
     filtered.findIndex((user) => user.username === c.username)
   ]?.data?.is_linkx_partner ? (
@@ -512,7 +425,6 @@ const { data: selectedGig } = useQuery({
       )}
 
     </div>
-
   </div>
 )}
     </div>
