@@ -5,10 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "../utils/api";
 
-//const base_url = "https://Linkx1.pythonanywhere.com";
-
-const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
-
 export default function BottomNav() {
   useEffect(() => {
     const fetchMe = async () => {
@@ -26,19 +22,17 @@ export default function BottomNav() {
   }, []);
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
-  const location = useLocation(); // get current path
+  const location = useLocation();
 
   return (
     <div style={styles.nav}>
-      {/* Home */}
       <Link to="/">
         <FiHome
           size={24}
           color={location.pathname === "/" ? "#000" : "#aaa"}
         />
       </Link>
-
-      {/* Add / Upload */}
+      
       <div style={styles.plus} onClick={() => {
       if (!me) return;
       if (me.is_freelancer) {
@@ -54,7 +48,6 @@ export default function BottomNav() {
   />
 </div>
 
-      {/* Profile */}
       <Link to="/profile">
         <FiUser
           size={24}

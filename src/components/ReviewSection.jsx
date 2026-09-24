@@ -10,18 +10,14 @@ const ReviewSection = ({ gigId }) => {
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  //const base_url = "https://Linkx1.pythonanywhere.com";
   const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
-  
   const token = localStorage.getItem("accessToken")
-  // fetch reviews
   const fetchReviews = async () => {
     try {
       const res = await fetchWithAuth(
         `/api/gigs/gigs/${gigId}/reviews/`
         );
       const data = await res.json();
-
       setReviews(data.reviews || []);
       setAvgRating(data.avg_rating || 0);
       setTotalReviews(data.total_reviews || 0);
@@ -29,15 +25,11 @@ const ReviewSection = ({ gigId }) => {
       console.error(err);
     }
   };
-
   useEffect(() => {
     if (gigId) fetchReviews();
   }, [gigId]);
-
-  // submit review
   const handleSubmit = async () => {
     if (!rating) return showToast("Select rating");
-
     try {
       const res = await fetchWithAuth(
         `/api/gigs/gigs/${gigId}/review/create/`,
@@ -66,20 +58,15 @@ const ReviewSection = ({ gigId }) => {
 
   return (
     <div>
-      {/* BUTTON */}
       <button onClick={() => setOpen(true)} className="review-btn">
         ⭐ {avgRating?.toFixed(1) || "0.0"}  {totalReviews?.split?.("•")?.[0] || " "}
       </button>
-      
-
-      {/* MODAL */}
       {open && (
         <div className="modal-overlay" onClick={() => setOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
 
             <button className="close-btn" onClick={() => setOpen(false)}>✕</button>
 
-            {/* HEADER */}
             <div className="review-summary">
               <h3>Reviews</h3>
               <div className="rating-overview">
@@ -88,7 +75,6 @@ const ReviewSection = ({ gigId }) => {
               </div>
             </div>
 
-            {/* REVIEW LIST */}
             <div className="review-list">
               {reviews.length === 0 ? (
                 <p className="no-reviews">No reviews yet</p>
@@ -110,7 +96,6 @@ const ReviewSection = ({ gigId }) => {
               )}
             </div>
 
-            {/* GIVE REVIEW */}
             <div className="give-review">
               <p>Give review</p>
 

@@ -32,7 +32,7 @@ export default function Chat() {
   const fixCloudinaryUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
-    return `https://res.cloudinary.com/dd04focej/${url}`;
+    return `https://res.cloudinary.com/kv9bzad0/${url}`;
   };
   // new
   const [mediaModal, setMediaModal] =

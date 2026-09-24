@@ -9,7 +9,6 @@
   gap: 10px;
 }
 
-/* Base toast */
 .toast {
   min-width: 220px;
   max-width: 320px;
@@ -25,13 +24,11 @@
   box-shadow: 0 6px 18px rgba(0,0,0,0.25);
 }
 
-/* Show animation */
 .toast.show {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Types */
 .toast-success {
   background: #000;
 }

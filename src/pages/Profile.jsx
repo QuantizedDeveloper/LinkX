@@ -20,7 +20,7 @@ const fixUrl = (url) => {
 const fixCloudinaryUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
-  return `https://res.cloudinary.com/dd04focej/${url}`;
+  return `https://res.cloudinary.com/kv9bzad0/${url}`;
 };
 export default function Profile() {
   const [agreed, setAgreed] = useState(false);
