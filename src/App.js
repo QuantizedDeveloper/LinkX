@@ -10,12 +10,12 @@ import Inbox from "./pages/Inbox";
 import Notifications from "./pages/Notifications";
 import EditProfile from "./pages/EditProfile";
 import Search from "./pages/Search";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import VerifyOtpSignup from "./pages/verify-otp";
+//import Login from "./pages/Login";
+//import Signup from "./pages/Signup";
+//import VerifyOtpSignup from "./pages/verify-otp";
 import FaceVerification from "./pages/FaceVerification";
-import ResetPassword from "./pages/ResetPassword";
-import ForgotPassword from "./pages/ForgotPassword";
+//import ResetPassword from "./pages/ResetPassword";
+//import ForgotPassword from "./pages/ForgotPassword";
 import Chat from "./pages/Chat";
 import Chatbot from "./pages/Chatbot";
 import { useEffect } from "react";
@@ -57,16 +57,11 @@ export default function App() {
         <Route path="/public-profile/:username" element={<PublicProfile />} />
       </Route>
       {/* ✅ ROUTES WITHOUT BottomNav */}
-      <Route path="/loginBan" element={<Login />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/face-verificationAgreement" element={<FaceVerificationInfo />} />
        <Route path="/freelancer-agreement" element={<FreelancerAgreement />} />
       <Route path="/login" element={<GoogleLogin />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/verify-otp" element={<VerifyOtpSignup />} />
       <Route path="/faceVerification" element={<FaceVerification />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/hiring-guide" element={<HiringGuide />} />
       <Route path="/hired-guide" element={<HiredGuide />} />
       <Route path="/chat/:username" element={<Chat />} />

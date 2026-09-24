@@ -31,7 +31,6 @@ const ActivityTracker = () => {
   }
 };
     const startTracking = () => {
-      // Send immediately
       sendHeartbeat();
       interval = setInterval(() => {
         if (!document.hidden) {
@@ -51,10 +50,8 @@ const ActivityTracker = () => {
         startTracking();
       }
     };
-
     const initializeTracking = async () => {
       try {
-        // Check if user is freelancer
         await fetchMe();
         startTracking();
         document.addEventListener(
@@ -62,22 +59,17 @@ const ActivityTracker = () => {
           handleVisibilityChange
         );
       } catch (error) {
-        // Not freelancer -> do nothing
       }
     };
-
     initializeTracking();
-
     return () => {
       stopTracking();
-
       document.removeEventListener(
         "visibilitychange",
         handleVisibilityChange
       );
     };
   }, []);
-
   return null;
 };
 
