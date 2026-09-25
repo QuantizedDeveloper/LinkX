@@ -36,9 +36,9 @@ export default function App() {
   }
   navigator.serviceWorker.register(
   process.env.PUBLIC_URL + "/service-worker.js")
-  .then(async () => {
-      await enablePushNotifications();
-    })
+  //.then(async () => {
+     // await enablePushNotifications();
+    //})
     .catch((err) => {
       console.error(err);
     });

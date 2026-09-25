@@ -1,15 +1,22 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { fetchWithAuth } from "../utils/api";
-import { FiLogOut } from "react-icons/fi";
+import { FiLogOut, FiBell } from "react-icons/fi";
+import {
+  enablePushNotifications,
+  disablePushNotifications,
+  arePushNotificationsEnabled,
+} from "../utils/push";
+
 const isDesktop = window.innerWidth >= 975;
 
 export default function SideMenu({ open, onClose }) {
   const username = localStorage.getItem("username") || "User";
   const avatarLetter = username.charAt(0).toLowerCase();
-
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
   const fetchActiveFreelancers = async () => {
     try {
       const res = await fetchWithAuth(
@@ -52,7 +59,50 @@ export default function SideMenu({ open, onClose }) {
     return await res.json();
   },
 });
+  useEffect(() => {
+  const checkNotificationStatus = async () => {
+    try {
+      const enabled = await arePushNotificationsEnabled();
+      setNotificationsEnabled(enabled);
+    } catch (error) {
+      console.error(
+        "Failed to check notification status:",
+        error
+      );
+    }
+  };
 
+  checkNotificationStatus();
+}, []);
+  const handleNotificationToggle = async () => {
+  if (notificationLoading) return;
+
+  setNotificationLoading(true);
+
+  try {
+    if (notificationsEnabled) {
+      await disablePushNotifications();
+      setNotificationsEnabled(false);
+    } else {
+      await enablePushNotifications();
+      setNotificationsEnabled(true);
+    }
+  } catch (error) {
+    console.error(
+      "Notification toggle failed:",
+      error
+    );
+
+    alert(
+      error?.message ||
+      "Could not change notification settings."
+    );
+  } finally {
+    setNotificationLoading(false);
+  }
+};
+  
+  
   useEffect(() => {
     const ping = async () => {
       try {
@@ -227,6 +277,32 @@ export default function SideMenu({ open, onClose }) {
     ))}
   </div>
 )}
+        <div style={styles.notificationRow}>
+  <div
+    style={{
+      ...styles.notificationToggle,
+      backgroundColor: notificationsEnabled
+        ? "#42a5f5"
+        : "#bdbdbd",
+      opacity: notificationLoading ? 0.6 : 1,
+    }}
+    onClick={handleNotificationToggle}
+  >
+    <div
+      style={{
+        ...styles.notificationKnob,
+        transform: notificationsEnabled
+          ? "translateX(24px)"
+          : "translateX(0)",
+      }}
+    />
+  </div>
+
+  <FiBell
+    size={21}
+    color={notificationsEnabled ? "#555" : "#999"}
+  />
+</div>
         <div style={styles.footer2}>
   <button
     style={styles.logoutButton}
@@ -498,6 +574,32 @@ guideButton: {
   cursor: "pointer",
   boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
   fontFamily: "Inter, sans-serif",
+},
+notificationRow: {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "10px 14px",
+},
+notificationToggle: {
+  width: "52px",
+  height: "28px",
+  borderRadius: "20px",
+  position: "relative",
+  cursor: "pointer",
+  transition: "background-color 0.2s ease",
+  flexShrink: 0,
+},
+notificationKnob: {
+  position: "absolute",
+  top: "2px",
+  left: "2px",
+  width: "24px",
+  height: "24px",
+  borderRadius: "50%",
+  background: "#ffffff",
+  boxShadow: "0 1px 4px rgba(0, 0, 0, 0.2)",
+  transition: "transform 0.2s ease",
 },
 
 };
