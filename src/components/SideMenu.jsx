@@ -150,7 +150,7 @@ export default function SideMenu({ open, onClose }) {
   {userStatus?.is_linkx_partner ? (
     <div style={styles.partnerBadge}>
       <img
-      src={`${process.env.PUBLIC_URL}/Linkx.jpg`}
+      src={`${process.env.PUBLIC_URL}/neuraGigs.jpg`}
       alt="LinkX Partner"
       style={styles.partnerBadgeImage}
     />
@@ -202,7 +202,7 @@ export default function SideMenu({ open, onClose }) {
           navigate("/chatbot");
           onClose();
           }}>
-            Linkbot
+            neuBot
             </div>
             )}
           {isDesktop && (

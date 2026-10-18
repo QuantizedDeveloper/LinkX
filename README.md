@@ -1,72 +1,145 @@
-# Getting Started with Create React App
+# neuraGigs
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+neuraGigs is a freelancer marketplace built for agencies and businesses that regularly hire freelancers.
 
-## Available Scripts
+Instead of searching through freelancer profiles manually, businesses can describe what they need to LinkBot. LinkBot asks a few questions about the project and helps find matching freelancers on LinkX.
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+* Freelancer profiles and portfolios
+* Freelancer project listings
+* LinkBot for finding relevant freelancers
+* Skill and project-based matching
+* Verified freelancer profiles
+* Messaging between users
+* Real-time message notifications
+* Freelancer and client accounts
+* Responsive web interface
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## How LinkBot Works
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. Describe the work you need.
+2. LinkBot asks questions to understand the requirements.
+3. Your answers are used to find relevant freelancers.
+4. Review the matching freelancers and their profiles.
+5. Contact them through LinkX.
 
-### `npm test`
+LinkBot is intended to reduce the time spent manually searching through freelancer profiles.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Tech Stack
 
-### `npm run build`
+### Frontend
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+* React.js
+* JavaScript
+* HTML
+* CSS
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Backend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+* Python
+* Django
+* Django REST Framework
+* Simple JWT
 
-### `npm run eject`
+### Database
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+* PostgreSQL
+* Supabase
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Other Services
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+* Hugging Face — backend hosting
+* Cloudinary — media and image storage
+* Ably — real-time messaging
+* Web Push — browser notifications
+* Gemini — LinkBot's conversational responses
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Project Structure
 
-## Learn More
+```text
+neuraGigs/
+├── public/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   └── ...
+├── package.json
+└── README.md
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+The backend is maintained separately from this frontend repository.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Running Locally
 
-### Code Splitting
+### Requirements
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+* Node.js
+* npm
 
-### Analyzing the Bundle Size
+### Installation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Clone the repository:
 
-### Making a Progressive Web App
+```bash
+git clone https://github.com/QuantizedDeveloper/LinkX.git
+cd LinkX
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Install dependencies:
 
-### Advanced Configuration
+```bash
+npm install
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Start the development server:
 
-### Deployment
+```bash
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+The application will normally be available at:
 
-### `npm run build` fails to minify
+```text
+http://localhost:3000
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# linkx-frontend
-# linkx-frontend
+### Production Build
+
+Create a production build with:
+
+```bash
+npm run build
+```
+
+The production files are generated in the `build` directory.
+
+## Deployment
+
+The frontend can be deployed as a static React application.
+
+The neuraGigs production frontend is available at:
+
+https://linkxllm.run.place
+
+## Status
+
+neuraGigs is under active development.
+
+The core marketplace, freelancer profiles, matching, messaging, and notification functionality are being developed and tested as the product evolves.
+
+## Repository
+
+GitHub:
+
+https://github.com/QuantizedDeveloper/LinkX
+
+## License
+
+This project does not currently use an open-source license.
+
+```
+
+This version deliberately keeps the README **technical and factual** rather than trying to sell the project. If you want it even more stripped down, I can make it look like a serious **developer-built open-source README** with almost no marketing language.
+```

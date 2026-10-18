@@ -17,7 +17,7 @@ export default function FaceVerificationInfo() {
       </p>
 
       <p>
-        At LinkX, our goal is to build a trusted marketplace where clients
+        At neuraGigs, our goal is to build a trusted marketplace where clients
         can confidently hire freelancers. To help achieve this, we ask
         freelancers to complete a face verification process.
       </p>
@@ -35,7 +35,7 @@ export default function FaceVerificationInfo() {
 
       <p>
         We understand that your privacy is important. Face verification is
-        requested solely to verify identity as part of the LinkX
+        requested solely to verify identity as part of the neuraGigs
         verification process.
       </p>
 
@@ -43,7 +43,7 @@ export default function FaceVerificationInfo() {
         <li>Your information is handled securely.</li>
         <li>
           Your face verification is used for verification purposes in
-          accordance with LinkX policies.
+          accordance with neuraGigs policies.
         </li>
         <li>
           LinkX does not use your face verification for advertising or
@@ -63,7 +63,7 @@ export default function FaceVerificationInfo() {
 
       <p>
         By continuing with face verification, you acknowledge that you
-        understand why verification is required and consent to LinkX using
+        understand why verification is required and consent to neuraGigs using
         the verification information for identity verification and platform
         security in accordance with its applicable policies.
       </p>

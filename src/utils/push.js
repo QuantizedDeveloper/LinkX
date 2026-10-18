@@ -28,15 +28,20 @@ export async function enablePushNotifications() {
     throw new Error("Push notifications are not supported");
   }
 
-  const permission =
-    await Notification.requestPermission();
+  const permission = await Notification.requestPermission();
 
   if (permission !== "granted") {
     throw new Error("Notification permission was not granted");
   }
 
+  // Make sure the service worker is registered
   const registration =
-    await navigator.serviceWorker.ready;
+    await navigator.serviceWorker.register(
+      process.env.PUBLIC_URL + "/service-worker.js"
+    );
+
+  // Wait until the service worker is active
+  await navigator.serviceWorker.ready;
 
   const keyRes = await fetchWithAuth(
     "/api/messaging/push/public-key/"
@@ -48,6 +53,10 @@ export async function enablePushNotifications() {
 
   const data = await keyRes.json();
 
+  if (!data.publicKey) {
+    throw new Error("VAPID public key is missing");
+  }
+
   let subscription =
     await registration.pushManager.getSubscription();
 
@@ -56,9 +65,7 @@ export async function enablePushNotifications() {
       await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey:
-          urlBase64ToUint8Array(
-            data.publicKey
-          ),
+          urlBase64ToUint8Array(data.publicKey),
       });
   }
 

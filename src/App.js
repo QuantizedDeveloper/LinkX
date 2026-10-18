@@ -10,12 +10,7 @@ import Inbox from "./pages/Inbox";
 import Notifications from "./pages/Notifications";
 import EditProfile from "./pages/EditProfile";
 import Search from "./pages/Search";
-//import Login from "./pages/Login";
-//import Signup from "./pages/Signup";
-//import VerifyOtpSignup from "./pages/verify-otp";
 import FaceVerification from "./pages/FaceVerification";
-//import ResetPassword from "./pages/ResetPassword";
-//import ForgotPassword from "./pages/ForgotPassword";
 import Chat from "./pages/Chat";
 import Chatbot from "./pages/Chatbot";
 import { useEffect } from "react";
@@ -36,16 +31,14 @@ export default function App() {
   }
   navigator.serviceWorker.register(
   process.env.PUBLIC_URL + "/service-worker.js")
-  //.then(async () => {
-     // await enablePushNotifications();
-    //})
+    
     .catch((err) => {
       console.error(err);
     });
 }, []);
   return (
     <Routes>
-      {/* ✅ ROUTES WITH BottomNav */}
+      {/* ROUTES WITH BottomNav */}
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />}/>
         <Route path="/upload" element={<Upload />} />
@@ -56,7 +49,7 @@ export default function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/public-profile/:username" element={<PublicProfile />} />
       </Route>
-      {/* ✅ ROUTES WITHOUT BottomNav */}
+      {/* ROUTES WITHOUT BottomNav */}
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/face-verificationAgreement" element={<FaceVerificationInfo />} />
        <Route path="/freelancer-agreement" element={<FreelancerAgreement />} />

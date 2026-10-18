@@ -34,7 +34,6 @@ export default function Chat() {
     if (url.startsWith("http")) return url;
     return `https://res.cloudinary.com/kv9bzad0/${url}`;
   };
-  // new
   const [mediaModal, setMediaModal] =
   useState(null);
   const fileInputRef = useRef(null);
@@ -378,7 +377,6 @@ useEffect(() => {
     username,
   });
 
-  // NEW MESSAGE
   const handleNewMessage = async (msg) => {
     const incoming = msg.data;
 
@@ -806,7 +804,6 @@ return (
  
   <div className="chat-wrapper">
 
-    {/* HEADER */}
      <div className="chat-header">
 
       <div className="header-left">
@@ -896,7 +893,6 @@ return (
       )}
     </div>
 
-    {/* CHAT BODY */}
     <div
       className="chat-body"
       ref={containerRef}
@@ -942,7 +938,6 @@ return (
 
               <div className="bubble">
 
-                {/* IMAGE */}
                 {msg.image_url && (
                   <div className="media-card">
 
@@ -981,7 +976,6 @@ return (
                   </div>
                 )}
 
-                {/* VIDEO */}
                 {msg.video_url && (
                   <div className="media-card">
 
@@ -1053,7 +1047,6 @@ return (
       </div>
       </div>
       )}
-                {/* TEXT */}
               
                 {msg.text && (
                   <div className="message-text">
@@ -1061,7 +1054,6 @@ return (
                   </div>
                 )}
 
-                {/* META */}
                 <div className="meta">
 
                   {new Date(
@@ -1105,8 +1097,7 @@ return (
 
 
 
-
-{/* INPUT */}
+    
 <div className="chat-composer">
   {selectedGig && (
   <div className="gig-preview">
@@ -1134,7 +1125,6 @@ return (
   </div>
 )}
 
-  {/* PREVIEW */}
   {selectedFile && (
     <div className="composer-preview-large">
 
@@ -1167,7 +1157,6 @@ return (
     </div>
   )}
 
-  {/* TEXTAREA */}
   <textarea
     value={text}
     rows={1}
@@ -1184,7 +1173,6 @@ return (
         }
       );
 
-      // auto grow
       e.target.style.height = "auto";
 
       e.target.style.height =
@@ -1195,10 +1183,8 @@ return (
     }}
   />
 
-  {/* BOTTOM BAR */}
   <div className="composer-bottom">
 
-    {/* PLUS */}
     <button
       className="composer-plus"
       onClick={() =>
@@ -1224,7 +1210,6 @@ return (
       }}
     />
 
-    {/* SEND */}
     <button
       className="composer-send"
       onClick={sendMessage}
@@ -1237,7 +1222,6 @@ return (
 
 </div>
 
-    {/* MEDIA MODAL */}
     {mediaModal && (
       <div className="media-modal">
 
@@ -1277,7 +1261,6 @@ return (
       </div>
     )}
 
-    {/* PAYMENT */}
     {showPayment && (
       <PaymentModal
         paymentInfo={otherUser.payment_info}

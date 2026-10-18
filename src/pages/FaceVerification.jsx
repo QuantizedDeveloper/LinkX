@@ -4,7 +4,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../utils/toast";
 import { Link } from "react-router-dom";
-//axios.defaults.baseURL = "https://Linkx1.pythonanywhere.com";
 axios.defaults.baseURL = "https://linkx-backend-api-linkx-backend.hf.space";
 
 axios.defaults.withCredentials = true;
@@ -21,42 +20,30 @@ export default function FaceVerification() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const mountedRef = useRef(true);
-
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
-
   const [step, setStep] = useState(0);
   const [captures, setCaptures] = useState([]);
   const [status, setStatus] = useState("Initializing...");
   const [submitting, setSubmitting] = useState(false);
 
-  /* =============================
-     1️⃣ LOAD MODELS
-  ============================== */
   useEffect(() => {
     mountedRef.current = true;
-
     async function loadModels() {
       try {
         const MODEL_URL = process.env.PUBLIC_URL + "/models/";
-
         setStatus("Loading face detector...");
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-
         setStatus("Loading landmarks...");
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-
         setStatus("Loading recognition model...");
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-
         if (!mountedRef.current) return;
 
         setModelsLoaded(true);
       } catch (err) {
         console.error("MODEL LOAD ERROR:", err);
         showToast(err.message);
-        //console.error("MODEL LOAD ERROR:", err);
-        //alert("Failed to load face models");
       }
     }
 
@@ -69,10 +56,6 @@ export default function FaceVerification() {
       }
     };
   }, []);
-
-  /* =============================
-     2️⃣ START CAMERA AFTER MODELS
-  ============================== */
   useEffect(() => {
     if (!modelsLoaded) return;
 
@@ -108,9 +91,6 @@ export default function FaceVerification() {
     startCamera();
   }, [modelsLoaded]);
 
-  /* =============================
-     3️⃣ CAPTURE FUNCTION
-  ============================== */
   const capture = async () => {
     if (!cameraReady || submitting) return;
 
@@ -163,9 +143,6 @@ export default function FaceVerification() {
     }
   };
 
-  /* =============================
-     4️⃣ SUBMIT TO BACKEND
-  ============================== */
   const submit = async (capturesData) => {
   try {
     setSubmitting(true);
@@ -185,16 +162,13 @@ export default function FaceVerification() {
     );
 
     const data = res.data;
-
-    // ✅ unified storage
     if (data.access) localStorage.setItem("accessToken", data.access);
     if (data.username) localStorage.setItem("username", data.username);
     if (data.refresh) localStorage.setItem("refreshToken", data.refresh);
     
-
     streamRef.current?.getTracks().forEach((t) => t.stop());
 
-    navigate("/"); // ✅ FIXED
+    navigate("/");
   } catch (err) {
   const status = err.response?.status;
   const backendError = err.response?.data;
@@ -207,10 +181,6 @@ export default function FaceVerification() {
   console.error("FULL ERROR:", err);
 }
 };
-
-  /* =============================
-     UI
-  ============================== */
   return (
     <div style={{ padding: 20, textAlign: "center" }}>
       <video
@@ -245,9 +215,6 @@ export default function FaceVerification() {
   );
 }
 
-/* =============================
-   POSE VALIDATION
-============================= */
 function poseValid(result, pose, video) {
   const nose = result.landmarks.getNose()[3].x;
   const jaw = result.landmarks.getJawOutline();

@@ -11,7 +11,7 @@ export default function TermsAndConditions() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <h1>LinkX Sign-Up Terms & Conditions</h1>
+      <h1> neuraGigs Sign-Up Terms & Conditions</h1>
 
       <p>
         <strong>Last Updated:</strong> June 8, 2026
@@ -178,7 +178,7 @@ export default function TermsAndConditions() {
 
       <p>
         If you have questions regarding these Terms, please contact the
-        LinkX support team through the official channels provided within
+        neuraGigs support team through the official channels provided within
         the platform.
       </p>
 
@@ -187,7 +187,7 @@ export default function TermsAndConditions() {
       <h2>Acceptance</h2>
 
       <p>
-        By selecting <strong>"I agree"</strong> or by creating a LinkX
+        By selecting <strong>"I agree"</strong> or by creating a neuraGigs
         account, you acknowledge that you have read, understood, and
         agree to these Sign-Up Terms & Conditions.
       </p>

@@ -54,7 +54,7 @@ export default function GoogleLogin() {
     <div className="login-container">
       <div className="login-content">
         <h1 className="welcome-title">
-          Welcome to linkX
+          Welcome to neuraGigs.ai
         </h1>
         <p className="welcome-subtitle">
           <span>Find</span>{" "}
@@ -74,7 +74,7 @@ export default function GoogleLogin() {
         </button>
 
         <div className="terms-container">
-          <span>linkx </span>
+          <span>neuraGigs </span>
           <Link to="/terms">
             terms and conditions
           </Link>

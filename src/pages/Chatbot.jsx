@@ -318,7 +318,7 @@ const formatExplanation = (text) => {
           {!isDesktop && (
           <span onClick={() => navigate("/")}>✕</span>
           )}
-          <span className="title">LinkBot</span>
+          <span className="title">neuBot</span>
           
             <button
             className="resetBtn2"
@@ -486,11 +486,11 @@ const formatExplanation = (text) => {
     </div>
     <div className="explanationCard">
       <div className="explanationTitle">
-        🧠 Why LinkBot picked this freelancer
+        🧠 Why neuBot picked this freelancer
       </div>
       <div className="explanationSummary">
         <span className="aiBadge">
-          LinkBot Analysis
+          neuBot Analysis
           </span>
           <div className="explanationText">
   {formatExplanation(f.explanation)}
