@@ -121,7 +121,7 @@ The frontend can be deployed as a static React application.
 
 The neuraGigs production frontend is available at:
 
-https://linkxllm.run.place
+https://neuragigs.run.place
 
 ## Status
 

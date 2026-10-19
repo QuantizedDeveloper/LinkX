@@ -22,7 +22,7 @@ const Username = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        navigate("/faceVerification");
+        navigate("/");
       } else {
         alert(data.error || "Error");
       }

@@ -202,7 +202,7 @@ export default function SideMenu({ open, onClose }) {
           navigate("/chatbot");
           onClose();
           }}>
-            neuBot
+            Neur Agent
             </div>
             )}
           {isDesktop && (
@@ -217,7 +217,7 @@ export default function SideMenu({ open, onClose }) {
           )}
 
           <a
-    href="mailto:linkx.llm@gmail.com?subject=Need%20help!"
+    href="mailto:neuragigs@gmail.com?subject=Need%20help!"
     target="_blank"
     rel="noopener noreferrer"
     style={styles.supportButton}
