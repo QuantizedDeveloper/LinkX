@@ -1,3 +1,4 @@
+
 import { fetchWithAuth } from "./api";
 
 function urlBase64ToUint8Array(base64String) {
@@ -5,9 +6,7 @@ function urlBase64ToUint8Array(base64String) {
     (4 - (base64String.length % 4)) % 4
   );
 
-  const base64 = (
-    base64String + padding
-  )
+  const base64 = (base64String + padding)
     .replace(/-/g, "+")
     .replace(/_/g, "/");
 
@@ -18,117 +17,142 @@ function urlBase64ToUint8Array(base64String) {
   );
 }
 
-export async function enablePushNotifications() {
-  if (
-    !("serviceWorker" in navigator) ||
-    !("PushManager" in window) ||
-    !("Notification" in window)
-  ) {
-    throw new Error("Push notifications are not supported");
-  }
+async function getErrorMessage(response) {
+  const text = await response.text();
 
-  const permission = await Notification.requestPermission();
-
-  if (permission !== "granted") {
-    throw new Error("Notification permission was not granted");
-  }
-
-  const registration =
-    await navigator.serviceWorker.register(
-      process.env.PUBLIC_URL + "/service-worker.js"
-    );
-  await navigator.serviceWorker.ready;
-
-  const keyRes = await fetchWithAuth(
-    "/api/messaging/push/public-key/"
-  );
-
-  if (!keyRes.ok) {
-    throw new Error("Failed to get VAPID public key");
-  }
-
-  const data = await keyRes.json();
-
-  if (!data.publicKey) {
-    throw new Error("VAPID public key is missing");
-  }
-
-  let subscription =
-    await registration.pushManager.getSubscription();
-
-  if (!subscription) {
-    subscription =
-      await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey:
-          urlBase64ToUint8Array(data.publicKey),
-      });
-  }
-
-  const subscribeRes = await fetchWithAuth(
-    "/api/messaging/push/subscribe/",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(
-        subscription.toJSON()
-      ),
-    }
-  );
-
-  if (!subscribeRes.ok) {
-    throw new Error("Failed to save push subscription");
-  }
-
-  return true;
-}
-
-export async function disablePushNotifications() {
-  if (!("serviceWorker" in navigator)) {
-    return false;
-  }
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.getSubscription();
-
-  if (!subscription) {
-    return false;
-  }
-  const response = await fetchWithAuth(
-    "/api/messaging/push/subscribe/",
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(
-        subscription.toJSON()
-      ),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to disable notifications on server");
-  }
-  await subscription.unsubscribe();
-
-  return true;
-}
-export async function arePushNotificationsEnabled() {
-  if (
-    !("serviceWorker" in navigator) ||
-    !("PushManager" in window)
-  ) {
-    return false;
-  }
+  if (!text) return `HTTP ${response.status}`;
 
   try {
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
+    const data = JSON.parse(text);
+    return (
+      data.detail ||
+      data.error ||
+      data.message ||
+      JSON.stringify(data)
+    );
+  } catch {
+    return text.slice(0, 300);
+  }
+}
 
-    return !!subscription;
+export async function enablePushNotifications() {
+  try {
+    if (
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window)
+    ) {
+      alert("Push notifications are not supported by this browser.");
+      return false;
+    }
+
+    if (!window.isSecureContext) {
+      alert("Push notifications require HTTPS.");
+      return false;
+    }
+
+    if (Notification.permission === "denied") {
+      alert(
+        "Notifications are blocked. Enable them in your browser settings."
+      );
+      return false;
+    }
+
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      alert("Notification permission was not granted.");
+      return false;
+    }
+
+    let registration;
+
+    try {
+      registration = await navigator.serviceWorker.register(
+        `${process.env.PUBLIC_URL || ""}/service-worker.js`
+      );
+
+      await navigator.serviceWorker.ready;
+    } catch (error) {
+      alert(`Service worker registration failed: ${error.message}`);
+      return false;
+    }
+
+    let keyRes;
+
+    try {
+      keyRes = await fetchWithAuth(
+        "/api/messaging/push/public-key/"
+      );
+    } catch (error) {
+      alert(`Could not reach push public-key API: ${error.message}`);
+      return false;
+    }
+
+    if (!keyRes.ok) {
+      alert(
+        `Push public-key API failed (${keyRes.status}): ${
+          await getErrorMessage(keyRes)
+        }`
+      );
+      return false;
+    }
+
+    const data = await keyRes.json();
+
+    if (
+      typeof data.publicKey !== "string" ||
+      !data.publicKey.trim()
+    ) {
+      alert("VAPID public key is missing or invalid.");
+      return false;
+    }
+
+    const applicationServerKey =
+      urlBase64ToUint8Array(data.publicKey.trim());
+
+    let subscription =
+      await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      subscription =
+        await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey,
+        });
+    }
+
+    let subscribeRes;
+
+    try {
+      subscribeRes = await fetchWithAuth(
+        "/api/messaging/push/subscribe/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(subscription.toJSON()),
+        }
+      );
+    } catch (error) {
+      alert(`Could not reach push subscription API: ${error.message}`);
+      return false;
+    }
+
+    if (!subscribeRes.ok) {
+      alert(
+        `Push subscription API failed (${subscribeRes.status}): ${
+          await getErrorMessage(subscribeRes)
+        }`
+      );
+      return false;
+    }
+
+    alert("Push notifications enabled successfully!");
+    return true;
   } catch (error) {
+    alert(`Push notification setup failed: ${error.message}`);
     return false;
   }
 }
