@@ -83,7 +83,7 @@ The backend is maintained separately from this frontend repository.
 Clone the repository:
 
 ```bash
-git clone https://github.com/QuantizedDeveloper/LinkX.git
+git clone https://github.com/QuantizedDeveloper/NeuraGigs.git
 cd LinkX
 ```
 
