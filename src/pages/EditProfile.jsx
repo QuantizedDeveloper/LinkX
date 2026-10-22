@@ -1,12 +1,11 @@
 import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEdit2, FiArrowLeft } from "react-icons/fi";
+import { FiEdit2, FiArrowLeft, FiCamera } from "react-icons/fi";
 import { FaQrcode, FaRupeeSign, FaPaypal } from "react-icons/fa";
 import { SiRazorpay } from "react-icons/si";
 import { BsCreditCard } from "react-icons/bs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "../utils/toast";
-import { FiCamera } from "react-icons/fi";
 import { fetchWithAuth } from "../utils/api";
 
 

@@ -39,9 +39,9 @@ export default function GoogleLogin() {
       localStorage.setItem("refreshToken", data.refresh);
       if (data.needs_username) {
         navigate("/username");
-      } else if (data.needs_face) {
+      } /*else if (data.needs_face) {
         navigate("/faceVerification");
-      } else {
+    }*/ else {
         localStorage.setItem("username", data.username);
         navigate("/");
       }

@@ -11,12 +11,9 @@ export const fetchWithAuth = async (url, options = {}) => {
     throw new Error("No access token");
     showToast("No access token")
   }
-
   const isFormData = options.body instanceof FormData;
-
   const makeRequest = async (accessToken) => {
   const start = performance.now();
-
   const response = await fetch(API_BASE + url, {
     ...options,
     headers: {

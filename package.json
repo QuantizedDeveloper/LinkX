@@ -1,8 +1,8 @@
 {
-  "name": "linkx-ui",
+  "name": "NeuraGigs",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://linkxllm.run.place",
+  "homepage": "https://neuragigs.run.place",
   "engines": {
     "node": "18.x"
   },

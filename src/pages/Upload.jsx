@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { FiImage } from "react-icons/fi";
 import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "../utils/api";
-const base_url = "https://linkx-backend-api-linkx-backend.hf.space";
 
 export default function Upload() {
   const navigate = useNavigate();

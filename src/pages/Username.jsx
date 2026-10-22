@@ -22,6 +22,7 @@ const Username = () => {
       });
       const data = await res.json();
       if (res.ok) {
+        localStorage.setItem("username", data.username);
         navigate("/");
       } else {
         alert(data.error || "Error");
@@ -38,7 +39,7 @@ const Username = () => {
     <div className="username-container">
       <div className="username-box">
         <h2>
-          <strong>enter username</strong> to start using LinkX
+          <strong>enter username</strong> to start using NeuraGigs
         </h2>
         <input
           type="text"

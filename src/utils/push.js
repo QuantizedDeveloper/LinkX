@@ -18,7 +18,6 @@ function urlBase64ToUint8Array(base64String) {
   );
 }
 
-
 export async function enablePushNotifications() {
   if (
     !("serviceWorker" in navigator) ||
@@ -34,13 +33,10 @@ export async function enablePushNotifications() {
     throw new Error("Notification permission was not granted");
   }
 
-  // Make sure the service worker is registered
   const registration =
     await navigator.serviceWorker.register(
       process.env.PUBLIC_URL + "/service-worker.js"
     );
-
-  // Wait until the service worker is active
   await navigator.serviceWorker.ready;
 
   const keyRes = await fetchWithAuth(
@@ -89,37 +85,36 @@ export async function enablePushNotifications() {
   return true;
 }
 
-
 export async function disablePushNotifications() {
   if (!("serviceWorker" in navigator)) {
-    return;
+    return false;
   }
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
 
-  const registration =
-    await navigator.serviceWorker.ready;
-
-  const subscription =
-    await registration.pushManager.getSubscription();
-
-  if (subscription) {
-    await subscription.unsubscribe();
+  if (!subscription) {
+    return false;
   }
-
   const response = await fetchWithAuth(
     "/api/messaging/push/subscribe/",
     {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        subscription.toJSON()
+      ),
     }
   );
 
   if (!response.ok) {
-    throw new Error("Failed to disable notifications");
+    throw new Error("Failed to disable notifications on server");
   }
+  await subscription.unsubscribe();
 
   return true;
 }
-
-
 export async function arePushNotificationsEnabled() {
   if (
     !("serviceWorker" in navigator) ||
@@ -129,11 +124,8 @@ export async function arePushNotificationsEnabled() {
   }
 
   try {
-    const registration =
-      await navigator.serviceWorker.ready;
-
-    const subscription =
-      await registration.pushManager.getSubscription();
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
 
     return !!subscription;
   } catch (error) {

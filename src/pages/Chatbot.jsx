@@ -313,26 +313,44 @@ const formatExplanation = (text) => {
   return (
   <div className="page">
     <div className="container">
-      <div className="header">
-        <div className="left">
-          {!isDesktop && (
-          <span onClick={() => navigate("/")}>✕</span>
-          )}
-          <span className="title">neuBot</span>
-          
-            <button
-            className="resetBtn2"
-            onClick={resetChat}>
-              ⟳
-              </button>
-        </div>
-      </div>
+      
+<div className="header">
+  <div className="left">
+    {!isDesktop && (
+      <span onClick={() => navigate("/")}>✕</span>
+    )}
+
+    <img
+  src={`${process.env.PUBLIC_URL}/neurAgent.jpg`}
+  alt="neurAgent"
+  className="neurAgent-logo"
+/>
+
+    <span className="title">NeurAgent</span>
+    <button
+    className="newChatBtn"
+    onClick={resetChat}
+    type="button"
+  >
+  ‎ ‎ ‎ ‎ + New Chat
+  </button>
+  </div>
+
+  
+</div>
+        
       <div className="content">
         {questions.map((q, i) => (
           <div key={q.id || i} className="block">
-            <div className="botRow">
-              <div className="botBubble">{q.text}</div>
-            </div>
+            
+<div className="botRow">
+  <img
+  src={`${process.env.PUBLIC_URL}/neurAgent.jpg`}
+  alt="neurAgent"
+  className="neurAgent-logo"
+/>
+  <div className="botBubble">{q.text}</div>
+</div>
             {answerMap[q.id] && (
               <div className="userRow">
                 <div className="userBubble">
@@ -344,11 +362,17 @@ const formatExplanation = (text) => {
         ))}
 
         {showTransition && (
-          <div className="botRow">
-            <div className="aiHint animate-pulse">
-              {transitionText}
-            </div>
-          </div>
+          
+<div className="botRow">
+  <img
+  src={`${process.env.PUBLIC_URL}/neurAgent.jpg`}
+  alt="neurAgent"
+  className="neurAgent-logo"
+/>
+  <div className="aiHint animate-pulse">
+    {transitionText}
+  </div>
+</div>
         )}
 
         {done && (
@@ -420,8 +444,8 @@ const formatExplanation = (text) => {
       )}
      <div className="explain">
        {f.is_verified_by_linkx
-       ? "✔ Verified by LinkX"
-       : "○ Not verified by LinkX yet"}
+       ? "✔ Verified by NeuraGigs team "
+       : "○ Not verified by NeuraGigs team yet"}
     </div>
       <div className="actions">
         <button
@@ -486,7 +510,7 @@ const formatExplanation = (text) => {
     </div>
     <div className="explanationCard">
       <div className="explanationTitle">
-        🧠 Why neuBot picked this freelancer
+        🧠 Why NeurAgent picked this freelancer
       </div>
       <div className="explanationSummary">
         <span className="aiBadge">
@@ -552,7 +576,7 @@ const formatExplanation = (text) => {
   </div>
 )}
 
-    </div>
   </div>
+ </div>
 );
 }

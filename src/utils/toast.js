@@ -16,9 +16,7 @@ export function showToast(message, type = "info") {
   toast.innerText = message;
 
   toastContainer.appendChild(toast);
-  // animate in
   setTimeout(() => toast.classList.add("show"), 10);
-  // remove
   setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 300);

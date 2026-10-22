@@ -9,7 +9,6 @@ import Ably from "ably";
 import { fetchWithAuth } from "../utils/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import "./Chat.css";
-
 import PaymentModal from "./PaymentModal";
 import {
   FiPlus,
@@ -17,11 +16,9 @@ import {
   FiEye,
   FiX,
 } from "react-icons/fi";
-
 import { IoSend } from "react-icons/io5";
 import Gig from "../components/Gig";
 import { useQuery } from "@tanstack/react-query";
-
 
 export default function Chat() {
   const queryClient = useQueryClient();

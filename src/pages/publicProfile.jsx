@@ -1,23 +1,14 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { FaTimes, FaEllipsisV, FaPlay } from "react-icons/fa";
+import { FaTimes, FaEllipsisV, FaPlay, FaBriefcase,FaGlobeAsia,FaLayerGroup,FaRegCommentDots,FaStar, FaCalendarAlt } from "react-icons/fa";
 import { FiMail } from "react-icons/fi";
 import Gig from "../components/Gig";
 import "./Chat.css";
 import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "../utils/api";
-
-import {
-  FaBriefcase,
-  FaGlobeAsia,
-  FaLayerGroup,
-  FaRegCommentDots,
-  FaStar,
-  FaCalendarAlt
-} from "react-icons/fa";
-
 import Gigs from "../components/Gigs";
+
 function PaymentModal({ paymentInfo, onClose }) {
   const [showQR, setShowQR] = useState(null);
   if (!paymentInfo) return null;

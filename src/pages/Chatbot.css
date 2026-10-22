@@ -456,3 +456,67 @@
   margin-bottom: 12px;
   font-family: Inter, sans-serif;
 }
+
+
+
+/* neurAgent header */
+
+
+.neurAgent-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.newChatBtn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 8px 0 8px 8px;
+  position: relative;
+  left:10
+}
+
+/* Assistant message avatar */
+
+.bot-avatar {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid #000
+}
+
+@media (max-width: 400px) {
+  .neurAgent-logo {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #000
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .newChatBtn {
+    font-size: 15px;
+  }
+
+  .bot-avatar {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #000
+  }
+}

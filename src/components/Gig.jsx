@@ -6,7 +6,6 @@ import { showToast } from "../utils/toast";
 import ReviewSection from "./ReviewSection";
 import { useQuery, useQueryClient, useQueries } from "@tanstack/react-query";
 import { fetchWithAuth } from "../utils/api";
-const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 const fixUrl = (url) => {
   if (!url) return null;
