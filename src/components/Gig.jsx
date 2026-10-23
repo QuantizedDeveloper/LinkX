@@ -12,6 +12,7 @@ const fixUrl = (url) => {
   if (url.startsWith("http")) return url;
   return API_BASE + url;
 };
+const API_BASE = "https://linkx-backend-api-linkx-backend.hf.space";
 
 function Gig({ gig }) {
   const navigate = useNavigate();

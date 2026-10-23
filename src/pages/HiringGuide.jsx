@@ -20,7 +20,7 @@ const HiringGuide = () => {
         <div>
           <div style={styles.headerTitle}>Hiring Guide</div>
           <div style={styles.headerSubtitle}>
-            A simple guide to hiring on LinkX
+            A simple guide to hiring on NeuraGigs
           </div>
         </div>
       </div>
@@ -37,7 +37,7 @@ const HiringGuide = () => {
           </h1>
 
           <p style={styles.heroText}>
-            LinkX gives you tools to discover, understand and connect
+            NeuraGigs gives you tools to discover, understand and connect
             with freelancers. Here's how to make the most of them.
           </p>
         </div>
@@ -47,7 +47,7 @@ const HiringGuide = () => {
         <div style={styles.flowCard}>
 
           <div style={styles.flowTitle}>
-            How hiring on LinkX works
+            How hiring on NeuraGigs works
           </div>
 
           <div style={styles.flowSteps}>
@@ -55,7 +55,7 @@ const HiringGuide = () => {
             <div style={styles.flowStep}>
               <div style={styles.flowIcon}>🤖</div>
               <div>
-                <strong>LinkBot</strong>
+                <strong>NeurAgent</strong>
                 <span> helps you find</span>
               </div>
             </div>
@@ -100,7 +100,7 @@ const HiringGuide = () => {
 
           <div style={styles.cardContent}>
             <h2 style={styles.cardTitle}>
-              Tell LinkBot what you need
+              Tell NeurAgent what you need
             </h2>
 
             <p style={styles.cardText}>
@@ -114,11 +114,11 @@ const HiringGuide = () => {
 
               <div>
                 <div style={styles.featureTitle}>
-                  LinkBot
+                  NeurAgent
                 </div>
 
                 <div style={styles.featureText}>
-                  LinkBot helps understand your requirements and
+                  NeurAgent helps understand your requirements and
                   find freelancers who may be a good fit.
                 </div>
               </div>
@@ -137,7 +137,7 @@ const HiringGuide = () => {
             </h2>
 
             <p style={styles.cardText}>
-              LinkBot helps narrow down the search. Take a look at
+              NeurAgent helps narrow down the search. Take a look at
               the suggested freelancers and compare the information
               available on their profiles.
             </p>
@@ -159,12 +159,12 @@ const HiringGuide = () => {
 
           <div style={styles.cardContent}>
             <h2 style={styles.cardTitle}>
-              Look for LinkX verification
+              Look for NeuraGigs verification
             </h2>
 
             <p style={styles.cardText}>
-              Some freelancers have a LinkX verification badge.
-              These freelancers have gone through LinkX's manual
+              Some freelancers have a NeuraGigs verification badge.
+              These freelancers have gone through NeuraGig's manual
               verification process.
             </p>
 
@@ -173,12 +173,12 @@ const HiringGuide = () => {
 
               <div>
                 <div style={styles.verifiedTitle}>
-                  LinkX verified
+                  NeuraGigs verified
                 </div>
 
                 <div style={styles.verifiedText}>
                   An additional trust signal that the freelancer
-                  has completed LinkX's verification process.
+                  has completed NeuraGig's verification process.
                 </div>
               </div>
             </div>
@@ -202,7 +202,7 @@ const HiringGuide = () => {
             </h2>
 
             <p style={styles.cardText}>
-              Use LinkX messaging to discuss the project before
+              Use NeuraGigs messaging to discuss the project before
               making your decision.
             </p>
 
@@ -231,7 +231,7 @@ const HiringGuide = () => {
             </h2>
 
             <p style={styles.cardText}>
-              LinkX helps you discover and evaluate freelancers,
+              NeuraGigs helps you discover and evaluate freelancers,
               but the final hiring decision is always yours.
             </p>
 
@@ -240,7 +240,7 @@ const HiringGuide = () => {
               <div style={styles.finalRow}>
                 <span>🤖</span>
                 <div>
-                  <strong>LinkBot</strong>
+                  <strong>NeurAgent</strong>
                   <small>helps you find</small>
                 </div>
               </div>
@@ -281,7 +281,7 @@ const HiringGuide = () => {
           </h2>
 
           <p style={styles.sectionText}>
-            LinkX is designed for legitimate freelance work and
+            NeuraGigs is designed for legitimate freelance work and
             professional services.
           </p>
 
@@ -311,7 +311,7 @@ const HiringGuide = () => {
             </h2>
 
             <p style={styles.cardText}>
-              LinkX should not be used to hire for illegal,
+              NeuraGigs should not be used to hire for illegal,
               fraudulent, harmful, abusive, or deceptive activities.
             </p>
 
@@ -333,12 +333,12 @@ const HiringGuide = () => {
 
           <div>
             <h2 style={styles.cardTitle}>
-              What LinkX does and doesn't guarantee
+              What NeuraGigs does and doesn't guarantee
             </h2>
 
             <p style={styles.cardText}>
-              LinkX provides tools to help you discover and connect
-              with freelancers. However, LinkX does not guarantee
+              NeuraGigs provides tools to help you discover and connect
+              with freelancers. However, NeuraGigs does not guarantee
               a freelancer's work quality, delivery time, project
               result, or business outcome.
             </p>
@@ -365,10 +365,10 @@ const HiringGuide = () => {
           </p>
 
           <a
-            href="mailto:linkx.llm@gmail.com?subject=LinkX%20Hiring%20Help"
+            href="mailto:neuragigs@gmail.com?subject=LinkX%20Hiring%20Help"
             style={styles.supportLink}
           >
-            Need help? Contact LinkX Support →
+            Need help? Contact NeuraGigs Support →
           </a>
 
         </section>
@@ -381,7 +381,7 @@ const HiringGuide = () => {
           </div>
 
           <div style={styles.bottomText}>
-            LinkX is here to make that process simpler.
+            NeuraGigs is here to make that process simpler.
           </div>
         </div>
 

@@ -243,7 +243,7 @@ const HiredGuide = () => {
 
             <p style={styles.smallText}>
               If you cannot resolve the situation, use the
-              appropriate LinkX support or reporting process.
+              appropriate NeuraGigs support or reporting process.
             </p>
           </div>
 
@@ -283,13 +283,13 @@ const HiredGuide = () => {
 
           <div>
             <h2 style={styles.cardTitle}>
-              What LinkX does
+              What NeuraGigs does
             </h2>
 
             <p style={styles.cardText}>
-              LinkX provides the marketplace and tools that help
+              NeuraGigs provides the marketplace and tools that help
               clients and freelancers connect and work together.
-              But LinkX does not guarantee that every project will
+              But NeuraGigs does not guarantee that every project will
               be successful or that a particular result will be achieved.
             </p>
           </div>
@@ -314,7 +314,7 @@ const HiredGuide = () => {
 
           <p style={styles.finalText}>
             Every project is an opportunity to build trust with
-            your client and strengthen your reputation on LinkX.
+            your client and strengthen your reputation on NeuraGigs.
           </p>
 
         </section>

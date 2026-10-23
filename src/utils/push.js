@@ -1,4 +1,4 @@
-
+import { showToast } from "../utils/toast";
 import { fetchWithAuth } from "./api";
 
 function urlBase64ToUint8Array(base64String) {
@@ -42,17 +42,17 @@ export async function enablePushNotifications() {
       !("PushManager" in window) ||
       !("Notification" in window)
     ) {
-      alert("Push notifications are not supported by this browser.");
+      showToast("Push notifications are not supported by this browser.");
       return false;
     }
 
     if (!window.isSecureContext) {
-      alert("Push notifications require HTTPS.");
+      showToast("Push notifications require HTTPS.");
       return false;
     }
 
     if (Notification.permission === "denied") {
-      alert(
+      showToast(
         "Notifications are blocked. Enable them in your browser settings."
       );
       return false;
@@ -74,7 +74,7 @@ export async function enablePushNotifications() {
 
       await navigator.serviceWorker.ready;
     } catch (error) {
-      alert(`Service worker registration failed: ${error.message}`);
+      showToast(`Service worker registration failed: ${error.message}`);
       return false;
     }
 
@@ -90,7 +90,7 @@ export async function enablePushNotifications() {
     }
 
     if (!keyRes.ok) {
-      alert(
+      showToast(
         `Push public-key API failed (${keyRes.status}): ${
           await getErrorMessage(keyRes)
         }`
@@ -104,7 +104,7 @@ export async function enablePushNotifications() {
       typeof data.publicKey !== "string" ||
       !data.publicKey.trim()
     ) {
-      alert("VAPID public key is missing or invalid.");
+      showToast("VAPID public key is missing or invalid.");
       return false;
     }
 
@@ -136,12 +136,12 @@ export async function enablePushNotifications() {
         }
       );
     } catch (error) {
-      alert(`Could not reach push subscription API: ${error.message}`);
+      showToast(`Could not reach push subscription API: ${error.message}`);
       return false;
     }
 
     if (!subscribeRes.ok) {
-      alert(
+      showToast(
         `Push subscription API failed (${subscribeRes.status}): ${
           await getErrorMessage(subscribeRes)
         }`
@@ -149,10 +149,84 @@ export async function enablePushNotifications() {
       return false;
     }
 
-    alert("Push notifications enabled successfully!");
+    showToast("Push notifications enabled successfully!");
     return true;
   } catch (error) {
     alert(`Push notification setup failed: ${error.message}`);
+    return false;
+  }
+}
+
+
+export async function arePushNotificationsEnabled() {
+  try {
+    if (
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window) ||
+      Notification.permission !== "granted"
+    ) {
+      return false;
+    }
+
+    const registration =
+      await navigator.serviceWorker.getRegistration();
+
+    if (!registration) {
+      return false;
+    }
+
+    const subscription =
+      await registration.pushManager.getSubscription();
+
+    return Boolean(subscription);
+  } catch (error) {
+    console.error(
+      "Failed to check push notification status:",
+      error
+    );
+    return false;
+  }
+}
+
+
+
+
+export async function disablePushNotifications() {
+  try {
+    if (!("serviceWorker" in navigator)) {
+      showToast("Service workers are not supported.");
+      return false;
+    }
+
+    const registration =
+      await navigator.serviceWorker.getRegistration();
+
+    if (!registration) {
+      showToast("No service worker registration was found.");
+      return false;
+    }
+
+    const subscription =
+      await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      return true;
+    }
+
+    const success = await subscription.unsubscribe();
+
+    if (!success) {
+      showToast("Could not disable push notifications.");
+      return false;
+    }
+
+    showToast("Push notifications disabled on this browser.");
+    return true;
+  } catch (error) {
+    showToast(
+      `Could not disable notifications: ${error.message}`
+    );
     return false;
   }
 }
